@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SISTEMA SEI — Gestión de Flota</title>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+
+    <!-- Supabase SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <style>
+        :root {
+            --bg: #0d1117;
+            --panel: #161d2b;
+            --panel-card: #1c2638;
+            --border: #243047;
+            --border-bright: #3a4a6b;
+            --teal: #20c997;
+            --teal-dim: rgba(32, 201, 151, 0.1);
+            --red: #e03131;
+            --red-dim: rgba(224, 49, 49, 0.1);
+            --amber: #f59f00;
+            --sky: #339af0;
+            --text: #e2e8f0;
+            --text-dim: #8a9bba;
+            --font-title: 'Syne', sans-serif;
+            --font-body: 'DM Sans', sans-serif;
+            --font-mono: 'DM Mono', monospace;
+            --shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: var(--font-body);
+            background-image: radial-gradient(circle, #243047 1px, transparent 1px);
+            background-size: 30px 30px;
+            min-height: 100vh;
+            padding-bottom: 80px;
+        }
+
+        /* Nav & Header */
+        nav {
+            background: rgba(13, 17, 23, 0.85);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border);
+            padding: 12px 30px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .btn-back {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-dim);
+            text-decoration: none;
+            font-family: var(--font-mono);
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: color 0.2s;
+        }
+
+        .btn-back:hover {
+            color: var(--teal);
+        }
+
+        .header-title {
+            font-family: var(--font-title);
+            font-weight: 800;
+            font-size: 18px;
+            letter-spacing: -0.5px;
+            background: linear-gradient(90deg, #fff, var(--text-dim));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 40px auto;
+            padding: 0 25px;
+        }
+
+        /* GRID FLOTA */
+        .fleet-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+            gap: 25px;
+        }
+
+        /* VEHICLE CARD */
+        .v-card {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+            transition: transform 0.3s, border-color 0.3s, box-shadow 0.3s;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .v-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--border-bright);
+            box-shadow: var(--shadow);
+        }
+
+        .v-card.fuser {
+            border-color: var(--red);
+            box-shadow: 0 0 20px rgba(224, 49, 49, 0.15);
+        }
+
+        .v-header {
+            padding: 20px;
+            background: var(--panel-card);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .v-id {
+            font-family: var(--font-title);
+            font-weight: 800;
+            font-size: 28px;
+            color: #fff;
+        }
+
+        .v-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-family: var(--font-mono);
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            padding: 4px 10px;
+            border-radius: 20px;
+        }
+
+        .status-ok {
+            background: var(--teal-dim);
+            color: var(--teal);
+            border: 1px solid rgba(32, 201, 151, 0.2);
+        }
+
+        .status-fuser {
+            background: var(--red-dim);
+            color: var(--red);
+            border: 1px solid rgba(224, 49, 49, 0.2);
+        }
+
+        .v-model {
+            font-family: var(--font-mono);
+            font-size: 12px;
+            color: var(--text-dim);
+            margin-top: 5px;
+        }
+
+        .v-body {
+            padding: 20px;
+            flex: 1;
+        }
+
+        /* CAPACIDADES TECH GRID */
+        .v-tech-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .tech-item {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .tech-label {
+            font-size: 10px;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            font-family: var(--font-mono);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .tech-val {
+            font-family: var(--font-title);
+            font-weight: 700;
+            font-size: 16px;
+            color: #fff;
+        }
+
+        .tech-unit {
+            font-size: 11px;
+            color: var(--text-dim);
+            margin-left: 2px;
+        }
+
+        /* NOVEDADES SECTION */
+        .novedades-box {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            padding: 15px;
+            border: 1px dashed var(--border);
+        }
+
+        .nov-title {
+            font-family: var(--font-mono);
+            font-size: 10px;
+            color: var(--text-dim);
+            margin-bottom: 10px;
+            display: block;
+            text-transform: uppercase;
+        }
+
+        .nov-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .nov-badge {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 6px 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            background: var(--panel-card);
+            border: 1px solid var(--border);
+            animation: fadeIn 0.3s ease;
+        }
+
+        .nov-badge.critica {
+            border-left: 3px solid var(--red);
+        }
+
+        .nov-badge.leve {
+            border-left: 3px solid var(--amber);
+        }
+
+        .btn-del-nov {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 2px;
+            transition: color 0.2s;
+        }
+
+        .btn-del-nov:hover {
+            color: var(--red);
+        }
+
+        /* WIDGET CONVERSOR */
+        .widget-btn {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 60px;
+            height: 60px;
+            background: var(--teal);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 10px 25px rgba(32, 201, 151, 0.4);
+            z-index: 1000;
+            transition: transform 0.3s;
+        }
+
+        .widget-btn:hover {
+            transform: scale(1.1);
+        }
+
+        .calc-panel {
+            position: fixed;
+            bottom: 100px;
+            right: 30px;
+            width: 300px;
+            background: var(--panel);
+            border: 1px solid var(--border-bright);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: var(--shadow);
+            z-index: 1000;
+            display: none;
+            animation: slideIn 0.3s ease;
+        }
+
+        .calc-panel.show {
+            display: block;
+        }
+
+        .calc-title {
+            font-family: var(--font-title);
+            font-size: 14px;
+            margin-bottom: 20px;
+            display: block;
+        }
+
+        .calc-field {
+            margin-bottom: 15px;
+        }
+
+        .calc-field label {
+            font-size: 10px;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            margin-bottom: 5px;
+            display: block;
+        }
+
+        .calc-input-wrap {
+            position: relative;
+        }
+
+        .calc-input-wrap input {
+            width: 100%;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            padding: 10px;
+            border-radius: 5px;
+            color: #fff;
+            font-family: var(--font-mono);
+            outline: none;
+        }
+
+        .calc-input-wrap span {
+            position: absolute;
+            right: 10px;
+            top: 10px;
+            font-size: 11px;
+            color: var(--text-dim);
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateY(20px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        /* Empty state */
+        #empty-state {
+            text-align: center;
+            padding: 100px 0;
+            color: var(--text-dim);
+            font-family: var(--font-mono);
+            grid-column: 1 / -1;
+        }
+    </style>
+</head>
+
+<body>
+
+    <nav>
+        <a href="dashboard_principal.html" class="btn-back">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <path d="M19 12H5M12 19l-7-7 7-7" />
+            </svg>
+            Volver al Dashboard
+        </a>
+        <div class="header-title">GESTIÓN DE FLOTA SEI</div>
+        <div style="width: 140px;"></div> <!-- Spacer for center alignment -->
+    </nav>
+
+    <div class="container">
+        <div id="fleet-grid" class="fleet-grid">
+            <!-- Cards will be injected here -->
+            <div id="empty-state">Cargando flota desde la base de datos...</div>
+        </div>
+    </div>
+
+    <!-- WIDGET CONVERSOR -->
+    <div class="calc-panel" id="calc-panel">
+        <span class="calc-title">🔄 CONVERSOR ARFF</span>
+
+        <div class="calc-field">
+            <label>Galones Americanos (US Gal)</label>
+            <div class="calc-input-wrap">
+                <input type="number" id="inp-gal" oninput="convert('gal')" placeholder="0.0">
+                <span>GAL</span>
+            </div>
+        </div>
+
+        <div style="text-align:center; margin: 10px 0; color: var(--text-muted);">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M7 10l5 5 5-5" />
+            </svg>
+        </div>
+
+        <div class="calc-field">
+            <label>Litros (L)</label>
+            <div class="calc-input-wrap">
+                <input type="number" id="inp-lit" oninput="convert('lit')" placeholder="0.0">
+                <span>L</span>
+            </div>
+        </div>
+
+        <div style="font-size: 10px; color: var(--text-muted); font-family: var(--font-mono); margin-top: 10px;">
+            Factor: 1 gal = 3.785 L
+        </div>
+    </div>
+
+    <div class="widget-btn" onclick="toggleCalc()">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5">
+            <circle cx="12" cy="12" r="10" />
+            <path d="M8 12h8M12 8v8" />
+        </svg>
+    </div>
+
+    <script src="supabase-config.js"></script>
+    <script>
+        // Lógica de Conversión
+        function convert(source) {
+            const galField = document.getElementById('inp-gal');
+            const litField = document.getElementById('inp-lit');
+            const factor = 3.78541;
+
+            if (source === 'gal') {
+                const val = parseFloat(galField.value);
+                if (!isNaN(val)) litField.value = (val * factor).toFixed(2);
+                else litField.value = '';
+            } else {
+                const val = parseFloat(litField.value);
+                if (!isNaN(val)) galField.value = (val / factor).toFixed(2);
+                else galField.value = '';
+            }
+        }
+
+        function toggleCalc() {
+            document.getElementById('calc-panel').classList.toggle('show');
+        }
+
+        // Integración Supabase
+        async function loadFleet() {
+            try {
+                // 1. Obtener Estaciones para filtrar (opcional, por ahora traemos todas)
+                const { data: maquinas, error: mErr } = await supabaseClient
+                    .from('maquinas_sei')
+                    .select('*')
+                    .order('numero_interno', { ascending: true });
+
+                if (mErr) throw mErr;
+
+                // 2. Obtener Novedades para el estado FUSER
+                const { data: novedades, error: nErr } = await supabaseClient
+                    .from('novedades_maquinas')
+                    .select('*')
+                    .is('reparado', false); // Traemos solo las NO reparadas
+
+                if (nErr) throw nErr;
+
+                renderFleet(maquinas, novedades);
+
+            } catch (err) {
+                console.error("Error cargando flota:", err);
+                document.getElementById('empty-state').textContent = "Error al conectar con Supabase.";
+            }
+        }
+
+        function renderFleet(maquinas, novedades) {
+            const grid = document.getElementById('fleet-grid');
+            grid.innerHTML = '';
+
+            if (maquinas.length === 0) {
+                grid.innerHTML = '<div id="empty-state">No hay máquinas registradas.</div>';
+                return;
+            }
+
+            maquinas.forEach(m => {
+                // Filtrar novedades de esta máquina
+                const mNovedades = novedades.filter(n => n.maquina_id === m.id);
+                const isFuser = mNovedades.some(n => n.severidad === 'critica');
+
+                const card = document.createElement('div');
+                card.className = `v-card ${isFuser ? 'fuser' : ''}`;
+
+                card.innerHTML = `
+                    <div class="v-header">
+                        <div>
+                            <div class="v-id">${m.numero_interno}</div>
+                            <div class="v-model">${m.marca} ${m.modelo}</div>
+                        </div>
+                        <div class="v-status ${isFuser ? 'status-fuser' : 'status-ok'}">
+                            ${isFuser ? '● FUSER' : '● Disponible'}
+                        </div>
+                    </div>
+                    <div class="v-body">
+                        <div class="v-tech-grid">
+                            <div class="tech-item">
+                                <span class="tech-label">💧 Agua</span>
+                                <span class="tech-val">${m.cap_agua || 0} <span class="tech-unit">L</span></span>
+                            </div>
+                            <div class="tech-item">
+                                <span class="tech-label">🫧 Espuma</span>
+                                <span class="tech-val">${m.cap_espuma || 0} <span class="tech-unit">L</span></span>
+                            </div>
+                            <div class="tech-item">
+                                <span class="tech-label">🧯 PQS</span>
+                                <span class="tech-val">${m.cap_pqs || 0} <span class="tech-unit">Kg</span></span>
+                            </div>
+                            <div class="tech-item">
+                                <span class="tech-label">🚀 Q Torreta</span>
+                                <span class="tech-val">${m.q_torreta || 0} <span class="tech-unit">Lpm</span></span>
+                            </div>
+                        </div>
+
+                        <div class="novedades-box">
+                            <span class="nov-title">Novedades Activas</span>
+                            <div class="nov-list">
+                                ${mNovedades.length > 0 ? mNovedades.map(n => `
+                                    <div class="nov-badge ${n.severidad}">
+                                        <span>${n.descripcion}</span>
+                                        <button class="btn-del-nov" onclick="marcarReparado('${n.id}')">✕</button>
+                                    </div>
+                                `).join('') : '<div style="font-size:11px; color:var(--text-muted);">Sin novedades pendientes.</div>'}
+                            </div>
+                        </div>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        async function marcarReparado(novedadId) {
+            if (!confirm("¿Marcar esta novedad como reparada?")) return;
+
+            try {
+                const { error } = await supabaseClient
+                    .from('novedades_maquinas')
+                    .update({ reparado: true })
+                    .eq('id', novedadId);
+
+                if (error) throw error;
+                loadFleet(); // Recargar flota para actualizar estado
+            } catch (err) {
+                alert("Error al actualizar: " + err.message);
+            }
+        }
+
+        // Carga inicial
+        window.onload = loadFleet;
+    </script>
+</body>
+
+</html>
