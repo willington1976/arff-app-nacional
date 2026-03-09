@@ -23,18 +23,24 @@
             --s3: #162035;
             --border: #1c2e47;
             --border2: #243a58;
-            --teal: #0bc5a0;
-            --teal-glow: rgba(11, 197, 160, .15);
-            --red: #f03e3e;
-            --amber: #f59f00;
+            --teal: #00ff9d;
+            /* Neon Green */
+            --teal-glow: rgba(0, 255, 157, .3);
+            --red: #ff2e2e;
+            /* Bright Red */
+            --red-glow: rgba(255, 46, 46, .3);
+            --amber: #ffcc00;
+            --amber-glow: rgba(255, 204, 0, .3);
+            --maint: #38bdf8;
+            /* Mantenimiento (Sky) */
             --sky: #38bdf8;
-            --text: #dde4ee;
-            --text-dim: #7a90aa;
+            --text: #ffffff;
+            --text-dim: #a0aec0;
             --ff-t: 'Syne', sans-serif;
             --ff-b: 'DM Sans', sans-serif;
             --ff-m: 'DM Mono', monospace;
             --r: 12px;
-            --tr: .2s ease;
+            --tr: .15s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         * {
@@ -191,31 +197,117 @@
             transform: translateY(-1px);
         }
 
-        .btn-delete {
-            background: rgba(240, 62, 62, 0.1);
-            color: var(--red);
-            border-color: rgba(240, 62, 62, 0.2);
+        /* Status Toggle Group */
+        .status-toggle-group {
+            display: flex;
+            background: var(--s2);
+            padding: 3px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            gap: 2px;
         }
 
-        .btn-delete:hover {
+        .btn-toggle {
+            flex: 1;
+            padding: 6px 4px;
+            border: none;
+            background: transparent;
+            color: var(--text-dim);
+            font-family: var(--ff-m);
+            font-size: 8px;
+            font-weight: 700;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: var(--tr);
+            letter-spacing: 0.5px;
+        }
+
+        .btn-toggle.active[data-status="OPERATIVO"] {
+            background: var(--teal);
+            color: #000;
+            box-shadow: 0 0 10px var(--teal-glow);
+        }
+
+        .btn-toggle.active[data-status="FUSER"] {
             background: var(--red);
             color: #fff;
+            box-shadow: 0 0 10px var(--red-glow);
         }
 
-        .btn-update {
-            background: rgba(56, 189, 248, 0.1);
-            color: var(--sky);
-            border-color: rgba(56, 189, 248, 0.2);
-        }
-
-        .btn-update:hover {
+        .btn-toggle.active[data-status="MANTENIMIENTO"] {
             background: var(--sky);
             color: #fff;
+            box-shadow: 0 0 10px rgba(56, 189, 248, 0.3);
+        }
+
+        .btn-toggle:not(.active):hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text);
+        }
+
+        /* Novedades Table Styling */
+        .nov-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0 4px;
+            margin-top: 10px;
+        }
+
+        .nov-table th {
+            background: transparent;
+            border: none;
+            padding: 4px 10px;
+            color: var(--text-dim);
+        }
+
+        .nov-table td {
+            background: var(--s2);
+            border: none;
+            padding: 8px 10px;
+        }
+
+        .nov-table tr td:first-child {
+            border-radius: 4px 0 0 4px;
+        }
+
+        .nov-table tr td:last-child {
+            border-radius: 0 4px 4px 0;
+        }
+
+        .nov-input,
+        .nov-select {
+            width: 100%;
+            background: var(--s3);
+            border: 1px solid var(--border2);
+            border-radius: 4px;
+            color: #fff;
+            padding: 6px;
+            font-size: 11px;
+            font-family: var(--ff-b);
+        }
+
+        .badge-sev {
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: var(--ff-m);
+            font-size: 9px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .bg-critica {
+            background: var(--red);
+            color: white;
+        }
+
+        .bg-leve {
+            background: var(--amber);
+            color: black;
         }
 
         /* Novedades Row */
         .nested-row {
-            background: rgba(0, 0, 0, 0.2);
+            background: rgba(0, 0, 0, 0.4);
         }
 
         .nested-box {
@@ -416,26 +508,34 @@
 
         function renderTable() {
             const tbody = document.getElementById('fleet-body');
-            // Keep the first registration row
             const regRow = tbody.querySelector('.reg-row');
             tbody.innerHTML = '';
             tbody.appendChild(regRow);
 
             fleetData.forEach(m => {
                 const mNovs = noveltiesData.filter(n => n.maquina_id === m.id);
-                const hasCritical = mNovs.some(n => n.severidad === 'critica');
-                const isFuser = (m.estado === 'Fuera de Servicio' || m.estado === 'FUSER') || hasCritical;
+                const hasCritical = mNovs.some(n => n.severidad === 'critica' && !n.reparado);
+
+                // Determine effective status
+                let currentStatus = m.estado || 'OPERATIVO';
+                if (hasCritical && currentStatus === 'OPERATIVO') currentStatus = 'FUSER';
+
+                const isFuser = currentStatus === 'FUSER' || currentStatus === 'Fuera de Servicio';
 
                 // Main row
                 const row = document.createElement('tr');
                 row.innerHTML = `
-                    <td style="font-family: var(--ff-m); font-weight: 700; color: #fff;">
+                    <td style="font-family: var(--ff-m); font-weight: 700;">
                         <span class="status-dot ${isFuser ? 'dot-fuser' : 'dot-ok'}"></span>
                         ${m.numero_interno}
                     </td>
                     <td>
-                        <div style="font-size: 11px; color: var(--text-dim); text-transform: uppercase;">${m.marca}</div>
-                        <div style="font-weight: 600;">${m.modelo}</div>
+                        <div style="font-size: 10px; color: var(--text-dim); text-transform: uppercase; margin-bottom: 2px;">${m.marca} ${m.modelo}</div>
+                        <div class="status-toggle-group">
+                            <button class="btn-toggle ${currentStatus === 'OPERATIVO' ? 'active' : ''}" data-status="OPERATIVO" onclick="setMachineStatus('${m.id}', 'OPERATIVO')">OPERATIVO</button>
+                            <button class="btn-toggle ${(currentStatus === 'FUSER' || currentStatus === 'Fuera de Servicio') ? 'active' : ''}" data-status="FUSER" onclick="setMachineStatus('${m.id}', 'FUSER')">FUSER</button>
+                            <button class="btn-toggle ${currentStatus === 'MANTENIMIENTO' ? 'active' : ''}" data-status="MANTENIMIENTO" onclick="setMachineStatus('${m.id}', 'MANTENIMIENTO')">MANT</button>
+                        </div>
                     </td>
                     <td><input type="number" class="edit-input" value="${m.capacidad_agua_gal || 0}" onchange="updateMachineField('${m.id}', 'capacidad_agua_gal', this.value)"></td>
                     <td><input type="number" class="edit-input" value="${m.capacidad_espuma_gal || 0}" onchange="updateMachineField('${m.id}', 'capacidad_espuma_gal', this.value)"></td>
@@ -443,40 +543,96 @@
                     <td><input type="number" class="edit-input" value="${m.caudal_torreta_lmin || 0}" onchange="updateMachineField('${m.id}', 'caudal_torreta_lmin', this.value)"></td>
                     <td><input type="text" class="edit-input" value="${m.aeropuerto_id || ''}" onchange="updateMachineField('${m.id}', 'aeropuerto_id', this.value)"></td>
                     <td>
-                        <div style="display: flex; gap: 4px;">
-                            <button class="btn-action btn-delete" onclick="deleteMachine('${m.id}')">
-                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
-                            </button>
-                        </div>
+                        <button class="btn-action btn-delete" onclick="deleteMachine('${m.id}')">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+                        </button>
                     </td>
                 `;
                 tbody.appendChild(row);
 
-                // Nested Novelties Row
+                // Nested Novelties Table Row
                 const novRow = document.createElement('tr');
                 novRow.className = 'nested-row';
                 novRow.innerHTML = `
                     <td colspan="8">
                         <div class="nested-box">
                             <div class="nov-header">
-                                <div class="nov-title">⚡ NOVEDADES Y ESTADO TÉCNICO</div>
-                                <button class="btn-action btn-save" style="padding: 4px 10px; font-size: 9px;" onclick="promptNovelty('${m.id}')">+ AGREGAR NOVEDAD</button>
+                                <div class="nov-title" style="color: #fff; font-weight: 800;">[ LOG DE NOVEDADES OPERATIVAS ]</div>
                             </div>
-                            <div class="nov-list">
-                                ${mNovs.length > 0 ? mNovs.map(n => `
-                                    <div class="nov-badge ${n.severidad}">
-                                        <span class="nov-sev sev-${n.severidad}">${n.severidad}</span>
-                                        <span class="nov-desc">${n.descripcion}</span>
-                                        <button class="btn-action btn-update" style="padding: 4px 8px;" onclick="resolveNovelty('${n.id}')">REPARADO</button>
-                                        <button class="btn-del-nov" onclick="deleteNovelty('${n.id}')">✕</button>
-                                    </div>
-                                `).join('') : '<div style="color: var(--text-muted); font-size: 11px;">Operativo sin novedades registradas.</div>'}
-                            </div>
+                            <table class="nov-table">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 120px;">Fecha</th>
+                                        <th>Descripción de la Novedad</th>
+                                        <th style="width: 100px;">Gravedad</th>
+                                        <th style="width: 150px;">Acción</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${mNovs.map(n => `
+                                        <tr>
+                                            <td style="font-family: var(--ff-m); font-size: 10px;">${new Date(n.created_at).toLocaleDateString()}</td>
+                                            <td class="nov-desc">${n.descripcion}</td>
+                                            <td><span class="badge-sev ${n.severidad === 'critica' ? 'bg-critica' : 'bg-leve'}">${n.severidad}</span></td>
+                                            <td>
+                                                <div style="display: flex; gap: 5px;">
+                                                    <button class="btn-action btn-update" style="padding: 4px 8px;" onclick="resolveNovelty('${n.id}')">REPARADO</button>
+                                                    <button class="btn-action btn-delete" style="padding: 4px 8px;" onclick="deleteNovelty('${n.id}')">✕</button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    `).join('')}
+                                    <!-- Input Row -->
+                                    <tr style="background: rgba(255,255,255,0.05);">
+                                        <td><div style="font-size: 9px; color: var(--text-dim);">NUEVA NOVEDAD</div></td>
+                                        <td><input type="text" class="nov-input" id="nov-desc-${m.id}" placeholder="Escriba la novedad técnica..."></td>
+                                        <td>
+                                            <select class="nov-select" id="nov-sev-${m.id}">
+                                                <option value="leve">LEVE</option>
+                                                <option value="critica">CRÍTICA</option>
+                                            </select>
+                                        </td>
+                                        <td>
+                                            <button class="btn-action btn-save" style="width: 100%; justify-content: center;" onclick="addNoveltyInline('${m.id}')">AGREGAR</button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
                         </div>
                     </td>
                 `;
                 tbody.appendChild(novRow);
             });
+        }
+
+        async function setMachineStatus(id, newStatus) {
+            const { error } = await supabaseClient
+                .from('maquinas_sei')
+                .update({ estado: newStatus })
+                .eq('id', id);
+
+            if (error) alert("Error al actualizar estado: " + error.message);
+            else {
+                // Optimistic UI or full reload
+                loadData();
+            }
+        }
+
+        async function addNoveltyInline(mId) {
+            const desc = document.getElementById(`nov-desc-${mId}`).value;
+            const sev = document.getElementById(`nov-sev-${mId}`).value;
+
+            if (!desc) return alert("Ingrese descripción");
+
+            const { error } = await supabaseClient.from('novedades_maquinas').insert([{
+                maquina_id: mId,
+                descripcion: desc,
+                severidad: sev,
+                reparado: false
+            }]);
+
+            if (error) alert(error.message);
+            else loadData();
         }
 
         /* ── SUPABASE OPERATIONS ── */
@@ -519,19 +675,7 @@
         }
 
         async function promptNovelty(mId) {
-            const desc = prompt("Descripción de la novedad:");
-            if (!desc) return;
-            const sev = confirm("¿Es una novedad CRÍTICA (deja la máquina FUSER)?") ? 'critica' : 'leve';
-
-            const { error } = await supabaseClient.from('novedades_maquinas').insert([{
-                maquina_id: mId,
-                descripcion: desc,
-                severidad: sev,
-                reparado: false
-            }]);
-
-            if (error) alert(error.message);
-            else loadData();
+            // Deprecated by addNoveltyInline
         }
 
         async function resolveNovelty(nId) {
