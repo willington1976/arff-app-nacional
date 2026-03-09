@@ -514,7 +514,13 @@
             maquinas.forEach(m => {
                 // Filtrar novedades de esta máquina
                 const mNovedades = novedades.filter(n => n.maquina_id === m.id);
-                const isFuser = mNovedades.some(n => n.severidad === 'critica');
+
+                // Lógica de estado FUSER:
+                // 1. Si la columna 'estado' es 'Fuera de Servicio'
+                // 2. O si existe alguna novedad con severidad 'critica'
+                const isFuserByStatus = m.estado === 'Fuera de Servicio' || m.estado === 'FUSER';
+                const hasCriticalNovelty = mNovedades.some(n => n.severidad === 'critica');
+                const isFuser = isFuserByStatus || hasCriticalNovelty;
 
                 const card = document.createElement('div');
                 card.className = `v-card ${isFuser ? 'fuser' : ''}`;
@@ -533,19 +539,19 @@
                         <div class="v-tech-grid">
                             <div class="tech-item">
                                 <span class="tech-label">💧 Agua</span>
-                                <span class="tech-val">${m.cap_agua || 0} <span class="tech-unit">L</span></span>
+                                <span class="tech-val">${m.capacidad_agua_gal || 0} <span class="tech-unit">GAL</span></span>
                             </div>
                             <div class="tech-item">
                                 <span class="tech-label">🫧 Espuma</span>
-                                <span class="tech-val">${m.cap_espuma || 0} <span class="tech-unit">L</span></span>
+                                <span class="tech-val">${m.capacidad_espuma_gal || 0} <span class="tech-unit">GAL</span></span>
                             </div>
                             <div class="tech-item">
                                 <span class="tech-label">🧯 PQS</span>
-                                <span class="tech-val">${m.cap_pqs || 0} <span class="tech-unit">Kg</span></span>
+                                <span class="tech-val">${m.libras_pqs || 0} <span class="tech-unit">Lb</span></span>
                             </div>
                             <div class="tech-item">
                                 <span class="tech-label">🚀 Q Torreta</span>
-                                <span class="tech-val">${m.q_torreta || 0} <span class="tech-unit">Lpm</span></span>
+                                <span class="tech-val">${m.caudal_torreta_lmin || 0} <span class="tech-unit">Lpm</span></span>
                             </div>
                         </div>
 
