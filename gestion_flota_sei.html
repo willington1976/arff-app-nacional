@@ -374,7 +374,29 @@
             color: var(--amber);
         }
 
-        /* Status Indicator in Number Row */
+        /* Row State Backgrounds */
+        .row-fuser {
+            background: rgba(255, 46, 46, 0.1) !important;
+        }
+
+        .row-fuser td:first-child {
+            color: var(--red) !important;
+            text-shadow: 0 0 5px rgba(255, 46, 46, 0.5);
+        }
+
+        .row-maint {
+            background: rgba(255, 204, 0, 0.1) !important;
+        }
+
+        .row-maint td:first-child {
+            color: var(--amber) !important;
+        }
+
+        .row-operativo {
+            background: rgba(0, 255, 157, 0.02) !important;
+        }
+
+        /* Status Toggles and indicators */
         .status-dot {
             width: 8px;
             height: 8px;
@@ -518,12 +540,21 @@
 
                 // Determine effective status
                 let currentStatus = m.estado || 'OPERATIVO';
-                if (hasCritical && currentStatus === 'OPERATIVO') currentStatus = 'FUSER';
+                if (hasCritical && (currentStatus === 'OPERATIVO' || currentStatus === 'OPERATIVA')) {
+                    currentStatus = 'FUSER';
+                }
 
                 const isFuser = currentStatus === 'FUSER' || currentStatus === 'Fuera de Servicio';
+                const isMaint = currentStatus === 'MANTENIMIENTO' || currentStatus === 'MANT';
+
+                // Assign Row Class
+                let rowClass = 'row-operativo';
+                if (isFuser) rowClass = 'row-fuser';
+                else if (isMaint) rowClass = 'row-maint';
 
                 // Main row
                 const row = document.createElement('tr');
+                row.className = rowClass;
                 row.innerHTML = `
                     <td style="font-family: var(--ff-m); font-weight: 700;">
                         <span class="status-dot ${isFuser ? 'dot-fuser' : 'dot-ok'}"></span>
@@ -569,9 +600,11 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    ${mNovs.map(n => `
+                                    ${mNovs.map(n => {
+                    const dateStr = n.created_at ? new Date(n.created_at).toLocaleDateString('es-CO') : new Date().toLocaleDateString('es-CO');
+                    return `
                                         <tr>
-                                            <td style="font-family: var(--ff-m); font-size: 10px;">${new Date(n.created_at).toLocaleDateString()}</td>
+                                            <td style="font-family: var(--ff-m); font-size: 10px;">${dateStr}</td>
                                             <td class="nov-desc">${n.descripcion}</td>
                                             <td><span class="badge-sev ${n.severidad === 'critica' ? 'bg-critica' : 'bg-leve'}">${n.severidad}</span></td>
                                             <td>
@@ -581,7 +614,7 @@
                                                 </div>
                                             </td>
                                         </tr>
-                                    `).join('')}
+                                    `}).join('')}
                                     <!-- Input Row -->
                                     <tr style="background: rgba(255,255,255,0.05);">
                                         <td><div style="font-size: 9px; color: var(--text-dim);">NUEVA NOVEDAD</div></td>
@@ -606,14 +639,21 @@
         }
 
         async function setMachineStatus(id, newStatus) {
+            // Optimistic update
+            const machine = fleetData.find(m => m.id === id);
+            if (machine) {
+                machine.estado = newStatus;
+                renderTable();
+            }
+
             const { error } = await supabaseClient
                 .from('maquinas_sei')
                 .update({ estado: newStatus })
                 .eq('id', id);
 
-            if (error) alert("Error al actualizar estado: " + error.message);
-            else {
-                // Optimistic UI or full reload
+            if (error) {
+                console.error("Error al actualizar estado:", error);
+                // Rollback on error
                 loadData();
             }
         }
