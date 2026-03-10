@@ -19,34 +19,28 @@
   <style>
     /* ═══════════ TOKENS */
     :root {
-      --bg: #0d1117;
-      --panel: #161d2b;
-      --panel2: #1c2638;
-      --panel3: #212d42;
-      --border: #243047;
-      --border2: #2e3f5c;
-      --red: #e03131;
-      --red-dim: #b52525;
-      --red-glow: rgba(224, 49, 49, .15);
-      --orange: #f76707;
-      --amber: #f59f00;
-      --green: #2f9e44;
-      --green-glow: rgba(47, 158, 68, .15);
-      --teal: #0ca678;
-      --teal-dim: #087f5b;
-      --teal-glow: rgba(12, 166, 120, .18);
+      --bg: #0b0f19;
+      --glass: rgba(255, 255, 255, 0.03);
+      --glass-edge: rgba(255, 255, 255, 0.1);
+      --panel: rgba(22, 29, 43, 0.7);
+      --panel2: rgba(28, 38, 56, 0.6);
+      --panel3: rgba(33, 45, 66, 0.5);
+      --border: rgba(36, 48, 71, 0.6);
+      --border2: rgba(46, 63, 92, 0.7);
+      --neon-cyan: #00f2ff;
+      --neon-green: #39ff14;
+      --neon-red: #ff3e3e;
+      --neon-amber: #ffcc00;
       --sky: #339af0;
-      --sky-glow: rgba(51, 154, 240, .15);
-      --purple: #7048e8;
       --text: #e2e8f0;
-      --text-dim: #8a9bba;
-      --text-muted: #4a5878;
+      --text-dim: #94a3b8;
+      --text-muted: #64748b;
       --ff-t: 'Syne', sans-serif;
       --ff-b: 'DM Sans', sans-serif;
       --ff-m: 'DM Mono', monospace;
-      --r: 10px;
-      --rs: 6px;
-      --tr: .18s ease;
+      --r: 12px;
+      --rs: 8px;
+      --tr: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
     *,
@@ -68,8 +62,19 @@
       font-size: 14px;
       line-height: 1.6;
       min-height: 100vh;
-      background-image: radial-gradient(circle, #1e2d47 1px, transparent 1px);
-      background-size: 28px 28px;
+      background-image:
+        radial-gradient(circle at 50% 50%, rgba(0, 242, 255, 0.03) 0%, transparent 50%),
+        radial-gradient(circle, #1e2d47 1px, transparent 1px);
+      background-size: 100% 100%, 32px 32px;
+      overflow-x: hidden;
+    }
+
+    .glass {
+      background: var(--glass);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--glass-edge);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
     }
 
     /* ═══════════ NAV */
@@ -77,21 +82,21 @@
       position: sticky;
       top: 0;
       z-index: 100;
-      background: rgba(13, 17, 23, .93);
-      backdrop-filter: blur(14px);
-      -webkit-backdrop-filter: blur(14px);
+      background: rgba(11, 15, 25, 0.85);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
       border-bottom: 1px solid var(--border);
       display: flex;
       align-items: center;
       gap: 12px;
-      padding: 0 20px;
-      height: 58px;
+      padding: 0 24px;
+      height: 64px;
     }
 
     .nav-logo {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 12px;
       text-decoration: none
     }
 
@@ -104,18 +109,23 @@
     .nav-brand-main {
       font-family: var(--ff-t);
       font-weight: 800;
-      font-size: 12.5px;
+      font-size: 13px;
       color: var(--text);
-      letter-spacing: .04em;
-      text-transform: uppercase
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      background: linear-gradient(90deg, #fff, var(--text-dim));
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
     }
 
     .nav-brand-sub {
       font-family: var(--ff-m);
       font-size: 10px;
-      color: var(--teal);
-      letter-spacing: .08em;
-      text-transform: uppercase
+      color: var(--neon-cyan);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      text-shadow: 0 0 8px rgba(0, 242, 255, 0.3);
     }
 
     .nav-sep {
@@ -126,38 +136,40 @@
       font-family: var(--ff-m);
       font-size: 10px;
       color: var(--text-dim);
-      background: var(--panel);
+      background: rgba(255, 255, 255, 0.03);
       border: 1px solid var(--border);
       border-radius: 4px;
-      padding: 3px 8px;
-      letter-spacing: .06em;
+      padding: 4px 10px;
+      letter-spacing: 0.08em;
       white-space: nowrap
     }
 
     .nav-badge span {
-      color: var(--teal)
+      color: var(--neon-cyan);
+      font-weight: 600;
     }
 
     .btn-return {
       display: inline-flex;
       align-items: center;
-      gap: 6px;
-      background: rgba(255, 255, 255, .05);
+      gap: 8px;
+      background: rgba(255, 255, 255, 0.03);
       border: 1px solid var(--border);
-      border-radius: 6px;
-      padding: 6px 12px;
+      border-radius: 8px;
+      padding: 8px 14px;
       color: var(--text-dim);
       font-family: var(--ff-m);
       font-size: 11px;
       text-decoration: none;
-      letter-spacing: .05em;
-      transition: all var(--tr);
+      letter-spacing: 0.05em;
+      transition: var(--tr);
     }
 
     .btn-return:hover {
-      background: rgba(255, 255, 255, .1);
-      color: var(--text);
-      border-color: var(--border2);
+      background: rgba(255, 255, 255, 0.08);
+      color: #fff;
+      border-color: var(--neon-cyan);
+      box-shadow: 0 0 15px rgba(0, 242, 255, 0.1);
     }
 
     @media(max-width:600px) {
@@ -168,9 +180,9 @@
 
     /* ═══════════ PAGE */
     .page {
-      max-width: 1200px;
+      max-width: 1400px;
       margin: 0 auto;
-      padding: 28px 16px 120px
+      padding: 32px 24px 120px
     }
 
     /* ═══════════ MODULE HEADER */
@@ -179,39 +191,43 @@
       border: 1px solid var(--border);
       border-radius: var(--r);
       overflow: hidden;
-      margin-bottom: 22px
+      margin-bottom: 24px;
+      position: relative;
     }
 
     .module-strip {
       height: 4px;
-      background: linear-gradient(90deg, var(--teal-dim) 0%, var(--teal) 50%, #38d9a9 100%)
+      background: linear-gradient(90deg, #12c2e9, #c471ed, #f64f59);
     }
 
     .mhi {
-      padding: 22px 28px 18px
+      padding: 28px 32px 24px
     }
 
     .module-eyebrow {
       font-family: var(--ff-m);
-      font-size: 10px;
-      color: var(--teal);
-      letter-spacing: .12em;
+      font-size: 11px;
+      color: var(--neon-cyan);
+      letter-spacing: 0.2em;
       text-transform: uppercase;
-      margin-bottom: 6px
+      margin-bottom: 8px;
+      text-shadow: 0 0 10px rgba(0, 242, 255, 0.2);
     }
 
     .module-title {
       font-family: var(--ff-t);
       font-weight: 800;
-      font-size: 22px;
-      letter-spacing: -.01em;
-      margin-bottom: 4px
+      font-size: 28px;
+      letter-spacing: -0.02em;
+      margin-bottom: 6px;
+      color: #fff;
     }
 
     .module-subtitle {
       color: var(--text-dim);
-      font-size: 12.5px;
-      max-width: 720px
+      font-size: 13.5px;
+      max-width: 800px;
+      line-height: 1.5;
     }
 
     /* Selector de Aeropuerto (Admin) */
@@ -265,29 +281,29 @@
     .formula-bar {
       background: var(--panel2);
       border: 1px solid var(--border2);
-      border-left: 3px solid var(--teal);
+      border-left: 4px solid var(--neon-cyan);
       border-radius: var(--r);
-      padding: 14px 20px;
-      margin-bottom: 20px;
+      padding: 16px 24px;
+      margin-bottom: 24px;
       display: flex;
       flex-wrap: wrap;
-      gap: 16px;
+      gap: 32px;
       align-items: center;
     }
 
     .f-main {
       font-family: var(--ff-m);
-      font-size: 20px;
+      font-size: 24px;
       font-weight: 500;
-      white-space: nowrap
+      color: #fff;
     }
 
     .fv {
-      color: var(--teal)
+      color: var(--neon-cyan)
     }
 
     .fq {
-      color: var(--orange)
+      color: var(--neon-amber)
     }
 
     .ft {
@@ -301,44 +317,40 @@
     .fdefs {
       display: flex;
       flex-wrap: wrap;
-      gap: 9px;
+      gap: 16px;
       flex: 1;
-      min-width: 220px
     }
 
     .fdef {
       display: flex;
-      align-items: flex-start;
-      gap: 6px;
-      min-width: 150px
+      align-items: center;
+      gap: 10px;
     }
 
     .fvar {
       font-family: var(--ff-m);
-      font-size: 11px;
-      font-weight: 500;
-      padding: 1px 7px;
-      border-radius: 4px;
-      background: rgba(255, 255, 255, .04);
-      flex-shrink: 0;
-      margin-top: 1px
+      font-size: 12px;
+      font-weight: 600;
+      padding: 2px 10px;
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border);
     }
 
     .fdesc {
-      font-size: 11px;
+      font-size: 11.5px;
       color: var(--text-dim);
-      line-height: 1.4
     }
 
     /* ═══════════ LAYOUT */
     .top-grid {
       display: grid;
-      grid-template-columns: 440px 1fr;
-      gap: 18px;
-      margin-bottom: 20px
+      grid-template-columns: 460px 1fr;
+      gap: 24px;
+      margin-bottom: 24px
     }
 
-    @media(max-width:920px) {
+    @media(max-width:1100px) {
       .top-grid {
         grid-template-columns: 1fr
       }
@@ -371,9 +383,11 @@
     /* ═══════════ PANELS */
     .panel {
       background: var(--panel);
+      backdrop-filter: blur(10px);
       border: 1px solid var(--border);
       border-radius: var(--r);
-      overflow: hidden
+      overflow: hidden;
+      transition: var(--tr);
     }
 
     .panel-head {
@@ -456,6 +470,8 @@
       outline: none;
       transition: border-color var(--tr), box-shadow var(--tr);
       -webkit-appearance: none;
+      -moz-appearance: none;
+      appearance: none;
     }
 
     .iwrap input[type=number]:focus {
@@ -652,6 +668,8 @@
       text-align: right;
       transition: border-color var(--tr);
       -webkit-appearance: none;
+      -moz-appearance: none;
+      appearance: none;
       width: 68px;
     }
 
@@ -702,6 +720,8 @@
       text-align: right;
       transition: border-color var(--tr);
       -webkit-appearance: none;
+      -moz-appearance: none;
+      appearance: none;
       width: 68px;
     }
 
@@ -1001,488 +1021,283 @@
       transform: translateY(0)
     }
 
-    /* ═══════════ OPERATIONAL CAPACITY CARD */
-    .capacity-card {
-      background: var(--panel);
-      border: 1px solid var(--border);
-      border-radius: var(--r);
-      overflow: hidden;
-      margin-bottom: 20px
-    }
-
-    .capacity-strip {
-      height: 3px;
-      background: linear-gradient(90deg, var(--orange) 0%, var(--amber) 100%)
-    }
-
-    .cap-grid {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 1px;
-      background: var(--border)
-    }
-
-    @media(max-width:640px) {
-      .cap-grid {
-        grid-template-columns: repeat(2, 1fr)
-      }
-    }
-
-    .cap-cell {
-      background: var(--panel2);
-      padding: 14px 12px;
-      text-align: center;
-      position: relative
-    }
-
-    .cap-val {
-      font-family: var(--ff-m);
-      font-size: 28px;
-      font-weight: 500;
-      line-height: 1;
-      margin-bottom: 4px;
-      transition: all .35s ease
-    }
-
-    .cap-val.pop {
-      animation: popIn .35s ease
-    }
-
-    .cap-lbl {
-      font-size: 9px;
-      color: var(--text-muted);
-      letter-spacing: .08em;
-      text-transform: uppercase;
-      line-height: 1.4
-    }
-
-    .cap-unit {
-      font-family: var(--ff-m);
-      font-size: 11px;
-      margin-left: 3px
-    }
-
-    .cap-norm {
-      font-family: var(--ff-m);
-      font-size: 8.5px;
-      color: var(--text-muted);
-      margin-top: 4px;
-      letter-spacing: .04em
-    }
-
-    /* Autonomy progress ring */
-    .ring-wrap {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin-bottom: 4px;
-      position: relative
-    }
-
-    .ring-wrap svg {
-      width: 64px;
-      height: 64px;
-      transform: rotate(-90deg)
-    }
-
-    .ring-bg {
-      fill: none;
-      stroke: var(--border2);
-      stroke-width: 5
-    }
-
-    .ring-fg {
-      fill: none;
-      stroke-width: 5;
-      stroke-linecap: round;
-      transition: stroke-dashoffset .8s cubic-bezier(.4, 0, .2, 1), stroke .3s
-    }
-
-    .ring-text {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      font-family: var(--ff-m);
-      font-size: 13px;
-      font-weight: 500;
-      text-align: center;
-      line-height: 1
-    }
-
-    /* Capacity banner — INSUFFICIENT */
-    .cap-insufficient {
-      background: rgba(224, 49, 49, .08);
-      border-top: 1px solid rgba(224, 49, 49, .2);
-      padding: 10px 16px;
-      font-family: var(--ff-m);
-      font-size: 11px;
-      color: #ff8787;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      display: none;
-    }
-
-    .cap-insufficient.show {
-      display: flex;
-      animation: pulseBorder 2s infinite
-    }
-
-    .cap-ok {
-      background: rgba(47, 158, 68, .07);
-      border-top: 1px solid rgba(47, 158, 68, .15);
-      padding: 10px 16px;
-      font-family: var(--ff-m);
-      font-size: 11px;
-      color: #8ce99a;
-      display: none;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .cap-ok.show {
-      display: flex
-    }
-
-    /* Required rate comparison */
-    .req-vs {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 1px;
-      background: var(--border)
-    }
-
-    .rv-cell {
-      background: var(--panel3);
-      padding: 10px 14px;
-      text-align: center
-    }
-
-    .rv-val {
-      font-family: var(--ff-m);
-      font-size: 20px;
-      font-weight: 500;
-      margin-bottom: 2px
-    }
-
-    .rv-lbl {
-      font-size: 9px;
-      color: var(--text-muted);
-      letter-spacing: .06em;
-      text-transform: uppercase
-    }
-
-    /* ═══════════ RESULT PANEL */
+    /* ═══════════ RESULT PANEL (Instrumentation) */
     .res-empty {
       flex: 1;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      padding: 36px 18px;
-      gap: 11px;
-      min-height: 260px;
+      padding: 48px 24px;
+      gap: 16px;
+      min-height: 300px;
       color: var(--text-muted);
       font-family: var(--ff-m);
-      font-size: 10.5px;
-      letter-spacing: .06em;
+      font-size: 11px;
+      letter-spacing: 0.1em;
       text-transform: uppercase;
       text-align: center;
     }
 
     .res-hero {
-      padding: 18px 18px 14px;
+      padding: 24px;
       border-bottom: 1px solid var(--border);
       position: relative;
-      overflow: hidden
-    }
-
-    .res-hero::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background: radial-gradient(ellipse at 15% 50%, rgba(12, 166, 120, .07) 0%, transparent 70%);
-      pointer-events: none;
+      overflow: hidden;
+      background: rgba(0, 0, 0, 0.2);
     }
 
     .reslbl {
       font-family: var(--ff-m);
-      font-size: 9.5px;
+      font-size: 10px;
       color: var(--text-muted);
-      letter-spacing: .1em;
+      letter-spacing: 0.15em;
       text-transform: uppercase;
-      margin-bottom: 3px
+      margin-bottom: 6px
     }
 
     .resbig {
       font-family: var(--ff-m);
-      font-size: 42px;
-      font-weight: 800;
-      color: #f59f00;
+      font-size: 56px;
+      font-weight: 700;
+      color: var(--neon-cyan);
       line-height: 1;
-      text-shadow: 0 0 40px rgba(245, 159, 0, .40);
-      transition: all .3s ease;
+      text-shadow: 0 0 30px rgba(0, 242, 255, 0.4);
+      transition: var(--tr);
     }
 
     .resbig .ru {
-      font-size: 16px;
-      color: var(--text-dim);
-      margin-left: 4px
+      font-size: 18px;
+      color: var(--text-muted);
+      margin-left: 8px;
+      vertical-align: baseline;
     }
 
     .resbig.pop {
-      animation: popIn .35s ease
+      animation: neonPulse 1.5s infinite alternate;
     }
 
-    @keyframes popIn {
+    @keyframes neonPulse {
       from {
-        transform: scale(.93);
-        opacity: 0
+        text-shadow: 0 0 20px rgba(0, 242, 255, 0.3);
       }
 
       to {
-        transform: scale(1);
-        opacity: 1
+        text-shadow: 0 0 40px rgba(0, 242, 255, 0.6);
       }
-    }
-
-    .ressub {
-      font-family: var(--ff-m);
-      font-size: 10.5px;
-      color: var(--text-dim);
-      margin-top: 3px
     }
 
     .mgrid {
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
+      grid-template-columns: repeat(2, 1fr);
       gap: 1px;
       background: var(--border)
     }
 
-    @media(max-width:500px) {
-      .mgrid {
-        grid-template-columns: repeat(2, 1fr)
-      }
-    }
-
     .mcell {
       background: var(--panel2);
-      padding: 9px 8px;
+      padding: 16px;
       text-align: center
     }
 
     .mcv {
       font-family: var(--ff-m);
-      font-size: 13px;
+      font-size: 20px;
       font-weight: 500;
-      margin-bottom: 2px
+      color: #fff;
+      margin-bottom: 4px
     }
 
     .mcl {
-      font-size: 8.5px;
-      color: var(--text-muted);
-      letter-spacing: .05em;
-      text-transform: uppercase;
-      line-height: 1.3
-    }
-
-    /* Desglose */
-    .desglose {
-      padding: 12px 16px;
-      border-top: 1px solid var(--border)
-    }
-
-    .des-lbl {
-      font-family: var(--ff-m);
-      font-size: 9.5px;
-      color: var(--text-muted);
-      letter-spacing: .08em;
-      text-transform: uppercase;
-      margin-bottom: 9px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .des-lbl em {
-      font-style: normal;
-      font-size: 8.5px;
-      color: var(--teal);
-      border: 1px solid rgba(12, 166, 120, .3);
-      border-radius: 3px;
-      padding: 1px 5px
-    }
-
-    .conc3 {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 7px
-    }
-
-    .cc {
-      background: var(--panel);
-      border: 1.5px solid var(--border2);
-      border-radius: var(--rs);
-      padding: 10px 11px;
-      position: relative;
-      overflow: hidden;
-      transition: border-color var(--tr);
-    }
-
-    .cc.active {
-      border-color: var(--teal);
-      background: rgba(12, 166, 120, .06);
-      box-shadow: 0 0 0 1px rgba(12, 166, 120, .12)
-    }
-
-    .cc-pct {
-      font-family: var(--ff-m);
-      font-size: 15px;
-      font-weight: 500;
-      margin-bottom: 2px
-    }
-
-    .cc-agent {
       font-size: 9px;
-      color: var(--text-dim);
+      color: var(--text-muted);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    /* Compliance Bars */
+    .compliance-section {
+      padding: 24px;
+      border-top: 1px solid var(--border);
+    }
+
+    .comp-bar-container {
+      margin-bottom: 20px;
+    }
+
+    .comp-label-row {
+      display: flex;
+      justify-content: space-between;
       margin-bottom: 8px;
-      line-height: 1.3
     }
 
-    .cc-item {
-      display: flex;
-      align-items: center;
-      gap: 5px;
-      margin-bottom: 3px
-    }
-
-    .cc-dot {
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-      flex-shrink: 0
-    }
-
-    .cc-key {
+    .comp-label {
       font-family: var(--ff-m);
-      font-size: 9px;
-      color: var(--text-muted);
-      width: 60px;
-      flex-shrink: 0
+      font-size: 10px;
+      color: var(--text-dim);
+      text-transform: uppercase;
     }
 
-    .cc-val {
+    .comp-value {
       font-family: var(--ff-m);
-      font-size: 11.5px;
-      font-weight: 500;
-      color: var(--text)
+      font-size: 11px;
+      color: #fff;
     }
 
-    .cc-pct-bar {
-      height: 3px;
-      background: var(--panel3);
-      border-radius: 2px;
-      margin-top: 7px;
-      overflow: hidden
+    .comp-bar-bg {
+      height: 8px;
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 4px;
+      overflow: hidden;
+      border: 1px solid var(--border);
     }
 
-    .cc-pct-fill {
+    .comp-bar-fill {
       height: 100%;
-      border-radius: 2px;
-      transition: width .5s ease
+      width: 0%;
+      transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1), background 0.3s;
     }
 
-    .cc-active-badge {
-      position: absolute;
-      top: 5px;
-      right: 6px;
-      font-family: var(--ff-m);
-      font-size: 8px;
-      border-radius: 3px;
-      padding: 1px 5px;
-      border: 1px solid
+    .comp-bar-fill.ok {
+      background: linear-gradient(90deg, #0ca678, var(--neon-green));
+      box-shadow: 0 0 10px rgba(57, 255, 20, 0.3);
     }
 
-    /* ═══════════ LEGAL RESERVE */
-    .reserve-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 12px;
-      margin-top: 14px
+    .comp-bar-fill.alert {
+      background: linear-gradient(90deg, #e03131, var(--neon-red));
+      animation: redGlow 1.5s infinite alternate;
     }
 
-    @media(max-width:540px) {
-      .reserve-grid {
-        grid-template-columns: 1fr
+    @keyframes redGlow {
+      from {
+        box-shadow: 0 0 5px rgba(255, 62, 62, 0.4);
+      }
+
+      to {
+        box-shadow: 0 0 20px rgba(255, 62, 62, 0.8);
       }
     }
 
-    .reserve-card {
+    /* Vehicle Cards */
+    #fleet-rows {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+
+    .veh-card {
       background: var(--panel2);
-      border: 1px solid var(--border2);
+      border: 1px solid var(--border);
       border-radius: var(--rs);
-      padding: 12px 14px
+      padding: 16px;
+      transition: var(--tr);
+      animation: cardIn 0.4s ease-out;
     }
 
-    .rc-head {
+    @keyframes cardIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .veh-card:hover {
+      border-color: var(--neon-cyan);
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .veh-card-head {
       display: flex;
+      justify-content: space-between;
       align-items: center;
-      gap: 8px;
-      margin-bottom: 8px
+      margin-bottom: 12px;
     }
 
-    .rc-icon {
-      width: 24px;
-      height: 24px;
-      border-radius: 5px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0
-    }
-
-    .rc-title {
+    .veh-card-name {
       font-family: var(--ff-m);
-      font-size: 10px;
-      color: var(--text-dim);
-      letter-spacing: .06em;
-      text-transform: uppercase
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--neon-cyan);
+      background: transparent;
+      border: none;
+      border-bottom: 1px solid transparent;
+      outline: none;
+      width: 120px;
     }
 
-    .rc-multiplier {
+    .veh-card-name:focus {
+      border-bottom-color: var(--neon-cyan);
+    }
+
+    .veh-card-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .veh-input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .veh-input-label {
+      font-size: 9px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .veh-input-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .veh-input {
+      width: 100%;
+      background: rgba(0, 0, 0, 0.2);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 6px 10px;
+      color: #fff;
+      font-family: var(--ff-m);
+      font-size: 14px;
+      outline: none;
+      transition: var(--tr);
+    }
+
+    .veh-input:focus {
+      border-color: var(--neon-cyan);
+      background: rgba(0, 0, 0, 0.3);
+    }
+
+    .veh-unit {
+      position: absolute;
+      right: 10px;
       font-family: var(--ff-m);
       font-size: 9px;
-      background: var(--panel);
-      border: 1px solid var(--border);
-      border-radius: 3px;
-      padding: 1px 6px;
-      color: var(--amber);
-      margin-left: auto
-    }
-
-    .rc-main {
-      font-family: var(--ff-m);
-      font-size: 22px;
-      font-weight: 500;
-      margin-bottom: 2px
-    }
-
-    .rc-sub {
-      font-family: var(--ff-m);
-      font-size: 10px;
-      color: var(--text-dim);
-      line-height: 2.0
-    }
-
-    .rc-norm {
-      font-family: var(--ff-m);
-      font-size: 8.5px;
       color: var(--text-muted);
-      margin-top: 6px;
-      border-top: 1px solid var(--border);
-      padding-top: 6px
+    }
+
+    .btn-del-card {
+      background: rgba(255, 62, 62, 0.1);
+      border: 1px solid rgba(255, 62, 62, 0.2);
+      color: var(--neon-red);
+      padding: 4px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: var(--tr);
+    }
+
+    .btn-del-card:hover {
+      background: var(--neon-red);
+      color: #fff;
     }
 
     /* ═══════════ DOTATION TABLE */
@@ -2366,431 +2181,446 @@
                     class="tpu">min</span><span class="tpl">Op.<br>extendida</span><span class="tpn">Cat.10/H</span>
                 </div>
               </div>
-              <div class="tinfo" id="tinfo">
-                <div class="tih">
-                  <span class="tiv" id="tiv">—<span class="tiunit"> min</span></span>
-                  <span class="tinorm" id="tinorm">—</span>
+              <div class="top-grid" id="pdf-content">
+                <!-- PANEL IZQUIERDO: CONFIGURACIÓN -->
+                <div class="panel glass">
+                  <div class="panel-head">
+                    <div class="picon" style="color:var(--neon-cyan)">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                        <line x1="3" y1="9" x2="21" y2="9" />
+                        <line x1="9" y1="21" x2="9" y2="9" />
+                      </svg>
+                    </div>
+                    <div class="ptitle">Configuración de Flota & Normativa</div>
+                  </div>
+
+                  <div class="pbody">
+                    <!-- Categoría OACI -->
+                    <div style="margin-bottom: 24px;">
+                      <label class="veh-input-label">Categoría OACI del Aeropuerto</label>
+                      <select id="inp-cat" class="veh-input" onchange="updateCalculations()">
+                        <option value="" disabled selected>Seleccione categoría...</option>
+                        <option value="1">Categoría 1</option>
+                        <option value="2">Categoría 2</option>
+                        <option value="3">Categoría 3</option>
+                        <option value="4">Categoría 4</option>
+                        <option value="5">Categoría 5</option>
+                        <option value="6">Categoría 6</option>
+                        <option value="7">Categoría 7</option>
+                        <option value="8">Categoría 8</option>
+                        <option value="9">Categoría 9</option>
+                        <option value="10">Categoría 10</option>
+                        <option value="H">Helipuerto (H)</option>
+                      </select>
+                    </div>
+
+                    <!-- Dosificación -->
+                    <div style="margin-bottom: 24px;">
+                      <label class="veh-input-label">Porcentaje de Dosificación (%)</label>
+                      <select id="inp-pct" class="veh-input" onchange="updateCalculations()">
+                        <option value="1">Concentrado 1%</option>
+                        <option value="3" selected>Concentrado 3%</option>
+                        <option value="6">Concentrado 6%</option>
+                      </select>
+                    </div>
+
+                    <!-- Tiempo de Descarga -->
+                    <div style="margin-bottom: 24px;">
+                      <label class="veh-input-label">Tiempo de Descarga (Minutos)</label>
+                      <div class="veh-input-wrapper">
+                        <input type="number" id="inp-time" class="veh-input" value="3" min="1" step="0.5"
+                          oninput="updateCalculations()">
+                        <span class="veh-unit">MIN</span>
+                      </div>
+                    </div>
+
+                    <div class="des-lbl"
+                      style="margin-top: 32px; display: flex; justify-content: space-between; align-items: center;">
+                      FLOTA ARFF OPERATIVA
+                      <button class="btn-calc" onclick="addVehicleCard()"
+                        style="width: auto; padding: 6px 12px; margin-top: 0; font-size: 10px; background: linear-gradient(135deg, var(--neon-cyan), var(--sky)); color: #000; font-weight: 800;">
+                        + AGREGAR VEHÍCULO
+                      </button>
+                    </div>
+
+                    <div id="fleet-rows" style="margin-top: 16px;">
+                      <!-- Las tarjetas de vehículos se generan dinámicamente -->
+                    </div>
+                  </div>
                 </div>
-                <div class="tibody" id="tibody"></div>
-              </div>
-              <div class="manual-t">
-                <label>Personalizado:</label>
-                <input type="number" id="inp-tm" min="0.5" max="60" step="0.5" placeholder="ej. 5"
-                  oninput="onManualT(this)">
-                <span class="mtu">min</span>
-              </div>
-              <div class="mwarn" id="mwarn">⚠ Fuera del rango normalizado OACI (1–4 min)</div>
-              <span class="ferr" id="err-t">⚠ Seleccione o ingrese un tiempo válido</span>
-            </div>
 
-            <!-- % DOSIFICACIÓN -->
-            <div class="field">
-              <label>
-                <span class="vpill" style="color:var(--amber);border:1px solid rgba(245,159,0,.3)">%</span>
-                Dosificación — tipo de agente espumante
-              </label>
-              <select id="inp-pct" class="ssel" onchange="clearErr()">
-                <option value="1">1% — AFFF baja concentración (Nivel B)</option>
-                <option value="3" selected>3% — AR-AFFF estándar (Nivel A)</option>
-                <option value="6">6% — FFFP / Proteínico (Nivel C)</option>
-              </select>
-            </div>
+                <!-- PANEL DERECHO: INSTRUMENTACIÓN DIGITAL -->
+                <div class="panel glass">
+                  <div class="panel-head">
+                    <div class="picon" style="color:var(--neon-amber)">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2">
+                        <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+                      </svg>
+                    </div>
+                    <div class="ptitle">Indicador de Capacidad Operativa</div>
+                  </div>
 
-            <!-- NOTA -->
-            <div class="field">
-              <label>Identificación / Nota de auditoría</label>
-              <input type="text" id="inp-note" placeholder="ej. El Dorado · Cat.9 · Turno A"
-                style="background:var(--panel2);border:1.5px solid var(--border2);border-radius:var(--rs);color:var(--text);
-                   font-family:var(--ff-b);font-size:12.5px;padding:8px 13px;outline:none;width:100%;transition:border-color var(--tr)" onfocus="this.style.borderColor='var(--teal)'"
-                onblur="this.style.borderColor='var(--border2)'">
-            </div>
+                  <div id="res-empty" class="res-empty">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"
+                      stroke-opacity="0.3">
+                      <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+                    </svg>
+                    SISTEMA EN ESPERA<br>INGRESE DATOS DE FLOTA PARA INICIAR CÁLCULO
+                  </div>
 
-            <button class="btn-calc" onclick="calcular()">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-                stroke-linecap="round">
-                <path d="M5 12h14M12 5l7 7-7 7" />
-              </svg>
-              Calcular Capacidad Operativa
-            </button>
-          </div>
-        </div>
-      </div>
+                  <div id="res-content" style="display: none;">
+                    <!-- DIGITAL METERS -->
+                    <div class="res-hero">
+                      <div class="reslbl">Volumen Total Requerido ($V_t$)</div>
+                      <div id="res-v-total" class="resbig pop">0<span class="ru"> GAL</span></div>
+                      <div style="margin-top: 8px; font-family: var(--ff-m); font-size: 11px; color: var(--text-dim);">
+                        Basado en descarga sostenida por <span id="res-val-time" class="ft"
+                          style="color:var(--sky)">3</span> min
+                      </div>
+                    </div>
 
-      <!-- RIGHT: RESULT -->
-      <div class="panel" style="display:flex;flex-direction:column">
-        <div class="panel-head">
-          <div class="picon" style="background:rgba(12,166,120,.12)">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--teal)" stroke-width="2"
-              stroke-linecap="round">
-              <path d="M12 2L2 7v10l10 5 10-5V7L12 2z" />
-            </svg>
-          </div>
-          <span class="ptitle">Resultado · Volumen & Desglose</span>
-        </div>
-        <div class="res-empty" id="res-empty">
-          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
-            <path d="M12 2L2 7v10l10 5 10-5V7L12 2z" />
-          </svg>
-          Agregue vehículos, seleccione categoría y tiempo
-        </div>
-        <div id="res-content" style="display:none;flex-direction:column;flex:1">
-          <div class="res-hero">
-            <div class="reslbl">Volumen total de solución (V = Σ Q × t)</div>
-            <div class="resbig" id="res-v">—<span class="ru">L</span></div>
-            <div class="ressub" id="res-formula"></div>
-          </div>
-          <div class="mgrid">
-            <div class="mcell">
-              <div class="mcv" style="color:var(--teal)" id="mc-vl">—</div>
-              <div class="mcl">Volumen (L)</div>
-            </div>
-            <div class="mcell">
-              <div class="mcv" style="color:var(--orange)" id="mc-q">—</div>
-              <div class="mcl">Σ Q flota</div>
-            </div>
-            <div class="mcell">
-              <div class="mcv" style="color:var(--sky)" id="mc-t">—</div>
-              <div class="mcl">Tiempo t</div>
-            </div>
-            <div class="mcell">
-              <div class="mcv" style="color:var(--amber)" id="mc-veh">—</div>
-              <div class="mcl">Vehículos</div>
-            </div>
-          </div>
-          <!-- Desglose agua / concentrado -->
-          <div class="desglose">
-            <div class="des-lbl">Desglose solución de espuma <em>OACI §2.3.4</em></div>
-            <div class="conc3" id="conc3"></div>
-          </div>
-          <!-- Tank equiv bars -->
-          <div style="padding:11px 16px;border-top:1px solid var(--border)">
-            <div
-              style="font-family:var(--ff-m);font-size:9.5px;color:var(--text-muted);letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px">
-              Equivalencia en vehículos ARFF estándar</div>
-            <div id="tank-bars"></div>
-            <div class="firepower-card" id="firepower-card" style="display:none"></div>
-          </div>
-        </div>
-      </div>
-    </div><!-- /top-grid -->
+                    <div class="mgrid">
+                      <div class="mcell">
+                        <div class="cap-lbl">Total Foam Discharge Rate</div>
+                        <div class="cap-norm">Σ Q flota · OACI §2.3.3</div>
+                      </div>
 
-    <!-- ══════════════════════════════════════════════
-     OPERATIONAL CAPACITY CARD
-══════════════════════════════════════════════ -->
-    <div class="section" id="cap-section" style="display:none">
-      <div class="section-title">Capacidad Operativa — Auditoría OACI/IATA</div>
-      <div class="capacity-card">
-        <div class="capacity-strip"></div>
-        <div class="cap-grid">
+                      <!-- Required vs Available -->
+                      <div class="cap-cell" style="padding:0;overflow:hidden">
+                        <div class="req-vs">
+                          <div class="rv-cell">
+                            <div class="rv-val" id="cap-q-req" style="color:var(--text-dim)">—</div>
+                            <div class="rv-lbl">Requerido OACI</div>
+                          </div>
+                          <div class="rv-cell">
+                            <div class="rv-val" id="cap-q-avail" style="color:var(--orange)">—</div>
+                            <div class="rv-lbl">Disponible flota</div>
+                          </div>
+                        </div>
+                        <div style="padding:6px 10px 8px;text-align:center">
+                          <div
+                            style="font-family:var(--ff-m);font-size:8.5px;color:var(--text-muted);letter-spacing:.06em;text-transform:uppercase">
+                            Caudal OACI Tabla 2-2 vs. Flota</div>
+                        </div>
+                      </div>
 
-          <!-- Total discharge rate -->
-          <div class="cap-cell">
-            <div class="cap-val" id="cap-q-total" style="color:var(--orange)">—<span class="cap-unit"
-                style="font-size:13px">L/min</span></div>
-            <div class="cap-lbl">Total Foam Discharge Rate</div>
-            <div class="cap-norm">Σ Q flota · OACI §2.3.3</div>
-          </div>
+                      <!-- Autonomía -->
+                      <div class="cap-cell">
+                        <div class="ring-wrap">
+                          <svg viewBox="0 0 36 36">
+                            <circle class="ring-bg" cx="18" cy="18" r="15.9" />
+                            <circle class="ring-fg" id="ring-fg" cx="18" cy="18" r="15.9" stroke-dasharray="100 100"
+                              stroke-dashoffset="100" stroke="var(--teal)" />
+                          </svg>
+                          <div class="ring-text" id="ring-text">—<br><span
+                              style="font-size:8px;color:var(--text-muted)">min</span>
+                          </div>
+                        </div>
+                        <div class="cap-lbl">Autonomía descarga continua</div>
+                        <div class="cap-norm">Σ Agua flota ÷ Σ Q · τ = W/Q</div>
+                      </div>
 
-          <!-- Required vs Available -->
-          <div class="cap-cell" style="padding:0;overflow:hidden">
-            <div class="req-vs">
-              <div class="rv-cell">
-                <div class="rv-val" id="cap-q-req" style="color:var(--text-dim)">—</div>
-                <div class="rv-lbl">Requerido OACI</div>
-              </div>
-              <div class="rv-cell">
-                <div class="rv-val" id="cap-q-avail" style="color:var(--orange)">—</div>
-                <div class="rv-lbl">Disponible flota</div>
-              </div>
-            </div>
-            <div style="padding:6px 10px 8px;text-align:center">
-              <div
-                style="font-family:var(--ff-m);font-size:8.5px;color:var(--text-muted);letter-spacing:.06em;text-transform:uppercase">
-                Caudal OACI Tabla 2-2 vs. Flota</div>
-            </div>
-          </div>
+                      <!-- Agua total flota -->
+                      <div class="cap-cell">
+                        <div class="cap-val" id="cap-agua-total" style="color:var(--sky)">—<span class="cap-unit"
+                            style="font-size:13px">L</span></div>
+                        <div class="cap-lbl">Agua total en flota</div>
+                        <div class="cap-norm">Σ tanques de agua · todos los vehículos</div>
+                      </div>
 
-          <!-- Autonomía -->
-          <div class="cap-cell">
-            <div class="ring-wrap">
-              <svg viewBox="0 0 36 36">
-                <circle class="ring-bg" cx="18" cy="18" r="15.9" />
-                <circle class="ring-fg" id="ring-fg" cx="18" cy="18" r="15.9" stroke-dasharray="100 100"
-                  stroke-dashoffset="100" stroke="var(--teal)" />
-              </svg>
-              <div class="ring-text" id="ring-text">—<br><span style="font-size:8px;color:var(--text-muted)">min</span>
-              </div>
-            </div>
-            <div class="cap-lbl">Autonomía descarga continua</div>
-            <div class="cap-norm">Σ Agua flota ÷ Σ Q · τ = W/Q</div>
-          </div>
+                    </div>
+                    <div class="cap-insufficient" id="cap-insufficient">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2.5">
+                        <path
+                          d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                        <line x1="12" y1="9" x2="12" y2="13" />
+                        <line x1="12" y1="17" x2="12.01" y2="17" />
+                      </svg>
+                      <span id="cap-insufficient-text"></span>
+                    </div>
+                    <div class="cap-ok" id="cap-ok">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2.5">
+                        <polyline points="20 6 9 17 4 12" />
+                      </svg>
+                      <span id="cap-ok-text"></span>
+                    </div>
+                  </div>
+                </div>
 
-          <!-- Agua total flota -->
-          <div class="cap-cell">
-            <div class="cap-val" id="cap-agua-total" style="color:var(--sky)">—<span class="cap-unit"
-                style="font-size:13px">L</span></div>
-            <div class="cap-lbl">Agua total en flota</div>
-            <div class="cap-norm">Σ tanques de agua · todos los vehículos</div>
-          </div>
-
-        </div>
-        <div class="cap-insufficient" id="cap-insufficient">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
-            <line x1="12" y1="9" x2="12" y2="13" />
-            <line x1="12" y1="17" x2="12.01" y2="17" />
-          </svg>
-          <span id="cap-insufficient-text"></span>
-        </div>
-        <div class="cap-ok" id="cap-ok">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-            <polyline points="20 6 9 17 4 12" />
-          </svg>
-          <span id="cap-ok-text"></span>
-        </div>
-      </div>
-    </div>
-
-    <!-- ══════════════════════════════════════════════
+                <!-- ══════════════════════════════════════════════
      LEGAL RESERVE
 ══════════════════════════════════════════════ -->
-    <div class="section" id="reserve-section" style="display:none">
-      <div class="section-title">Reservas Legales — NFPA 403 §5.4 · OACI Doc 9137 §2.3.4</div>
-      <div class="panel">
-        <div class="panel-head">
-          <div class="picon" style="background:rgba(245,159,0,.12)">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--amber)" stroke-width="2">
-              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-            </svg>
-          </div>
-          <span class="ptitle">Reservas de bodega por capacidad de flota</span>
-        </div>
-        <div class="pbody">
-          <div style="font-size:12px;color:var(--text-dim);margin-bottom:10px;line-height:1.6">
-            NFPA 403 §5.4 establece que el aeródromo debe mantener en bodega una reserva de reabastecimiento equivalente
-            al
-            <strong style="color:var(--amber)">200% de la capacidad total de solución de espuma</strong> de la flota y
-            al
-            <strong style="color:var(--amber)">100% del PQS</strong> cargado en vehículos, para garantizar al menos dos
-            recargas completas.
-          </div>
-          <div class="reserve-grid" id="reserve-grid">
-            <!-- populated by JS -->
-          </div>
-        </div>
-      </div>
-    </div>
+                <div class="section" id="reserve-section" style="display:none">
+                  <div class="section-title">Reservas Legales — NFPA 403 §5.4 · OACI Doc 9137 §2.3.4</div>
+                  <div class="panel">
+                    <div class="panel-head">
+                      <div class="picon" style="background:rgba(245,159,0,.12)">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--amber)"
+                          stroke-width="2">
+                          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                        </svg>
+                      </div>
+                      <span class="ptitle">Reservas de bodega por capacidad de flota</span>
+                    </div>
+                    <div class="pbody">
+                      <div style="font-size:12px;color:var(--text-dim);margin-bottom:10px;line-height:1.6">
+                        NFPA 403 §5.4 establece que el aeródromo debe mantener en bodega una reserva de reabastecimiento
+                        equivalente
+                        al
+                        <strong style="color:var(--amber)">200% de la capacidad total de solución de espuma</strong> de
+                        la flota y
+                        al
+                        <strong style="color:var(--amber)">100% del PQS</strong> cargado en vehículos, para garantizar
+                        al menos dos
+                        recargas completas.
+                      </div>
+                      <div class="reserve-grid" id="reserve-grid">
+                        <!-- populated by JS -->
+                      </div>
+                    </div>
+                  </div>
+                </div>
 
-    <!-- ══════════════════════════════════════════════
+                <!-- ══════════════════════════════════════════════
      DOTACIÓN OACI TABLA 2-2
 ══════════════════════════════════════════════ -->
-    <div class="section" id="dotacion-section" style="display:none">
-      <div class="section-title">Dotación Mínima OACI · Doc 9137 Tabla 2-2 · Categoría: <span id="dotacion-cat"
-          style="color:var(--teal)">—</span></div>
-      <div class="tbl-wrap">
-        <table>
-          <thead>
-            <tr class="tg">
-              <th colspan="2" style="background:var(--panel2);color:var(--text-dim);text-align:left">Categoría</th>
-              <th colspan="3" style="background:rgba(12,166,120,.06);color:var(--teal)">Agua para producción de espuma
-              </th>
-              <th colspan="2" style="background:rgba(245,159,0,.06);color:var(--amber)">Agentes complementarios</th>
-              <th style="background:rgba(51,154,240,.06);color:var(--sky)">Q mín. OACI</th>
-            </tr>
-            <tr class="tc">
-              <th style="text-align:center">Cat.</th>
-              <th>Aeronave referencia</th>
-              <th>Mínimo (L)</th>
-              <th>Preferente (L)</th>
-              <th>Máximo (L)</th>
-              <th>PQS (kg)</th>
-              <th>CO₂ (kg)</th>
-              <th>Q mín. (L/min)</th>
-            </tr>
-          </thead>
-          <tbody id="dotacion-tbody"></tbody>
-        </table>
-      </div>
-    </div>
+                <div class="section" id="dotacion-section" style="display:none">
+                  <div class="section-title">Dotación Mínima OACI · Doc 9137 Tabla 2-2 · Categoría: <span
+                      id="dotacion-cat" style="color:var(--teal)">—</span></div>
+                  <div class="tbl-wrap">
+                    <table>
+                      <thead>
+                        <tr class="tg">
+                          <th colspan="2" style="background:var(--panel2);color:var(--text-dim);text-align:left">
+                            Categoría</th>
+                          <th colspan="3" style="background:rgba(12,166,120,.06);color:var(--teal)">Agua para producción
+                            de espuma
+                          </th>
+                          <th colspan="2" style="background:rgba(245,159,0,.06);color:var(--amber)">Agentes
+                            complementarios</th>
+                          <th style="background:rgba(51,154,240,.06);color:var(--sky)">Q mín. OACI</th>
+                        </tr>
+                        <tr class="tc">
+                          <th style="text-align:center">Cat.</th>
+                          <th>Aeronave referencia</th>
+                          <th>Mínimo (L)</th>
+                          <th>Preferente (L)</th>
+                          <th>Máximo (L)</th>
+                          <th>PQS (kg)</th>
+                          <th>CO₂ (kg)</th>
+                          <th>Q mín. (L/min)</th>
+                        </tr>
+                      </thead>
+                      <tbody id="dotacion-tbody"></tbody>
+                    </table>
+                  </div>
+                </div>
 
-    <!-- ══════════════════════════════════════════════
+                <!-- ══════════════════════════════════════════════
      COMPLIANCE
 ══════════════════════════════════════════════ -->
-    <div class="section" id="compliance-section" style="display:none">
-      <div class="section-title">Estado de Cumplimiento — Inventario real vs. OACI Tabla 2-2</div>
-      <div class="panel" style="margin-bottom:13px">
-        <div class="panel-head">
-          <div class="picon" style="background:rgba(51,154,240,.12)">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sky)" stroke-width="2">
-              <path d="M9 11l3 3L22 4" />
-              <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
-            </svg>
-          </div>
-          <span class="ptitle">Inventario Real del Aeródromo</span>
-        </div>
-        <div class="pbody">
-          <div class="comp-input-grid">
-            <div class="avfield">
-              <label><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--sky)" stroke-width="2">
-                  <circle cx="12" cy="12" r="10" />
-                  <path
-                    d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
-                </svg>Agua disponible</label>
-              <input type="number" id="av-agua" min="0" step="100" placeholder="ej. 54 000">
-              <span class="au">litros — total todos los vehículos + bodega</span>
-            </div>
-            <div class="avfield">
-              <label><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--amber)" stroke-width="2">
-                  <path d="M12 2c0 0-6 4-6 9a6 6 0 0 0 12 0c0-5-6-9-6-9z" />
-                </svg>Concentrado disponible</label>
-              <input type="number" id="av-conc" min="0" step="10" placeholder="ej. 1620">
-              <span class="au">litros de espumógeno concentrado</span>
-            </div>
-            <div class="avfield">
-              <label><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--orange)"
-                  stroke-width="2">
-                  <polygon
-                    points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-                </svg>PQS disponible</label>
-              <input type="number" id="av-pqs" min="0" step="1" placeholder="ej. 675">
-              <span class="au">kilogramos de polvo químico seco</span>
-            </div>
-            <div class="avfield">
-              <label><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--purple)"
-                  stroke-width="2">
-                  <line x1="12" y1="22" x2="12" y2="11" />
-                  <path d="M12 11 8 7m4 4 4-4" />
-                  <circle cx="12" cy="5" r="3" />
-                </svg>CO₂ / Gas disponible</label>
-              <input type="number" id="av-co2" min="0" step="1" placeholder="ej. 90">
-              <span class="au">kilogramos — CO₂ o halón sustituto</span>
-            </div>
-          </div>
-          <button class="btn-check" onclick="checkCompliance()">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-              <polyline points="22 4 12 14.01 9 11.01" />
-            </svg>
-            Verificar Cumplimiento Normativo
-          </button>
-        </div>
-      </div>
-      <div id="comp-result" style="display:none">
-        <div class="comp-banner" id="comp-banner"></div>
-        <div class="comp-cards" id="comp-cards"></div>
-      </div>
-    </div>
+                <div class="section" id="compliance-section" style="display:none">
+                  <div class="section-title">Estado de Cumplimiento — Inventario real vs. OACI Tabla 2-2</div>
+                  <div class="panel" style="margin-bottom:13px">
+                    <div class="panel-head">
+                      <div class="picon" style="background:rgba(51,154,240,.12)">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sky)"
+                          stroke-width="2">
+                          <path d="M9 11l3 3L22 4" />
+                          <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
+                        </svg>
+                      </div>
+                      <span class="ptitle">Inventario Real del Aeródromo</span>
+                    </div>
+                    <div class="pbody">
+                      <div class="comp-input-grid">
+                        <div class="avfield">
+                          <label><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--sky)"
+                              stroke-width="2">
+                              <circle cx="12" cy="12" r="10" />
+                              <path
+                                d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+                            </svg>Agua disponible</label>
+                          <input type="number" id="av-agua" min="0" step="100" placeholder="ej. 54 000">
+                          <span class="au">litros — total todos los vehículos + bodega</span>
+                        </div>
+                        <div class="avfield">
+                          <label><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--amber)"
+                              stroke-width="2">
+                              <path d="M12 2c0 0-6 4-6 9a6 6 0 0 0 12 0c0-5-6-9-6-9z" />
+                            </svg>Concentrado disponible</label>
+                          <input type="number" id="av-conc" min="0" step="10" placeholder="ej. 1620">
+                          <span class="au">litros de espumógeno concentrado</span>
+                        </div>
+                        <div class="avfield">
+                          <label><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--orange)"
+                              stroke-width="2">
+                              <polygon
+                                points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                            </svg>PQS disponible</label>
+                          <input type="number" id="av-pqs" min="0" step="1" placeholder="ej. 675">
+                          <span class="au">kilogramos de polvo químico seco</span>
+                        </div>
+                        <div class="avfield">
+                          <label><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--purple)"
+                              stroke-width="2">
+                              <line x1="12" y1="22" x2="12" y2="11" />
+                              <path d="M12 11 8 7m4 4 4-4" />
+                              <circle cx="12" cy="5" r="3" />
+                            </svg>CO₂ / Gas disponible</label>
+                          <input type="number" id="av-co2" min="0" step="1" placeholder="ej. 90">
+                          <span class="au">kilogramos — CO₂ o halón sustituto</span>
+                        </div>
+                      </div>
+                      <button class="btn-check" onclick="checkCompliance()">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                          stroke-width="2.5">
+                          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                          <polyline points="22 4 12 14.01 9 11.01" />
+                        </svg>
+                        Verificar Cumplimiento Normativo
+                      </button>
+                    </div>
+                  </div>
+                  <div id="comp-result" style="display:none">
+                    <div class="comp-banner" id="comp-banner"></div>
+                    <div class="comp-cards" id="comp-cards"></div>
+                  </div>
+                </div>
 
-    <!-- ══════════════════════════════════════════════
+                <!-- ══════════════════════════════════════════════
      COMPARISON TABLE
 ══════════════════════════════════════════════ -->
-    <div class="section" id="table-section" style="display:none">
-      <div class="section-title">Comparativa — 4 tiempos OACI para la flota ingresada</div>
-      <div class="tbl-wrap">
-        <table>
-          <thead>
-            <tr class="tg">
-              <th colspan="2" style="background:var(--panel2);color:var(--text-dim);text-align:left">Tiempo</th>
-              <th colspan="2" style="background:rgba(12,166,120,.06);color:var(--teal)">Volumen solución</th>
-              <th colspan="2" style="background:rgba(51,154,240,.06);color:var(--sky)">Componentes (% activo)</th>
-              <th colspan="3" style="background:rgba(245,159,0,.06);color:var(--amber)">Concentrado por tipo</th>
-            </tr>
-            <tr class="tc">
-              <th style="text-align:center">t</th>
-              <th>Fase OACI</th>
-              <th>V (L)</th>
-              <th>V (m³)</th>
-              <th>Agua (L)</th>
-              <th>Conc. (L)</th>
-              <th>1% (L)</th>
-              <th>3% (L)</th>
-              <th>6% (L)</th>
-            </tr>
-          </thead>
-          <tbody id="comp-tbody"></tbody>
-        </table>
-      </div>
-    </div>
+                <div class="section" id="table-section" style="display:none">
+                  <div class="section-title">Comparativa — 4 tiempos OACI para la flota ingresada</div>
+                  <div class="tbl-wrap">
+                    <table>
+                      <thead>
+                        <tr class="tg">
+                          <th colspan="2" style="background:var(--panel2);color:var(--text-dim);text-align:left">Tiempo
+                          </th>
+                          <th colspan="2" style="background:rgba(12,166,120,.06);color:var(--teal)">Volumen solución
+                          </th>
+                          <th colspan="2" style="background:rgba(51,154,240,.06);color:var(--sky)">Componentes (%
+                            activo)</th>
+                          <th colspan="3" style="background:rgba(245,159,0,.06);color:var(--amber)">Concentrado por tipo
+                          </th>
+                        </tr>
+                        <tr class="tc">
+                          <th style="text-align:center">t</th>
+                          <th>Fase OACI</th>
+                          <th>V (L)</th>
+                          <th>V (m³)</th>
+                          <th>Agua (L)</th>
+                          <th>Conc. (L)</th>
+                          <th>1% (L)</th>
+                          <th>3% (L)</th>
+                          <th>6% (L)</th>
+                        </tr>
+                      </thead>
+                      <tbody id="comp-tbody"></tbody>
+                    </table>
+                  </div>
+                </div>
 
-    <!-- HISTORY -->
-    <div class="section">
-      <div class="section-title">Historial de Cálculos</div>
-      <div class="panel">
-        <div class="pbody">
-          <div style="display:flex;justify-content:flex-end;margin-bottom:9px">
-            <button onclick="clearHist()"
-              style="padding:4px 11px;border-radius:5px;border:1px solid var(--border2);background:var(--panel2);
+                <!-- HISTORY -->
+                <div class="section">
+                  <div class="section-title">Historial de Cálculos</div>
+                  <div class="panel">
+                    <div class="pbody">
+                      <div style="display:flex;justify-content:flex-end;margin-bottom:9px">
+                        <button onclick="clearHist()"
+                          style="padding:4px 11px;border-radius:5px;border:1px solid var(--border2);background:var(--panel2);
                  color:var(--text-dim);font-family:var(--ff-m);font-size:10px;cursor:pointer;letter-spacing:.04em;transition:all var(--tr)"
-              onmouseover="this.style.borderColor='var(--teal)';this.style.color='var(--teal)'"
-              onmouseout="this.style.borderColor='var(--border2)';this.style.color='var(--text-dim)'">✕ Limpiar
-              historial</button>
-          </div>
-          <div id="hist-list"
-            style="display:flex;flex-direction:column;gap:7px;max-height:260px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--border2) transparent">
-            <div id="hist-empty"
-              style="text-align:center;padding:24px;color:var(--text-muted);font-family:var(--ff-m);font-size:10.5px;letter-spacing:.06em">
-              Sin cálculos registrados</div>
-          </div>
-        </div>
-      </div>
-    </div>
+                          onmouseover="this.style.borderColor='var(--teal)';this.style.color='var(--teal)'"
+                          onmouseout="this.style.borderColor='var(--border2)';this.style.color='var(--text-dim)'">✕
+                          Limpiar
+                          historial</button>
+                      </div>
+                      <div id="hist-list"
+                        style="display:flex;flex-direction:column;gap:7px;max-height:260px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--border2) transparent">
+                        <div id="hist-empty"
+                          style="text-align:center;padding:24px;color:var(--text-muted);font-family:var(--ff-m);font-size:10.5px;letter-spacing:.06em">
+                          Sin cálculos registrados</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
 
-    <!-- NORMATIVA -->
-    <div class="section">
-      <div class="section-title">Marco Normativo</div>
-      <div class="norm-grid">
-        <div class="ncard">
-          <div class="ncard-head">
-            <div class="picon" style="background:rgba(12,166,120,.12)"><svg width="13" height="13" viewBox="0 0 24 24"
-                fill="none" stroke="var(--teal)" stroke-width="2">
-                <path d="M12 2L2 7v10l10 5 10-5V7L12 2z" />
-              </svg></div><span class="ptitle" style="color:var(--teal);font-size:11px">V = Σ Q × t · §2.3.4</span>
-          </div>
-          <div class="ncard-body"><strong style="color:var(--text)">OACI Doc 9137 Parte 1 §2.3.4</strong><br>El volumen
-            requerido se calcula con la suma de caudales de toda la flota ARFF en servicio. Todos los vehículos deben
-            alcanzar simultáneamente el área crítica.</div>
-        </div>
-        <div class="ncard">
-          <div class="ncard-head">
-            <div class="picon" style="background:rgba(245,159,0,.12)"><svg width="13" height="13" viewBox="0 0 24 24"
-                fill="none" stroke="var(--amber)" stroke-width="2">
-                <rect x="3" y="3" width="18" height="18" rx="2" />
-                <path d="M3 9h18M9 21V9" />
-              </svg></div><span class="ptitle" style="color:var(--amber);font-size:11px">Tabla 2-2 — Dotación</span>
-          </div>
-          <div class="ncard-body"><strong style="color:var(--text)">OACI Doc 9137 Tabla 2-2</strong><br>Define agua
-            (mín./pref./máx.), PQS y CO₂ por categoría. La validación de flota cruza el caudal real contra el mínimo
-            requerido para certificación.</div>
-        </div>
-        <div class="ncard">
-          <div class="ncard-head">
-            <div class="picon" style="background:rgba(224,49,49,.12)"><svg width="13" height="13" viewBox="0 0 24 24"
-                fill="none" stroke="var(--red)" stroke-width="2">
-                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
-                <line x1="12" y1="9" x2="12" y2="13" />
-                <line x1="12" y1="17" x2="12.01" y2="17" />
-              </svg></div><span class="ptitle" style="color:var(--red);font-size:11px">ARFF Capacity Insufficient · OACI
-              Anexo 14</span>
-          </div>
-          <div class="ncard-body"><strong style="color:var(--text)">RAC 14 / UAEAC · OACI Anexo 14</strong><br>Si el
-            caudal total de la flota no alcanza el mínimo OACI por categoría, el aeródromo debe notificar a la UAEAC y
-            restringir operaciones de esa categoría.</div>
-        </div>
-        <div class="ncard">
-          <div class="ncard-head">
-            <div class="picon" style="background:rgba(112,72,232,.12)"><svg width="13" height="13" viewBox="0 0 24 24"
-                fill="none" stroke="var(--purple)" stroke-width="2">
-                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-              </svg></div><span class="ptitle" style="color:var(--purple);font-size:11px">Reserva Legal · NFPA 403
-              §5.4</span>
-          </div>
-          <div class="ncard-body"><strong style="color:var(--text)">NFPA 403 §5.4 — Bodega de
-              reserva</strong><br><strong style="color:var(--amber)">200%</strong> de la capacidad total de solución
-            espuma y <strong style="color:var(--amber)">100%</strong> del PQS cargado deben estar disponibles en bodega
-            para garantizar reabastecimiento operativo inmediato.</div>
-        </div>
-      </div>
-    </div>
+                <!-- NORMATIVA -->
+                <div class="section">
+                  <div class="section-title">Marco Normativo</div>
+                  <div class="norm-grid">
+                    <div class="ncard">
+                      <div class="ncard-head">
+                        <div class="picon" style="background:rgba(12,166,120,.12)"><svg width="13" height="13"
+                            viewBox="0 0 24 24" fill="none" stroke="var(--teal)" stroke-width="2">
+                            <path d="M12 2L2 7v10l10 5 10-5V7L12 2z" />
+                          </svg></div><span class="ptitle" style="color:var(--teal);font-size:11px">V = Σ Q × t ·
+                          §2.3.4</span>
+                      </div>
+                      <div class="ncard-body"><strong style="color:var(--text)">OACI Doc 9137 Parte 1
+                          §2.3.4</strong><br>El volumen
+                        requerido se calcula con la suma de caudales de toda la flota ARFF en servicio. Todos los
+                        vehículos deben
+                        alcanzar simultáneamente el área crítica.</div>
+                    </div>
+                    <div class="ncard">
+                      <div class="ncard-head">
+                        <div class="picon" style="background:rgba(245,159,0,.12)"><svg width="13" height="13"
+                            viewBox="0 0 24 24" fill="none" stroke="var(--amber)" stroke-width="2">
+                            <rect x="3" y="3" width="18" height="18" rx="2" />
+                            <path d="M3 9h18M9 21V9" />
+                          </svg></div><span class="ptitle" style="color:var(--amber);font-size:11px">Tabla 2-2 —
+                          Dotación</span>
+                      </div>
+                      <div class="ncard-body"><strong style="color:var(--text)">OACI Doc 9137 Tabla
+                          2-2</strong><br>Define agua
+                        (mín./pref./máx.), PQS y CO₂ por categoría. La validación de flota cruza el caudal real contra
+                        el mínimo
+                        requerido para certificación.</div>
+                    </div>
+                    <div class="ncard">
+                      <div class="ncard-head">
+                        <div class="picon" style="background:rgba(224,49,49,.12)"><svg width="13" height="13"
+                            viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2">
+                            <path
+                              d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                            <line x1="12" y1="9" x2="12" y2="13" />
+                            <line x1="12" y1="17" x2="12.01" y2="17" />
+                          </svg></div><span class="ptitle" style="color:var(--red);font-size:11px">ARFF Capacity
+                          Insufficient · OACI
+                          Anexo 14</span>
+                      </div>
+                      <div class="ncard-body"><strong style="color:var(--text)">RAC 14 / UAEAC · OACI Anexo
+                          14</strong><br>Si el
+                        caudal total de la flota no alcanza el mínimo OACI por categoría, el aeródromo debe notificar a
+                        la UAEAC y
+                        restringir operaciones de esa categoría.</div>
+                    </div>
+                    <div class="ncard">
+                      <div class="ncard-head">
+                        <div class="picon" style="background:rgba(112,72,232,.12)"><svg width="13" height="13"
+                            viewBox="0 0 24 24" fill="none" stroke="var(--purple)" stroke-width="2">
+                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                          </svg></div><span class="ptitle" style="color:var(--purple);font-size:11px">Reserva Legal ·
+                          NFPA 403
+                          §5.4</span>
+                      </div>
+                      <div class="ncard-body"><strong style="color:var(--text)">NFPA 403 §5.4 — Bodega de
+                          reserva</strong><br><strong style="color:var(--amber)">200%</strong> de la capacidad total de
+                        solución
+                        espuma y <strong style="color:var(--amber)">100%</strong> del PQS cargado deben estar
+                        disponibles en bodega
+                        para garantizar reabastecimiento operativo inmediato.</div>
+                    </div>
+                  </div>
+                </div>
 
   </main>
 
@@ -2822,704 +2652,136 @@
 
   <script>
     /* ═══════════════════════════════════════════════════════════════════
-       DATA — OACI DOC 9137 TABLA 2-2
-       q_min: caudal mínimo total de flota ARFF (L/min) por categoría
-       Fuente: OACI Doc 9137 AN/898 Parte 1, Tabla 2-2 (6ª ed.)
-       Nota: q_min = agua_pref × tasa_aplicacion / t_minimo
-             Para efectos de validación se usa el valor referencial publicado
+       ARFF COLOMBIA - DIGITAL INSTRUMENTATION ENGINE (MÓDULO 03)
     ═══════════════════════════════════════════════════════════════════ */
+
     const T22 = {
-      '1': { ref: 'Ultraligero / AG mínima', agua_min: 230, agua_pref: 350, agua_max: 590, pqs_min: 45, co2_min: 0, q_min: 225 },
-      '2': { ref: 'Aviación general', agua_min: 670, agua_pref: 1000, agua_max: 1800, pqs_min: 90, co2_min: 0, q_min: 550 },
-      '3': { ref: 'Turbohélice ligero', agua_min: 1200, agua_pref: 1800, agua_max: 3600, pqs_min: 135, co2_min: 0, q_min: 900 },
-      '4': { ref: 'Jet ejecutivo', agua_min: 2400, agua_pref: 3600, agua_max: 8100, pqs_min: 135, co2_min: 0, q_min: 1800 },
-      '5': { ref: 'Jet regional ERJ/ATR', agua_min: 5400, agua_pref: 8100, agua_max: 11800, pqs_min: 180, co2_min: 45, q_min: 2700 },
-      '6': { ref: 'B737 / A320', agua_min: 7900, agua_pref: 11800, agua_max: 18200, pqs_min: 225, co2_min: 45, q_min: 3900 },
-      '7': { ref: 'B757 / A321neo', agua_min: 12100, agua_pref: 18200, agua_max: 27300, pqs_min: 225, co2_min: 90, q_min: 6000 },
-      '8': { ref: 'B767 / A330', agua_min: 18200, agua_pref: 27300, agua_max: 36400, pqs_min: 450, co2_min: 90, q_min: 9000 },
-      '9': { ref: 'B777 / A350', agua_min: 24300, agua_pref: 36400, agua_max: 48200, pqs_min: 450, co2_min: 90, q_min: 11200 },
-      '10': { ref: 'B747 / A380', agua_min: 32300, agua_pref: 48200, agua_max: 64300, pqs_min: 450, co2_min: 90, q_min: 13500 },
-      'H': { ref: 'Helicóptero ARFF-H', agua_min: 7900, agua_pref: 11800, agua_max: 18200, pqs_min: 225, co2_min: 45, q_min: 3900 },
+      '1': { q_min: 225 }, '2': { q_min: 550 }, '3': { q_min: 900 },
+      '4': { q_min: 1800 }, '5': { q_min: 2700 }, '6': { q_min: 3900 },
+      '7': { q_min: 6000 }, '8': { q_min: 9000 }, '9': { q_min: 11200 },
+      '10': { q_min: 13500 }, 'H': { q_min: 3900 }
     };
-    const CAT_COL = {
-      '1': '#2f9e44', '2': '#40c057', '3': '#74c476', '4': '#f59f00', '5': '#f76707',
-      '6': '#e03131', '7': '#c92a2a', '8': '#9c36b5', '9': '#7048e8', '10': '#364fc7', 'H': '#1971c2'
-    };
-    const T_CFG = {
-      1: { color: '#2f9e44', norm: 'OACI §2.3.4 · Cat.1–3', body: '<strong>Descarga inicial</strong> — Cat. 1–3. Control de incendio y apertura de vías de evacuación.' },
-      2: { color: '#f59f00', norm: 'OACI §2.3.4 · Cat.4–6', body: '<strong>Control rápido</strong> — jets regionales y medianos. Corredores de escape seguros por 2 min.' },
-      3: { color: '#0ca678', norm: 'OACI §2.3.4 · Cat.7–9', body: '<strong>Extinción estándar</strong> — fuselaje ancho (B777, A330, A350). Extinción completa y protección estructural.' },
-      4: { color: '#e03131', norm: 'OACI §2.3.4 · Cat.10/H · NFPA §5.4', body: '<strong>Operación extendida</strong> — super-jumbo y helicópteros. NFPA 403 §5.4 exige +25% reserva.' },
-    };
-    const CONC_INFO = {
-      1: { name: 'AFFF 1%', agent: 'Nivel B · Baja concentración', color: '#2f9e44' },
-      3: { name: 'AR-AFFF 3%', agent: 'Nivel A · Estándar AR', color: '#f59f00' },
-      6: { name: 'FFFP / PF 6%', agent: 'Nivel C · Proteínico', color: '#e03131' },
-    };
-    const STD_TANKS = [
-      { name: 'ARFF ligero', vol: 4000, icon: '🚒' },
-      { name: 'ARFF medio', vol: 10000, icon: '🚒' },
-      { name: 'ARFF pesado', vol: 19000, icon: '🚒' },
-      { name: 'Tender 25k', vol: 25000, icon: '🚚' },
-    ];
 
-    /* ──── STATE ──── */
-    let selT = 3, hist = [], vehId = 0;
+    let vehCount = 0;
 
-    /* ──── FLEET MANAGEMENT ──── */
-    const defaultFleet = [
-      { name: 'ARFF-1', q: 1700, water: 9000 },
-      { name: 'ARFF-2', q: 1700, water: 9000 },
-    ];
+    function addVehicleCard(name = '', q = '', water = '', isReadonly = false) {
+      vehCount++;
+      const id = vehCount;
+      const defaultName = name || `ARFF-${id}`;
 
-    function getFleet() {
-      const rows = document.querySelectorAll('.fleet-rows .veh-row');
-      return Array.from(rows).map(r => ({
-        name: r.querySelector('.veh-name').value.trim() || 'Vehículo',
-        q: parseFloat(r.querySelector('.veh-q input').value) || 0,
-        water: parseFloat(r.querySelector('.veh-water-inp input').value) || 0,
-      }));
+      const cardHtml = `
+        <div class="veh-card" id="vcard-${id}">
+          <div class="veh-card-head">
+            <input type="text" class="veh-card-name v-name" value="${defaultName}" ${isReadonly ? 'readonly' : ''} oninput="updateCalculations()">
+            ${!isReadonly ? `<button class="btn-del-card" onclick="removeVehicleCard(${id})"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button>` : ''}
+          </div>
+          <div class="veh-card-grid">
+            <div class="veh-input-group">
+              <label class="veh-input-label">Caudal (Q)</label>
+              <div class="veh-input-wrapper">
+                <input type="number" class="veh-input v-q" value="${q}" placeholder="0" oninput="updateCalculations()" ${isReadonly ? 'readonly' : ''}>
+                <span class="veh-unit">LPM</span>
+              </div>
+            </div>
+            <div class="veh-input-group">
+              <label class="veh-input-label">Agua en Tanque</label>
+              <div class="veh-input-wrapper">
+                <input type="number" class="veh-input v-water" value="${water}" placeholder="0" oninput="updateCalculations()" ${isReadonly ? 'readonly' : ''}>
+                <span class="veh-unit">GAL</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+
+      const container = document.getElementById('fleet-rows');
+      container.insertAdjacentHTML('beforeend', cardHtml);
+      updateCalculations();
     }
 
-    function getFleetTotals() {
-      const fleet = getFleet();
-      const qTotal = fleet.reduce((s, v) => s + v.q, 0);
-      const waterTotal = fleet.reduce((s, v) => s + v.water, 0);
-      return { fleet, qTotal, waterTotal };
+    function removeVehicleCard(id) {
+      const card = document.getElementById(`vcard-${id}`);
+      if (card) card.remove();
+      updateCalculations();
     }
 
-    function addVehicle(name = '', q = '', water = '') {
-      vehId++;
-      const id = vehId;
-      const row = document.createElement('div');
-      row.className = 'veh-row';
-      row.dataset.id = id;
-      row.innerHTML = `
-    <input class="veh-name" placeholder="ej. ARFF-${id}" value="${name}">
-    <div class="veh-q">
-      <input type="number" min="0" step="10" placeholder="Q" value="${q}" oninput="onFleetChange()">
-      <span class="vu">L/min</span>
-    </div>
-    <button class="btn-del" onclick="delVehicle(this)" title="Eliminar">
-      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-    </button>
-    <div class="veh-water-label">Agua en tanque:</div>
-    <div class="veh-water-inp">
-      <input type="number" min="0" step="100" placeholder="0" value="${water}" oninput="onFleetChange()">
-      <span class="vu">L</span>
-    </div>
-    <div></div>`;
-      document.getElementById('fleet-rows').appendChild(row);
-      onFleetChange();
-    }
-
-    function delVehicle(btn) {
-      btn.closest('.veh-row').remove();
-      onFleetChange();
-    }
-
-    function onFleetChange() {
-      const { qTotal, waterTotal, fleet } = getFleetTotals();
+    function updateCalculations() {
       const cat = document.getElementById('inp-cat').value;
-      const norm = cat ? T22[cat] : null;
+      const pct = parseInt(document.getElementById('inp-pct').value) || 3;
+      const time = parseFloat(document.getElementById('inp-time').value) || 0;
 
-      // Update badge
-      const ftEl = document.getElementById('fleet-total');
-      ftEl.textContent = Math.round(qTotal).toLocaleString();
-      ftEl.style.color = qTotal > 0 ? 'var(--teal)' : 'var(--text-muted)';
-      if (ftEl.classList.contains('pop')) ftEl.classList.remove('pop');
-      void ftEl.offsetWidth;
-      ftEl.classList.add('pop');
-
-      // Fleet alert
-      const alertEl = document.getElementById('fleet-alert-insufficient');
-      const okEl = document.getElementById('fleet-alert-ok');
-      if (norm && qTotal > 0) {
-        const deficit = norm.q_min - qTotal;
-        if (deficit > 0) {
-          alertEl.classList.add('show');
-          document.getElementById('fleet-alert-text').innerHTML =
-            `⚠ ARFF CAPACITY INSUFFICIENT · Déficit: <strong>${Math.round(deficit).toLocaleString()} L/min</strong> · Requerido Cat.${cat}: ${norm.q_min.toLocaleString()} L/min`;
-          okEl.classList.remove('show');
-        } else {
-          alertEl.classList.remove('show');
-          okEl.classList.add('show');
-          document.getElementById('fleet-ok-text').innerHTML =
-            `✓ Flota ARFF suficiente · Superávit: +${Math.round(-deficit).toLocaleString()} L/min sobre el mínimo OACI Cat.${cat}`;
-        }
-      } else {
-        alertEl.classList.remove('show');
-        okEl.classList.remove('show');
+      const cards = document.querySelectorAll('.veh-card');
+      if (cards.length === 0) {
+        document.getElementById('res-empty').style.display = 'flex';
+        document.getElementById('res-content').style.display = 'none';
+        return;
       }
-      document.getElementById('err-fleet').classList.remove('show');
-    }
 
-    /* ──── TIME ──── */
-    function selTime(el) {
-      document.querySelectorAll('.tpill').forEach(p => p.classList.remove('sel'));
-      el.classList.add('sel');
-      selT = parseFloat(el.dataset.t);
-      document.getElementById('inp-tm').value = '';
-      document.getElementById('mwarn').classList.remove('show');
-      showTInfo(selT);
-      clearErr();
-    }
-    function showTInfo(t) {
-      const c = T_CFG[t];
-      if (!c) { document.getElementById('tinfo').classList.remove('show'); return; }
-      const el = document.getElementById('tinfo');
-      el.style.borderLeftColor = c.color;
-      el.style.background = c.color + '0d';
-      document.getElementById('tiv').innerHTML = `<span style="color:${c.color}">${t}</span><span class="tiunit"> min</span>`;
-      document.getElementById('tinorm').textContent = c.norm;
-      document.getElementById('tibody').innerHTML = c.body;
-      el.classList.add('show');
-    }
-    function onManualT(inp) {
-      const v = parseFloat(inp.value);
-      if (isNaN(v) || v <= 0) { document.getElementById('mwarn').classList.remove('show'); return; }
-      document.querySelectorAll('.tpill').forEach(p => p.classList.remove('sel'));
-      selT = v;
-      if (![1, 2, 3, 4].includes(v)) { document.getElementById('mwarn').classList.add('show'); document.getElementById('tinfo').classList.remove('show'); }
-      else { document.getElementById('mwarn').classList.remove('show'); showTInfo(v); document.querySelectorAll('.tpill').forEach(p => { if (parseFloat(p.dataset.t) === v) p.classList.add('sel'); }); }
-      clearErr();
-    }
-    function onCatChange() {
-      const cat = document.getElementById('inp-cat').value;
-      if (!cat) return;
-      clearErr();
-      buildDotTable(cat);
-      document.getElementById('dotacion-section').style.display = 'block';
-      document.getElementById('compliance-section').style.display = 'block';
-      document.getElementById('dotacion-cat').textContent = cat;
-      onFleetChange(); // re-evaluate alert with new cat
-    }
-    function clearErr() {
-      ['err-q', 'err-t', 'err-cat', 'err-fleet'].forEach(id => {
-        const el = document.getElementById(id); if (el) el.classList.remove('show');
-      });
-    }
-
-    /* ──── VALIDATE ──── */
-    function validate() {
-      let ok = true;
-      const cat = document.getElementById('inp-cat').value;
-      const { qTotal } = getFleetTotals();
-      if (!cat) { document.getElementById('err-cat').classList.add('show'); ok = false; }
-      if (qTotal <= 0) { document.getElementById('err-fleet').classList.add('show'); ok = false; }
-      if (!selT || selT <= 0) { document.getElementById('err-t').classList.add('show'); ok = false; }
-      return ok;
-    }
-
-    /* ──── CALCULATE ──── */
-    function calcular() {
-      if (!validate()) { showToast('⚠ Verifique los campos de entrada'); return; }
-      const { fleet, qTotal, waterTotal } = getFleetTotals();
-      const t = selT;
-      const pct = parseInt(document.getElementById('inp-pct').value);
-      const cat = document.getElementById('inp-cat').value;
-      const note = document.getElementById('inp-note').value.trim();
-      const V = Math.round(qTotal * t * 100) / 100;
-
-      showResult(fleet, qTotal, waterTotal, t, V, pct, cat);
-      showCapacityCard(qTotal, waterTotal, t, cat);
-      showReserve(fleet, qTotal, waterTotal, t, pct, cat);
-      buildCompTable(qTotal, t, pct);
-      buildDotTable(cat);
-
-      document.getElementById('cap-section').style.display = 'block';
-      document.getElementById('reserve-section').style.display = 'block';
-      document.getElementById('dotacion-section').style.display = 'block';
-      document.getElementById('compliance-section').style.display = 'block';
-      document.getElementById('table-section').style.display = 'block';
-      document.getElementById('dotacion-cat').textContent = cat;
-
-      const entry = {
-        id: Date.now(), fleet: [...fleet], qTotal, waterTotal, t, V, pct, cat, note,
-        ts: new Date().toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' })
-      };
-      hist.unshift(entry);
-      if (hist.length > 20) hist.pop();
-      renderHist();
-      showToast(`✓ V = ${Math.round(V).toLocaleString()} L · Σ Q = ${Math.round(qTotal).toLocaleString()} L/min · Cat.${cat}`);
-    }
-
-    /* ──── RESULT PANEL ──── */
-    function showResult(fleet, qTotal, waterTotal, t, V, pct, cat) {
-      const cfg = T_CFG[t] || { color: '#0ca678' };
       document.getElementById('res-empty').style.display = 'none';
-      const rc = document.getElementById('res-content');
-      rc.style.display = 'flex';
+      document.getElementById('res-content').style.display = 'block';
 
-      const vEl = document.getElementById('res-v');
-      vEl.innerHTML = `${Math.round(V).toLocaleString()}<span class="ru"> L</span>`;
-      vEl.style.color = '#f59f00';
-      vEl.style.textShadow = `0 0 40px rgba(245,159,0,.45)`;
-      vEl.classList.remove('pop'); void vEl.offsetWidth; vEl.classList.add('pop');
+      let totalQ_LPM = 0;
+      let totalWater_GAL = 0;
 
-      document.getElementById('res-formula').innerHTML =
-        `Σ Q = <strong style="color:var(--orange)">${Math.round(qTotal).toLocaleString()} L/min</strong> × t = <strong style="color:var(--sky)">${t} min</strong>`;
-
-      document.getElementById('mc-vl').textContent = Math.round(V).toLocaleString();
-      document.getElementById('mc-q').textContent = Math.round(qTotal).toLocaleString() + ' L/min';
-      document.getElementById('mc-t').textContent = t + ' min';
-      document.getElementById('mc-veh').textContent = fleet.length + ' vehículos';
-
-      // Desglose
-      const g = document.getElementById('conc3'); g.innerHTML = '';
-      [1, 3, 6].forEach(p => {
-        const ci = CONC_INFO[p];
-        const conc = Math.round(V * p / (100));
-        const agua = Math.round(V - conc);
-        const isAct = p === pct;
-        g.insertAdjacentHTML('beforeend', `
-      <div class="cc ${isAct ? 'active' : ''}">
-        ${isAct ? `<div class="cc-active-badge" style="color:${ci.color};border-color:${ci.color}44;background:${ci.color}18">ACTIVO</div>` : ''}
-        <div class="cc-pct" style="color:${ci.color}">${p}%</div>
-        <div class="cc-agent">${ci.name}<br><span style="font-size:8px;color:var(--text-muted)">${ci.agent}</span></div>
-        <div class="cc-item"><span class="cc-dot" style="background:#339af0"></span><span class="cc-key">💧 Agua</span><span class="cc-val">${agua.toLocaleString()} L</span></div>
-        <div class="cc-item"><span class="cc-dot" style="background:${ci.color}"></span><span class="cc-key">⚗ Conc.</span><span class="cc-val">${conc.toLocaleString()} L</span></div>
-        <div class="cc-pct-bar"><div class="cc-pct-fill" style="width:${p * 10}%;background:${ci.color}"></div></div>
-      </div>`);
+      cards.forEach(card => {
+        const q = parseFloat(card.querySelector('.v-q').value) || 0;
+        const w = parseFloat(card.querySelector('.v-water').value) || 0;
+        totalQ_LPM += q;
+        totalWater_GAL += w;
       });
 
-      // Tank bars
-      const tb = document.getElementById('tank-bars'); tb.innerHTML = '';
-      STD_TANKS.forEach(tk => {
-        const n = V / tk.vol; const ov = n > 1;
-        tb.insertAdjacentHTML('beforeend', `
-      <div class="tbar-row">
-        <span class="tbar-icon">${tk.icon}</span>
-        <span class="tbar-name">${tk.name}</span>
-        <div class="tbar-wrap"><div class="tbar-fill ${ov ? 'ov' : ''}" style="width:${Math.min(n * 100, 100).toFixed(1)}%"></div></div>
-        <span class="tbar-cnt ${ov ? 'ov' : 'ok'}">×${n.toFixed(1)}</span>
-      </div>`);
-      });
+      const q_GPM = totalQ_LPM / 3.785;
+      const vTotal_GAL = Math.round(q_GPM * time);
+      const vFoam_GAL = Math.round(vTotal_GAL * (pct / 100));
+      const vWater_GAL = vTotal_GAL - vFoam_GAL;
 
-      // ── ANÁLISIS DE POTENCIA DE FUEGO ──
-      const fpCard = document.getElementById('firepower-card');
-      if (fpCard) fpCard.style.display = 'block';
-      buildFirepowerAnalysis(V, qTotal, waterTotal, t, fleet, cat);
-    }
+      animateNumber('res-v-total', vTotal_GAL);
+      animateNumber('res-v-water', vWater_GAL);
+      animateNumber('res-v-foam', vFoam_GAL);
+      document.getElementById('res-val-time').textContent = time;
 
-    /* ──── ANÁLISIS POTENCIA DE FUEGO ──── */
-    function buildFirepowerAnalysis(V, qTotal, waterTotal, t, fleet, cat) {
-      const container = document.getElementById('firepower-card');
-      if (!container) return;
+      const qMin = cat ? T22[cat].q_min : 0;
+      const qPct = qMin > 0 ? Math.min((totalQ_LPM / qMin) * 100, 100) : 0;
 
-      const ligeros = Math.round(V / 4000 * 10) / 10;
-      const pesados = Math.round(V / 19000 * 10) / 10;
-      const tenders = Math.round(V / 25000 * 10) / 10;
-      const autonomia = qTotal > 0 ? (waterTotal / qTotal).toFixed(1) : '—';
-      const lMin = Math.round(qTotal).toLocaleString();
-      const litros = Math.round(V).toLocaleString();
-      const nVeh = fleet.length;
-      const catLabel = cat ? `Categoría ${cat}` : 'la categoría seleccionada';
+      document.getElementById('comp-q-val').textContent = `${Math.round(totalQ_LPM).toLocaleString()} / ${qMin.toLocaleString()} LPM`;
+      const qFill = document.getElementById('comp-q-fill');
+      qFill.style.width = `${qPct}%`;
+      qFill.className = `comp-bar-fill ${totalQ_LPM >= qMin ? 'ok' : 'alert'}`;
 
-      // Nivel de potencia
-      let nivel = '', nivelColor = '';
-      if (V >= 48000) { nivel = 'MÁXIMA — operación super-jumbo sostenida'; nivelColor = '#e03131'; }
-      else if (V >= 27000) { nivel = 'ALTA — control de fuselaje ancho completo'; nivelColor = '#f59f00'; }
-      else if (V >= 11800) { nivel = 'ESTÁNDAR — cobertura de ruta media eficiente'; nivelColor = '#0ca678'; }
-      else if (V >= 3600) { nivel = 'BÁSICA — adecuada para aviación regional'; nivelColor = '#339af0'; }
-      else { nivel = 'MÍNIMA — aviación general y ultraligeros'; nivelColor = '#74c476'; }
+      const wPct = vWater_GAL > 0 ? Math.min((totalWater_GAL / vWater_GAL) * 100, 100) : 100;
+      document.getElementById('comp-water-val').textContent = `${Math.round(totalWater_GAL).toLocaleString()} / ${Math.round(vWater_GAL).toLocaleString()} GAL`;
+      const wFill = document.getElementById('comp-water-fill');
+      wFill.style.width = `${wPct}%`;
+      wFill.className = `comp-bar-fill ${totalWater_GAL >= vWater_GAL ? 'ok' : 'alert'}`;
 
-      container.innerHTML = `
-    <div class="fp-title">🔥 Análisis de Potencia de Fuego — Interpretación Operativa</div>
-    <div class="fp-body">
-      La flota activa de <em>${nVeh} vehículos</em> genera una <strong>capacidad hidráulica total</strong> de
-      <span class="fp-metric">${lMin} L/min</span> y produce un volumen de solución de
-      <span class="fp-metric">${litros} L</span> en <em>${t} minuto${t !== 1 ? 's' : ''}</em> de descarga sostenida —
-      equivalente a desplegar aproximadamente <em>${pesados} unidades clase Striker</em> (vehículo ARFF pesado de 19 000 L)
-      o <em>${ligeros} unidades ligeras</em> (4 000 L) operando simultáneamente sobre el área crítica.<br><br>
+      const autonomyMin = totalQ_LPM > 0 ? (totalWater_GAL * 3.785) / totalQ_LPM : 0;
+      const statusEl = document.getElementById('autonomy-status');
 
-      La <strong>autonomía de combate</strong> de la flota, calculada sobre el agua total embarcada,
-      alcanza <em>${autonomia} minutos</em> de descarga continua sin reabastecimiento —
-      parámetro crítico para operaciones de rescate activo sostenido en ${catLabel}.
-      ${parseFloat(autonomia) < t
-          ? `<strong style="color:#e03131"> ⚠ Autonomía insuficiente:</strong> el tiempo de descarga es inferior al mínimo normativo OACI de <em>${t} min</em>. Se requiere reabastecimiento táctico o refuerzo de flota.`
-          : parseFloat(autonomia) >= t * 2
-            ? `<strong style="color:#0ca678"> ✓ Autonomía extendida:</strong> la flota supera en <em>${((parseFloat(autonomia) / t - 1) * 100).toFixed(0)}%</em> el tiempo mínimo OACI, proporcionando margen operativo para fase de control post-extinción.`
-            : `<strong style="color:#f59f00"> ◎ Autonomía ajustada:</strong> la flota cubre el mínimo normativo con margen operativo limitado. Se recomienda tener unidad de reabastecimiento en posición de alerta.`
-        }<br><br>
-
-      Nivel de potencia de fuego clasificado como
-      <strong style="color:${nivelColor}">${nivel}</strong>.
-      ${V >= 27000
-          ? `La capacidad hidráulica es suficiente para sostener operaciones simultáneas de extinción y rescate según OACI Anexo 14 y NFPA 403 §5.4, garantizando presión de ataque continuo sobre estructuras de fuselaje ancho.`
-          : `Se recomienda evaluar el refuerzo de flota para operaciones de rescate activo prolongado conforme a las exigencias de OACI Doc 9137 §2.3.4 y RAC 14.`}
-    </div>`;
-    }
-
-    /* ──── CAPACITY CARD ──── */
-    function showCapacityCard(qTotal, waterTotal, t, cat) {
-      const norm = cat ? T22[cat] : null;
-      const qReq = norm ? norm.q_min : 0;
-      const autonomia = qTotal > 0 ? waterTotal / qTotal : 0;
-
-      // Q total
-      animateVal('cap-q-total', Math.round(qTotal), ' L/min', '#f59f00');
-      // req vs avail
-      document.getElementById('cap-q-req').textContent = qReq ? qReq.toLocaleString() + ' L/min' : '—';
-      document.getElementById('cap-q-avail').textContent = Math.round(qTotal).toLocaleString() + ' L/min';
-      const capOk = qTotal >= qReq;
-      document.getElementById('cap-q-avail').style.color = capOk ? 'var(--teal)' : 'var(--red)';
-
-      // Autonomy ring
-      const tNorm = t || 3;
-      const pctRing = Math.min((autonomia / (tNorm * 2)) * 100, 100);
-      const circumference = 2 * Math.PI * 15.9;
-      const offset = circumference * (1 - pctRing / 100);
-      const ringFg = document.getElementById('ring-fg');
-      const ringColor = autonomia >= t * 2 ? 'var(--teal)' : autonomia >= t ? 'var(--amber)' : 'var(--red)';
-      ringFg.style.strokeDasharray = `${circumference} ${circumference}`;
-      ringFg.style.strokeDashoffset = circumference;
-      ringFg.style.stroke = ringColor;
-      setTimeout(() => { ringFg.style.strokeDashoffset = offset; }, 100);
-      document.getElementById('ring-text').innerHTML =
-        `<span style="color:${ringColor};font-size:13px;font-family:var(--ff-m)">${autonomia.toFixed(1)}</span><br><span style="font-size:8px;color:var(--text-muted)">min</span>`;
-
-      animateVal('cap-agua-total', Math.round(waterTotal), ' L', 'var(--sky)');
-
-      // Banner
-      const insEl = document.getElementById('cap-insufficient');
-      const okEl = document.getElementById('cap-ok');
-      if (norm && qTotal < qReq) {
-        insEl.classList.add('show'); okEl.classList.remove('show');
-        document.getElementById('cap-insufficient-text').innerHTML =
-          `⚠ ARFF CAPACITY INSUFFICIENT · Cat.${cat} requiere mínimo <strong>${qReq.toLocaleString()} L/min</strong>. Flota actual: <strong>${Math.round(qTotal).toLocaleString()} L/min</strong>. Déficit: <strong style="color:var(--red)">${Math.round(qReq - qTotal).toLocaleString()} L/min</strong>. Restricción operacional RAC 14.`;
-      } else if (norm) {
-        okEl.classList.add('show'); insEl.classList.remove('show');
-        document.getElementById('cap-ok-text').innerHTML =
-          `✓ Flota ARFF suficiente para Cat.${cat} · Superávit de caudal: +${Math.round(qTotal - qReq).toLocaleString()} L/min · Autonomía: ${autonomia.toFixed(1)} min continua`;
-      }
-    }
-
-    function animateVal(id, val, unit, color) {
-      const el = document.getElementById(id);
-      el.innerHTML = `${val.toLocaleString()}<span class="cap-unit" style="font-size:13px">${unit}</span>`;
-      el.style.color = color;
-      el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop');
-    }
-
-    /* ──── LEGAL RESERVE ──── */
-    function showReserve(fleet, qTotal, waterTotal, t, pct, cat) {
-      const V = qTotal * t;
-      const norm = cat ? T22[cat] : null;
-      const pqs_flota = norm ? norm.pqs_min : 0;
-
-      // Reserva espuma = 200% de V total de la flota
-      const resEspuma = Math.round(V * 2);
-      // Agua para la reserva de espuma
-      const resAgua = Math.round(resEspuma * (1 - pct / 100));
-      const resConc = Math.round(resEspuma * pct / 100);
-      // Reserva PQS = 100% del cargado
-      const resPqs = pqs_flota;
-
-      const g = document.getElementById('reserve-grid'); g.innerHTML = '';
-
-      const cards = [
-        {
-          title: 'Reserva Espuma — Bodega', mult: '×200%', icon: '#0ca678',
-          main: resEspuma.toLocaleString() + ' L',
-          sub: `💧 Agua: <strong style="color:#339af0;font-size:14px">${resAgua.toLocaleString()} L</strong><br>⚗ Concentrado ${pct}%: <strong style="color:#f59f00;font-size:14px">${resConc.toLocaleString()} L</strong>`,
-          norm: 'NFPA 403 §5.4 — 2 recargas completas de la flota'
-        },
-        {
-          title: 'Reserva PQS — Bodega', mult: '×100%', icon: '#f59f00',
-          main: resPqs > 0 ? resPqs + ' kg' : 'N/A para esta cat.',
-          sub: resPqs > 0 ? `PQS adicional equivalente a la carga de vehículos<br>Cat.${cat} · Tabla 2-2` : 'Categoría 1–4 no requiere CO₂/Halón mínimo',
-          norm: 'NFPA 403 §5.4 · OACI Doc 9137 Tabla 2-2'
-        },
-      ];
-
-      cards.forEach(c => {
-        g.insertAdjacentHTML('beforeend', `
-      <div class="reserve-card">
-        <div class="rc-head">
-          <div class="rc-icon" style="background:${c.icon}18"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="${c.icon}" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
-          <span class="rc-title">${c.title}</span>
-          <span class="rc-multiplier">${c.mult}</span>
-        </div>
-        <div class="rc-main" style="color:${c.icon}">${c.main}</div>
-        <div class="rc-sub">${c.sub}</div>
-        <div class="rc-norm">${c.norm}</div>
-      </div>`);
-      });
-    }
-
-    /* ──── DOTATION TABLE ──── */
-    function buildDotTable(activeCat) {
-      const tbody = document.getElementById('dotacion-tbody'); tbody.innerHTML = '';
-      ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'H'].forEach(c => {
-        const d = T22[c];
-        const col = CAT_COL[c] || '#8a9bba';
-        const isA = c === activeCat;
-        tbody.insertAdjacentHTML('beforeend', `
-      <tr class="${isA ? 'cat-hi' : ''}">
-        <td><span class="cbadge" style="background:${col}20;color:${col};border:1px solid ${col}44">${c}</span></td>
-        <td>${d.ref}</td>
-        <td class="${isA ? 'th-hl' : ''}">${d.agua_min.toLocaleString()}</td>
-        <td class="${isA ? 'th-hl' : ''}" style="${isA ? 'font-size:13px' : ''}">${d.agua_pref.toLocaleString()}</td>
-        <td>${d.agua_max.toLocaleString()}</td>
-        <td class="${isA ? 'th-am' : ''}">${d.pqs_min}</td>
-        <td>${d.co2_min > 0 ? d.co2_min : '<span style="color:var(--text-muted)">—</span>'}</td>
-        <td class="${isA ? 'th-hl' : ''}">${d.q_min.toLocaleString()}</td>
-      </tr>`);
-      });
-    }
-
-    /* ──── COMPLIANCE ──── */
-    function checkCompliance() {
-      const cat = document.getElementById('inp-cat').value;
-      if (!cat) { showToast('⚠ Seleccione la categoría'); return; }
-      const norm = T22[cat];
-      const pct = parseInt(document.getElementById('inp-pct').value || '3');
-      const hA = parseFloat(document.getElementById('av-agua').value) || 0;
-      const hC = parseFloat(document.getElementById('av-conc').value) || 0;
-      const hP = parseFloat(document.getElementById('av-pqs').value) || 0;
-      const hG = parseFloat(document.getElementById('av-co2').value) || 0;
-      const rA = norm.agua_pref;
-      const rC = Math.round(rA * pct / (100 - pct));
-      const rP = norm.pqs_min;
-      const rG = norm.co2_min;
-
-      const ev = (have, req) => {
-        if (req === 0) return { status: 'ok', fill: 100, delta: 0 };
-        const fill = have / req * 100, delta = have - req;
-        return { status: fill >= 100 ? 'ok' : fill >= 75 ? 'warn' : 'alert', fill, delta };
-      };
-      const evA = ev(hA, rA), evC = ev(hC, rC), evP = ev(hP, rP), evG = rG > 0 ? ev(hG, rG) : null;
-      const allEvs = [evA, evC, evP, ...(evG ? [evG] : [])];
-      const hasAlert = allEvs.some(e => e.status === 'alert');
-      const hasWarn = allEvs.some(e => e.status === 'warn');
-
-      const banner = document.getElementById('comp-banner');
-      if (hasAlert) {
-        banner.className = 'comp-banner alert';
-        banner.innerHTML = `<strong>⚠ ALERTA RAC 14 — INCUMPLIMIENTO NORMATIVO</strong><br>
-      Cat.${cat} no dispone de los mínimos OACI Doc 9137 Tabla 2-2. Notifique a UAEAC y restrinja operaciones.<br>
-      <span style="font-size:9.5px;color:rgba(255,135,135,.6)">RAC 14 Subparte C · OACI Doc 9137 Tabla 2-2</span>`;
-      } else if (hasWarn) {
-        banner.className = 'comp-banner warn';
-        banner.innerHTML = `<strong>⚠ ADVERTENCIA — Dotación bajo nivel preferente OACI</strong><br>
-      Se supera el mínimo absoluto pero no el nivel preferente Tabla 2-2. Se recomienda incrementar reservas.<br>
-      <span style="font-size:9.5px;color:rgba(255,212,59,.6)">OACI Doc 9137 §2.3.4 — nivel preferente</span>`;
+      if (totalWater_GAL < vWater_GAL) {
+        statusEl.style.background = 'rgba(255, 62, 62, 0.1)';
+        statusEl.style.color = 'var(--neon-red)';
+        statusEl.style.borderColor = 'rgba(255, 62, 62, 0.3)';
+        statusEl.innerHTML = `⚠ ALERTA: AUTONOMÍA CRÍTICA. Solo ${autonomyMin.toFixed(1)} min de descarga. Se requieren ${time} min.`;
       } else {
-        banner.className = 'comp-banner ok';
-        banner.innerHTML = `<strong>✓ CUMPLIMIENTO NORMATIVO VERIFICADO — Cat.${cat}</strong><br>
-      Dotación conforme OACI Doc 9137 Tabla 2-2 · RAC 14.<br>
-      <span style="font-size:9.5px;color:rgba(140,233,154,.6)">Operación certificada</span>`;
-      }
-
-      const items = [
-        { lbl: 'Agua para espuma', unit: 'L', have: hA, req: rA, ev: evA, ref: `Tabla 2-2 Cat.${cat} pref.` },
-        { lbl: `Concentrado ${pct}%`, unit: 'L', have: hC, req: rC, ev: evC, ref: `${pct}% de ${rA.toLocaleString()} L` },
-        { lbl: 'PQS', unit: 'kg', have: hP, req: rP, ev: evP, ref: `Tabla 2-2 Cat.${cat}` },
-        ...(evG ? [{ lbl: 'CO₂ / Gas', unit: 'kg', have: hG, req: rG, ev: evG, ref: `Tabla 2-2 Cat.${cat}` }] : []),
-      ];
-      const cards = document.getElementById('comp-cards'); cards.innerHTML = '';
-      items.forEach(it => {
-        const { status, fill, delta } = it.ev;
-        const barCol = status === 'ok' ? 'var(--teal)' : status === 'warn' ? 'var(--amber)' : 'var(--red)';
-        const stLbl = status === 'ok' ? '✓ Cumple' : status === 'warn' ? '↓ Parcial' : '⚠ Déficit';
-        const dStr = delta >= 0 ? `+${Math.round(delta).toLocaleString()} ${it.unit}` : `−${Math.round(Math.abs(delta)).toLocaleString()} ${it.unit}`;
-        const dCls = delta >= 0 ? 'cv-surplus' : 'cv-deficit';
-        cards.insertAdjacentHTML('beforeend', `
-      <div class="ccard">
-        <div class="ccard-head"><span class="ccard-title">${it.lbl}</span><span class="cbadge-st ${status}">${stLbl}</span></div>
-        <div class="ccard-body">
-          <div class="ccomp-row"><span class="ccomp-lbl">OACI req.</span><span class="ccomp-val cv-norm">${it.req.toLocaleString()} ${it.unit}</span></div>
-          <div class="ccomp-row"><span class="ccomp-lbl">Disponible</span><span class="ccomp-val cv-have">${it.have.toLocaleString()} ${it.unit}</span></div>
-          <div class="ccomp-row"><span class="ccomp-lbl">Diferencia</span><span class="ccomp-val ${dCls}">${dStr}</span></div>
-          <div class="ccomp-row"><span class="ccomp-lbl" style="font-size:8px">${it.ref}</span><span style="font-family:var(--ff-m);font-size:10.5px;color:var(--text-dim)">${Math.min(fill, 200).toFixed(0)}%</span></div>
-          <div class="cprog"><div class="cprog-bar" style="width:${Math.min(fill, 100).toFixed(1)}%;background:${barCol}"></div></div>
-          ${delta < 0 ? `<div class="cdeficit-note show">Faltante: ${Math.round(Math.abs(delta)).toLocaleString()} ${it.unit} · Notificar UAEAC · Restringir Cat.${document.getElementById('inp-cat').value}</div>` : ''}
-        </div>
-      </div>`);
-      });
-      document.getElementById('comp-result').style.display = 'block';
-      showToast('✓ Verificación completada');
-      setTimeout(() => document.getElementById('comp-result').scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 100);
-    }
-
-    /* ──── COMPARISON TABLE ──── */
-    function buildCompTable(qTotal, selTval, pct) {
-      const tbody = document.getElementById('comp-tbody'); tbody.innerHTML = '';
-      const phases = { 1: 'Descarga inicial · Cat.1–3', 2: 'Control rápido · Cat.4–6', 3: 'Extinción estándar · Cat.7–9', 4: 'Operación extendida · Cat.10/H' };
-      [1, 2, 3, 4].forEach(t => {
-        const V = qTotal * t; const c = T_CFG[t]; const isA = t === selTval;
-        const agua = Math.round(V * (1 - pct / 100)), conc = Math.round(V * pct / 100);
-        tbody.insertAdjacentHTML('beforeend', `
-      <tr class="${isA ? 'active-row' : ''}">
-        <td><span class="time-tag" style="background:${c.color}18;color:${c.color};border:1px solid ${c.color}44">${t} min</span></td>
-        <td>${phases[t]}</td>
-        <td class="${isA ? 'tval-hi' : 'tval'}">${Math.round(V).toLocaleString()}</td>
-        <td>${(V / 1000).toFixed(3)}</td>
-        <td>${agua.toLocaleString()}</td><td>${conc.toLocaleString()}</td>
-        <td>${Math.round(V * .01).toLocaleString()}</td>
-        <td>${Math.round(V * .03).toLocaleString()}</td>
-        <td>${Math.round(V * .06).toLocaleString()}</td>
-      </tr>`);
-      });
-      if (![1, 2, 3, 4].includes(selTval) && selTval > 0) {
-        const V = qTotal * selTval; const agua = Math.round(V * (1 - pct / 100)); const conc = Math.round(V * pct / 100);
-        tbody.insertAdjacentHTML('beforeend', `
-      <tr class="active-row">
-        <td><span class="time-tag" style="background:rgba(51,154,240,.12);color:#339af0;border:1px solid rgba(51,154,240,.3)">${selTval} min</span></td>
-        <td>Personalizado <span style="font-size:9px;color:var(--text-muted)">— fuera rango OACI</span></td>
-        <td class="tval-hi">${Math.round(V).toLocaleString()}</td><td>${(V / 1000).toFixed(3)}</td>
-        <td>${agua.toLocaleString()}</td><td>${conc.toLocaleString()}</td>
-        <td>${Math.round(V * .01).toLocaleString()}</td><td>${Math.round(V * .03).toLocaleString()}</td><td>${Math.round(V * .06).toLocaleString()}</td>
-      </tr>`);
+        statusEl.style.background = 'rgba(0, 242, 255, 0.05)';
+        statusEl.style.color = 'var(--neon-cyan)';
+        statusEl.style.borderColor = 'rgba(0, 242, 255, 0.2)';
+        statusEl.innerHTML = `✓ AUTONOMÍA SUFICIENTE: ${autonomyMin.toFixed(1)} min de descarga sostenida.`;
       }
     }
 
-    /* ──── HISTORY ──── */
-    function renderHist() {
-      const list = document.getElementById('hist-list'); const empty = document.getElementById('hist-empty');
-      list.querySelectorAll('.h-item').forEach(el => el.remove());
-      if (!hist.length) { empty.style.display = 'block'; return; } empty.style.display = 'none';
-      hist.forEach((e, i) => {
-        const tc = T_CFG[e.t] || { color: '#0ca678' }; const cc = CAT_COL[e.cat] || '#8a9bba';
-        const item = document.createElement('div'); item.className = 'h-item';
-        item.onclick = () => loadEntry(e);
-        item.innerHTML = `
-      <span style="font-family:var(--ff-m);font-size:10px;color:var(--text-muted);width:18px;text-align:right">${hist.length - i}</span>
-      <div style="display:flex;flex-wrap:wrap;gap:5px;align-items:center">
-        <span style="font-family:var(--ff-m);font-size:10px;background:${cc}18;color:${cc};border:1px solid ${cc}44;border-radius:4px;padding:1px 6px">Cat.${e.cat}</span>
-        <span style="font-family:var(--ff-m);font-size:10px;color:var(--text-dim);background:var(--panel);border:1px solid var(--border);border-radius:4px;padding:1px 6px">Σ Q=${Math.round(e.qTotal).toLocaleString()} L/min</span>
-        <span style="font-family:var(--ff-m);font-size:10px;background:${tc.color}18;color:${tc.color};border:1px solid ${tc.color}44;border-radius:4px;padding:1px 6px">t=${e.t}min</span>
-        <span style="font-family:var(--ff-m);font-size:10px;color:var(--text-muted);background:var(--panel);border:1px solid var(--border);border-radius:4px;padding:1px 6px">${e.fleet.length} vehículos</span>
-        ${e.note ? `<span style="font-family:var(--ff-m);font-size:10px;color:var(--text);background:var(--panel);border:1px solid var(--border);border-radius:4px;padding:1px 6px">${e.note}</span>` : ''}
-        <span style="font-family:var(--ff-m);font-size:9.5px;color:var(--text-muted)">${e.ts}</span>
-      </div>
-      <span style="font-family:var(--ff-m);font-size:13px;font-weight:500;color:var(--teal);white-space:nowrap">${Math.round(e.V).toLocaleString()} <span style="font-size:9.5px;color:var(--text-muted)">L</span></span>`;
-        list.appendChild(item);
-      });
-    }
-    function loadEntry(e) {
-      // Clear and reload fleet
-      document.getElementById('fleet-rows').innerHTML = ''; vehId = 0;
-      e.fleet.forEach(v => addVehicle(v.name, v.q, v.water));
-      document.getElementById('inp-cat').value = e.cat;
-      document.getElementById('inp-pct').value = e.pct;
-      document.getElementById('inp-note').value = e.note || '';
-      selT = e.t;
-      document.querySelectorAll('.tpill').forEach(p => p.classList.toggle('sel', parseFloat(p.dataset.t) === e.t));
-      if (![1, 2, 3, 4].includes(e.t)) document.getElementById('inp-tm').value = e.t;
-      showTInfo(e.t); onCatChange(); calcular();
-    }
-    function clearHist() { hist = []; renderHist(); showToast('Historial borrado'); }
-
-    /* ──── TOAST / PDF ──── */
-    let _tt;
-    function showToast(msg) {
-      const t = document.getElementById('toast');
-      t.textContent = msg; t.classList.add('show');
-      clearTimeout(_tt); _tt = setTimeout(() => t.classList.remove('show'), 3600);
-    }
-    function exportPDF() {
-      showToast('⏳ Generando PDF de auditoría…');
-      html2pdf().set({
-        margin: [9, 8, 9, 8],
-        filename: `ARFF-ColombiaM03_CapacidadOperativa_${new Date().toISOString().slice(0, 10)}.pdf`,
-        image: { type: 'jpeg', quality: .96 },
-        html2canvas: { scale: 2, backgroundColor: '#0d1117', useCORS: true, logging: false },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' },
-        pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
-      }).from(document.getElementById('pdf-content')).save()
-        .then(() => showToast('✓ PDF de auditoría exportado'));
-    }
-
-    /* ──── INIT ──── */
-    showTInfo(3);
-    defaultFleet.forEach(v => addVehicle(v.name, v.q, v.water));
-
-    // Persistencia de navegación Admin → Dashboard Nacional y Auto-llenado en Cascada
-    document.addEventListener('DOMContentLoaded', () => {
-      const urlParams = new URLSearchParams(window.location.search);
-
-      // Auto-completado de Categoría
-      if (urlParams.get('cat')) {
-        const cat = urlParams.get('cat');
-        const select = document.getElementById('inp-cat');
-        if (select) {
-          select.value = cat;
-          // Disparar lógica de cambio de categoría (actualiza tablas de dotación)
-          if (typeof onCatChange === 'function') onCatChange();
-        }
-      }
-
-      // Inserción de Vehículo de Auditoría por Caudal herodado (q)
-      if (urlParams.get('q')) {
-        const qVal = parseFloat(urlParams.get('q'));
-        if (!isNaN(qVal) && qVal > 0) {
-          // Limpiar flota por defecto (ARFF-1, ARFF-2) antes de inyectar auditoría
-          document.getElementById('fleet-rows').innerHTML = '';
-
-          // Agregar vehículo virtual con el caudal acumulado de la fase anterior
-          if (typeof addVehicle === 'function') {
-            addVehicle('Vehículo de Auditoría (Cascada)', qVal, 0);
-            document.getElementById('inp-note').value = `Auditoría Nacional Automática - Q=${qVal} L/min`;
-
-            // Disparar cálculo final
-            setTimeout(() => {
-              if (typeof calcular === 'function') calcular();
-            }, 500);
-          }
-        }
-      }
-
-      if (urlParams.get('from') === 'nacional') {
-        const btnReturn = document.querySelector('.btn-return');
-        if (btnReturn) {
-          btnReturn.href = 'sei_dashboard_nacional.html';
-          btnReturn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg> Volver al Mapa Nacional';
-        }
-      }
-
-      // INTEGRACIÓN CON SUPABASE Y FLOTA
-      initFleetIntegration();
-    });
-
-    let currentUserAirport = 'SKBO'; // Se sobreescribe por onSEIReady
-    let isAdmin = false;
-
-    /**
-     * onSEIReady - auth-guard llama aqui cuando la sesion esta confirmada.
-     * Firma: (user, rol, nombre, estacion)
-     *   estacion: codigo OACI asignado al comandante ('SKYP', 'SKBO', etc.)
-     *             null para jefe_nacional y admin
-     */
-    window.onSEIReady = function(user, rol, nombre, estacion) {
-      isAdmin = ['admin', 'jefe_nacional'].includes(rol);
-
-      // Resolver estacion: si viene como UUID, convertir a OACI
-      var oaci = estacion
-        ? (window.seiUuidToOaci ? window.seiUuidToOaci(estacion) : estacion)
-        : 'SKBO';
-
-      currentUserAirport = oaci;
-      loadOperationalFleet(currentUserAirport);
-    };
-
-    async function initFleetIntegration() {
-      // Fallback si onSEIReady no se disparo (no deberia ocurrir con auth-guard)
-      currentUserAirport = (window.SEI_ESTACION)
-        ? (window.seiUuidToOaci ? window.seiUuidToOaci(window.SEI_ESTACION) : window.SEI_ESTACION)
-        : 'SKBO';
-      loadOperationalFleet(currentUserAirport);
-    }
-
-    async function changeAirport(aeroId) {
-      if (!aeroId) return;
-      currentUserAirport = aeroId;
-      loadOperationalFleet(aeroId);
+    function animateNumber(id, val) {
+      const el = document.getElementById(id);
+      const unit = id === 'res-v-total' ? ' GAL' : '';
+      el.innerHTML = `${val.toLocaleString()}<span class="ru">${unit}</span>`;
+      el.classList.remove('pop');
+      void el.offsetWidth;
+      el.classList.add('pop');
     }
 
     async function loadOperationalFleet(aeroId) {
-      showToast(`⏳ Sincronizando flota operativa: ${aeroId}...`);
+      if (!aeroId) return;
+      showToast(`⏳ Sincronizando flota: ${aeroId}...`);
       try {
         const { data: fleet, error } = await supabaseClient
           .from('maquinas_sei')
@@ -3528,65 +2790,46 @@
           .eq('estado', 'OPERATIVO');
 
         if (error) throw error;
-
-        // Limpiar tabla actual antes de la regeneración dinámica
         document.getElementById('fleet-rows').innerHTML = '';
-        vehId = 0;
+        vehCount = 0;
 
         if (fleet && fleet.length > 0) {
           fleet.forEach(m => {
-            // Mapeo Completo: numero_interno -> ARFF-X, caudal -> LPM, capacidad -> GAL
-            addVehicle(m.numero_interno, m.caudal_torreta_lmin, m.capacidad_agua_gal, true);
+            addVehicleCard(m.numero_interno, m.caudal_torreta_lmin, m.capacidad_agua_gal, true);
           });
-
-          // Cálculo Automático de Σ Q y validación
-          onFleetChange();
-          setTimeout(() => {
-            calcular(); // Ejecutar cálculo final con los datos cargados
-          }, 300);
-
-          showToast(`✓ Flota sincronizada (${fleet.length} máquinas operativas)`);
+          showToast(`✓ Flota sincronizada (${fleet.length} máquinas)`);
         } else {
-          showToast('⚠ No hay flota operativa en esta base');
+          showToast('⚠ No hay flota operativa registrada');
         }
       } catch (err) {
         console.error(err);
-        showToast('❌ Error al cargar flota de Supabase');
+        showToast('❌ Error de conexión con Supabase');
       }
     }
 
-    // REDEFINIR addVehicle PARA SOPORTAR READONLY Y UNIDADES SOLICITADAS
-    function addVehicle(name = '', q = '', water = '', isReadonly = false) {
-      const id = ++vehId;
-      const html = `
-      <div id="vrow-${id}">
-        <div class="veh-row">
-          <input type="text" class="veh-name v-name" placeholder="Ej. ARFF-1" value="${name}" ${isReadonly ? 'readonly' : ''}>
-          <div class="veh-q">
-            <input type="number" class="v-q" value="${q}" ${isReadonly ? 'readonly' : ''} oninput="onFleetChange()">
-            <span class="vu">LPM</span>
-          </div>
-          ${!isReadonly ? `
-          <button class="btn-del" onclick="removeVehicle(${id})">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6"/></svg>
-          </button>` : '<div></div>'}
-        </div>
-        <div class="veh-water-row">
-          <div class="veh-water-label">Capacidad de Agua (Depósito)</div>
-          <div class="veh-water-inp">
-            <input type="number" class="v-water" value="${water}" ${isReadonly ? 'readonly' : ''} oninput="onFleetChange()">
-            <span class="vu">GAL</span>
-          </div>
-          <div></div>
-        </div>
-      </div>`;
-      document.getElementById('fleet-rows').insertAdjacentHTML('beforeend', html);
-    }
+    document.addEventListener('DOMContentLoaded', () => {
+      const params = new URLSearchParams(window.location.search);
+      const cat = params.get('cat');
+      if (cat) document.getElementById('inp-cat').value = cat;
 
-    function removeVehicle(id) {
-      const el = document.getElementById(`vrow-${id}`);
-      if (el) el.remove();
-      onFleetChange();
+      if (window.onSEIReady) {
+        const original = window.onSEIReady;
+        window.onSEIReady = function (u, r, n, e) {
+          original(u, r, n, e);
+          const oaci = e ? (window.seiUuidToOaci ? window.seiUuidToOaci(e) : e) : 'SKBO';
+          loadOperationalFleet(oaci);
+        };
+      } else {
+        loadOperationalFleet('SKBO');
+      }
+    });
+
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      if (!t) return;
+      t.textContent = msg;
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 3000);
     }
   </script>
 </body>
