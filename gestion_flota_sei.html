@@ -473,21 +473,28 @@
 
         <div id="vista-label" style="font-family:var(--ff-m);font-size:9px;color:var(--teal);letter-spacing:.07em;text-transform:uppercase;margin-bottom:6px;padding:4px 10px;background:rgba(11,197,160,.06);border:1px solid rgba(11,197,160,.15);border-radius:4px;display:inline-block">CARGANDO...</div>
         <div id="admin-panel" class="admin-controls" style="display: none; margin-bottom: 15px;">
-            <label>MODO ADMINISTRADOR:</label>
-            <select id="admin-airport-selector" class="edit-input"
-                style="width: auto; height: 32px; background: var(--surface); padding: 5px 30px 5px 10px;"
-                onchange="changeAirport(this.value)">
-                <option value="">Seleccione Aeropuerto...</option>
-                <option value="SKBO">BOGOTÁ (SKBO)</option>
-                <option value="SKRG">RIONEGRO (SKRG)</option>
-                <option value="SKCL">CALI (SKCL)</option>
-                <option value="SKCC">CÚCUTA (SKCC)</option>
-                <option value="SKCG">CARTAGENA (SKCG)</option>
-                <option value="SKSM">SANTA MARTA (SKSM)</option>
-            </select>
-            <span
-                style="font-family: var(--ff-m); font-size: 10px; color: var(--text-dim); margin-left: auto; letter-spacing: 1px;">BASE:
-                <strong id="current-station-tag" style="color: var(--teal);">...</strong></span>
+            <label style="font-family:var(--ff-m);font-size:9px;color:var(--text-dim);letter-spacing:.07em;text-transform:uppercase;">MODO ADMINISTRADOR — ESTACIÓN:</label>
+            <div style="display:flex;align-items:center;gap:8px;margin-top:6px;flex-wrap:wrap;">
+              <input
+                type="text"
+                id="admin-airport-input"
+                list="dl-admin-airports"
+                placeholder="Escriba ciudad o código OACI — ej: Yopal o SKYP"
+                autocomplete="off"
+                style="flex:1;min-width:220px;background:var(--surface);border:1px solid var(--border);
+                       color:var(--text);padding:6px 12px;border-radius:4px;font-family:var(--ff-m);
+                       font-size:11px;outline:none;transition:border-color .2s;"
+                onfocus="this.style.borderColor='var(--teal)'"
+                onblur="this.style.borderColor='var(--border)'"
+                onchange="onAdminAirportChange(this.value)"
+              >
+              <datalist id="dl-admin-airports">
+                <!-- Inyectado por loadAdminAirports() -->
+              </datalist>
+              <span style="font-family:var(--ff-m);font-size:10px;color:var(--text-dim);white-space:nowrap;">
+                BASE: <strong id="current-station-tag" style="color:var(--teal);">...</strong>
+              </span>
+            </div>
         </div>
 
         <div class="table-panel">
@@ -544,13 +551,22 @@
            onSEIReady - auth-guard llama aqui cuando la sesion esta lista
            Firma: (user, rol, nombre, estacion)
         ================================================================ */
+        /* ================================================================
+           onSEIReady — auth-guard llama aqui cuando la sesion esta lista
+        ================================================================ */
         window.onSEIReady = function(user, rol, nombre, estacion) {
             isAdmin = ['admin', 'jefe_nacional'].includes(rol);
 
             if (isAdmin) {
                 document.getElementById('admin-panel').style.display = 'flex';
                 document.getElementById('vista-label').textContent   = 'VISTA: NACIONAL';
-                currentUserAirport = document.getElementById('admin-airport-selector').value || 'SKBO';
+                /* Cargar datalist de aeropuertos desde Supabase */
+                loadAdminAirports().then(() => {
+                    /* Intentar el primer aeropuerto del input si ya tiene valor */
+                    const inp = document.getElementById('admin-airport-input');
+                    if (inp && inp.value) onAdminAirportChange(inp.value);
+                    else if (currentUserAirport) loadData();
+                });
             } else {
                 currentUserAirport = estacion || 'SKBO';
                 document.getElementById('admin-panel').style.display = 'none';
@@ -562,17 +578,56 @@
                     regAero.readOnly = true;
                     regAero.style.opacity = '0.6';
                 }
+                loadData();
             }
-            loadData();
         };
 
-        /* changeAirport - solo admin/jefe */
-        async function changeAirport(aeroId) {
-            if (!aeroId || !isAdmin) return;
-            currentUserAirport = aeroId;
-            document.getElementById('current-station-tag').textContent = aeroId;
-            document.getElementById('reg-aero').value = aeroId;
-            await loadData();
+        /* ================================================================
+           loadAdminAirports — puebla el datalist desde estaciones_sei
+        ================================================================ */
+        const _adminAirportMap = new Map();
+
+        async function loadAdminAirports() {
+            try {
+                const { data, error } = await supabaseClient
+                    .from('estaciones_sei')
+                    .select('oaci, ciudad, nombre_aeropuerto')
+                    .order('ciudad', { ascending: true });
+                if (error) throw error;
+
+                const dl = document.getElementById('dl-admin-airports');
+                if (!dl) return;
+                dl.innerHTML = '';
+                _adminAirportMap.clear();
+
+                (data || []).forEach(function(est) {
+                    /* Opción "Ciudad (OACI)" */
+                    var label = est.ciudad + ' (' + est.oaci + ')';
+                    var o1 = document.createElement('option'); o1.value = label; dl.appendChild(o1);
+                    /* Opción solo OACI */
+                    var o2 = document.createElement('option'); o2.value = est.oaci; dl.appendChild(o2);
+                    var entry = { oaci: est.oaci, ciudad: est.ciudad };
+                    _adminAirportMap.set(label.toLowerCase(), entry);
+                    _adminAirportMap.set(est.oaci.toLowerCase(), entry);
+                });
+            } catch(err) {
+                console.error('Error cargando aeropuertos admin:', err);
+            }
+        }
+
+        /* ================================================================
+           onAdminAirportChange — resuelve selección y refresca tabla
+        ================================================================ */
+        function onAdminAirportChange(val) {
+            if (!val || !isAdmin) return;
+            var resolved = _adminAirportMap.get(val.trim().toLowerCase());
+            var oaci = resolved ? resolved.oaci : val.trim().toUpperCase();
+            if (!oaci) return;
+            currentUserAirport = oaci;
+            document.getElementById('current-station-tag').textContent = oaci;
+            var regAero = document.getElementById('reg-aero');
+            if (regAero) regAero.value = oaci;
+            loadData();
         }
 
         /* ================================================================
