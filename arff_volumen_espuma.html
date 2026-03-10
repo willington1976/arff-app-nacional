@@ -2212,23 +2212,10 @@
       <div class="module-strip"></div>
       <div class="mhi" id="pdf-content">
         <div class="module-eyebrow">UA-SEI-M03 · OACI Normativa</div>
-        <h1 class="module-title">Capacidad Operativa ARFF <em style="color:var(--teal)">· Cálculo de Espuma</em></h1>
+        <h1 class="module-title">Cálculo de Espuma</h1>
         <p class="module-subtitle">Cálculo táctico de volumen de solución, concentrado reserva y autonomía de descarga
-          basado en la flota operativa certificada UAEAC.</p>
+          basado en la flota operativa registrada.</p>
 
-        <div id="admin-panel" class="admin-controls" style="display: none;">
-          <label>Administración Nacional:</label>
-          <select id="admin-airport-selector" class="ssel" style="width: auto; height: 32px; padding: 0 30px 0 10px;"
-            onchange="changeAirport(this.value)">
-            <option value="">Seleccione Aeropuerto...</option>
-            <option value="SKBO">BOGOTÁ (SKBO)</option>
-            <option value="SKRG">RIONEGRO (SKRG)</option>
-            <option value="SKCL">CALI (SKCL)</option>
-            <option value="SKCC">CÚCUTA (SKCC)</option>
-            <option value="SKCG">CARTAGENA (SKCG)</option>
-            <option value="SKSM">SANTA MARTA (SKSM)</option>
-          </select>
-        </div>
 
         <div class="meta-row">
           <div class="mchip"><span class="dot" style="background:var(--orange)"></span>Σ Flota → Q total</div>
@@ -3497,16 +3484,8 @@
     let isAdmin = true; // Placeholder para detección de rol
 
     async function initFleetIntegration() {
-      if (isAdmin) {
-        document.getElementById('admin-panel').style.display = 'flex';
-      }
-
-      const lang = localStorage.getItem('userAirport') || 'SKBO';
-      currentUserAirport = lang;
-      if (document.getElementById('admin-airport-selector')) {
-        document.getElementById('admin-airport-selector').value = currentUserAirport;
-      }
-
+      // Prioridad a la sesión del usuario
+      currentUserAirport = localStorage.getItem('userAirport') || 'SKBO';
       loadOperationalFleet(currentUserAirport);
     }
 
@@ -3527,16 +3506,23 @@
 
         if (error) throw error;
 
-        // Limpiar tabla actual
+        // Limpiar tabla actual antes de la regeneración dinámica
         document.getElementById('fleet-rows').innerHTML = '';
         vehId = 0;
 
         if (fleet && fleet.length > 0) {
           fleet.forEach(m => {
+            // Mapeo Completo: numero_interno -> ARFF-X, caudal -> LPM, capacidad -> GAL
             addVehicle(m.numero_interno, m.caudal_torreta_lmin, m.capacidad_agua_gal, true);
           });
-          calcular();
-          showToast(`✓ Flota sincronizada (${fleet.length} máquinas)`);
+
+          // Cálculo Automático de Σ Q y validación
+          onFleetChange();
+          setTimeout(() => {
+            calcular(); // Ejecutar cálculo final con los datos cargados
+          }, 300);
+
+          showToast(`✓ Flota sincronizada (${fleet.length} máquinas operativas)`);
         } else {
           showToast('⚠ No hay flota operativa en esta base');
         }
@@ -3546,7 +3532,7 @@
       }
     }
 
-    // REDEFINIR addVehicle PARA SOPORTAR READONLY
+    // REDEFINIR addVehicle PARA SOPORTAR READONLY Y UNIDADES SOLICITADAS
     function addVehicle(name = '', q = '', water = '', isReadonly = false) {
       const id = ++vehId;
       const html = `
@@ -3554,23 +3540,30 @@
         <div class="veh-row">
           <input type="text" class="veh-name v-name" placeholder="Ej. ARFF-1" value="${name}" ${isReadonly ? 'readonly' : ''}>
           <div class="veh-q">
-            <input type="number" class="v-q" value="${q}" ${isReadonly ? 'readonly' : ''}>
+            <input type="number" class="v-q" value="${q}" ${isReadonly ? 'readonly' : ''} oninput="onFleetChange()">
             <span class="vu">LPM</span>
           </div>
+          ${!isReadonly ? `
           <button class="btn-del" onclick="removeVehicle(${id})">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6"/></svg>
-          </button>
+          </button>` : '<div></div>'}
         </div>
         <div class="veh-water-row">
           <div class="veh-water-label">Capacidad de Agua (Depósito)</div>
           <div class="veh-water-inp">
-            <input type="number" class="v-water" value="${water}" ${isReadonly ? 'readonly' : ''}>
+            <input type="number" class="v-water" value="${water}" ${isReadonly ? 'readonly' : ''} oninput="onFleetChange()">
             <span class="vu">GAL</span>
           </div>
           <div></div>
         </div>
       </div>`;
       document.getElementById('fleet-rows').insertAdjacentHTML('beforeend', html);
+    }
+
+    function removeVehicle(id) {
+      const el = document.getElementById(`vrow-${id}`);
+      if (el) el.remove();
+      onFleetChange();
     }
   </script>
 </body>
