@@ -34,13 +34,33 @@
             --maint: #38bdf8;
             /* Mantenimiento (Sky) */
             --sky: #38bdf8;
-            --text: #ffffff;
-            --text-dim: #a0aec0;
+            --text: #dde4ee;
+            --text-dim: #7a90aa;
             --ff-t: 'Syne', sans-serif;
             --ff-b: 'DM Sans', sans-serif;
             --ff-m: 'DM Mono', monospace;
             --r: 12px;
             --tr: .15s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Selector de Aeropuerto (Admin) */
+        .admin-controls {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+            padding: 12px;
+            background: rgba(0, 255, 157, 0.05);
+            border: 1px solid rgba(0, 255, 157, 0.2);
+            border-radius: 8px;
+        }
+
+        .admin-controls label {
+            font-family: var(--ff-m);
+            font-size: 10px;
+            color: var(--teal);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
         }
 
         * {
@@ -78,7 +98,7 @@
         }
 
         /* Header */
-        header {
+        .header {
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -435,57 +455,51 @@
 <body>
 
     <div class="container">
-        <header>
-            <div class="title-block">
-                <h1>PANEL TÉCNICO · FLOTA SEI</h1>
-                <p style="color: var(--text-dim); font-size: 11px; margin-top: 4px; font-family: var(--ff-m);">
-                    Sincronización de Capacidades Extintoras e Inventario</p>
+        <div class="header">
+            <div>
+                <div class="eyebrow"
+                    style="color: var(--teal); font-family: var(--ff-m); font-size: 10px; letter-spacing: 2px;">
+                    LOGÍSTICA TÁCTICA · UAEAC</div>
+                <h1 style="font-family: var(--ff-t); font-weight: 800; font-size: 28px; margin-top: 5px;">Gestión de
+                    Flota Operativa <em style="color: var(--teal); font-style: normal;">SEI</em></h1>
             </div>
             <a href="dashboard_principal.html" class="btn-back">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M19 12H5M12 19l-7-7 7-7" />
                 </svg>
-                Dashboard
+                PANEL PRINCIPAL
             </a>
-        </header>
-
-        <div class="table-panel">
-            <table>
-                <thead>
-                    <tr>
-                        <th style="width: 100px;">Nº Interno</th>
-                        <th>Marca / Modelo</th>
-                        <th style="width: 90px;">Agua (Gal)</th>
-                        <th style="width: 90px;">Espuma (Gal)</th>
-                        <th style="width: 90px;">PQS (Lb)</th>
-                        <th style="width: 110px;">Q Torreta (Lpm)</th>
-                        <th style="width: 120px;">Aeropuerto ID</th>
-                        <th style="width: 100px;">Control</th>
-                    </tr>
-                </thead>
-                <tbody id="fleet-body">
-                    <!-- Registro Fila -->
-                    <tr class="reg-row">
-                        <td><input type="text" id="reg-numero" placeholder="P-01"></td>
-                        <td>
-                            <div style="display: flex; gap: 4px;">
-                                <input type="text" id="reg-marca" placeholder="Oshkosh" style="width: 40%;">
-                                <input type="text" id="reg-modelo" placeholder="Striker 3000" style="width: 60%;">
-                            </div>
-                        </td>
-                        <td><input type="number" id="reg-agua" placeholder="3000"></td>
-                        <td><input type="number" id="reg-espuma" placeholder="420"></td>
-                        <td><input type="number" id="reg-pqs" placeholder="500"></td>
-                        <td><input type="number" id="reg-torreta" placeholder="1200"></td>
-                        <td><input type="text" id="reg-aero" placeholder="SKBO"></td>
-                        <td>
-                            <button class="btn-action btn-save" onclick="saveMachine()">
-                                <span>GUARDAR</span>
-                            </button>
-                        </td>
-                    </tr>
-                    <!-- Data rows will be injected here -->
-                </tbody>
+            <th style="width: 90px;">Agua (Gal)</th>
+            <th style="width: 90px;">Espuma (Gal)</th>
+            <th style="width: 90px;">PQS (Lb)</th>
+            <th style="width: 110px;">Q Torreta (Lpm)</th>
+            <th style="width: 120px;">Aeropuerto ID</th>
+            <th style="width: 100px;">Control</th>
+            </tr>
+            </thead>
+            <tbody id="fleet-body">
+                <!-- Registro Fila -->
+                <tr class="reg-row">
+                    <td><input type="text" id="reg-numero" placeholder="P-01"></td>
+                    <td>
+                        <div style="display: flex; gap: 4px;">
+                            <input type="text" id="reg-marca" placeholder="Oshkosh" style="width: 40%;">
+                            <input type="text" id="reg-modelo" placeholder="Striker 3000" style="width: 60%;">
+                        </div>
+                    </td>
+                    <td><input type="number" id="reg-agua" placeholder="3000"></td>
+                    <td><input type="number" id="reg-espuma" placeholder="420"></td>
+                    <td><input type="number" id="reg-pqs" placeholder="500"></td>
+                    <td><input type="number" id="reg-torreta" placeholder="1200"></td>
+                    <td><input type="text" id="reg-aero" placeholder="SKBO"></td>
+                    <td>
+                        <button class="btn-action btn-save" onclick="saveMachine()">
+                            <span>GUARDAR</span>
+                        </button>
+                    </td>
+                </tr>
+                <!-- Data rows will be injected here -->
+            </tbody>
             </table>
             <div id="loader" class="loader-wrap">CONECTANDO A SUPABASE...</div>
         </div>
@@ -500,12 +514,43 @@
             await loadData();
         }
 
+        let currentUserAirport = 'SKBO';
+        let isAdmin = true; // Placeholder para detección de rol
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            initHierarchy();
+        });
+
+        async function initHierarchy() {
+            if (isAdmin) {
+                document.getElementById('admin-panel').style.display = 'flex';
+            }
+
+            currentUserAirport = localStorage.getItem('userAirport') || 'SKBO';
+            document.getElementById('admin-airport-selector').value = currentUserAirport;
+            document.getElementById('current-station-tag').textContent = currentUserAirport;
+
+            // Auto-llenar el campo de aeropuerto en el registro de nueva máquina
+            document.getElementById('reg-aero').value = currentUserAirport;
+
+            await loadData();
+        }
+
+        async function changeAirport(aeroId) {
+            if (!aeroId) return;
+            currentUserAirport = aeroId;
+            document.getElementById('current-station-tag').textContent = aeroId;
+            document.getElementById('reg-aero').value = aeroId;
+            await loadData();
+        }
+
         async function loadData() {
             document.getElementById('loader').style.display = 'block';
             try {
                 const { data: machines, error: mErr } = await supabaseClient
                     .from('maquinas_sei')
                     .select('*')
+                    .eq('aeropuerto_id', currentUserAirport) // FILTRADO POR JERARQUÍA
                     .order('numero_interno', { ascending: true });
 
                 if (mErr) throw mErr;
@@ -679,17 +724,30 @@
 
         async function saveMachine() {
             const payload = {
-                numero_interno: document.getElementById('reg-numero').value,
+                numero_interno: document.getElementById('reg-numero').value.toUpperCase().trim(),
                 marca: document.getElementById('reg-marca').value,
                 modelo: document.getElementById('reg-modelo').value,
                 capacidad_agua_gal: parseFloat(document.getElementById('reg-agua').value) || 0,
                 capacidad_espuma_gal: parseFloat(document.getElementById('reg-espuma').value) || 0,
                 libras_pqs: parseFloat(document.getElementById('reg-pqs').value) || 0,
                 caudal_torreta_lmin: parseFloat(document.getElementById('reg-torreta').value) || 0,
-                aeropuerto_id: document.getElementById('reg-aero').value
+                aeropuerto_id: document.getElementById('reg-aero').value.toUpperCase().trim()
             };
 
-            if (!payload.numero_interno) return alert("Ingrese Número Interno");
+            if (!payload.numero_interno || !payload.aeropuerto_id) return alert("Número Interno y Aeropuerto ID son obligatorios");
+
+            // VALIDACIÓN DE UNICIDAD (Llave Compuesta)
+            const { data: existing, error: checkErr } = await supabaseClient
+                .from('maquinas_sei')
+                .select('numero_interno')
+                .eq('numero_interno', payload.numero_interno)
+                .eq('aeropuerto_id', payload.aeropuerto_id)
+                .maybeSingle();
+
+            if (checkErr) return console.error(checkErr);
+            if (existing) {
+                return alert(`ERROR: El vehículo [${payload.numero_interno}] ya está registrado en la base [${payload.aeropuerto_id}].`);
+            }
 
             const { error } = await supabaseClient.from('maquinas_sei').insert([payload]);
             if (error) alert("Error: " + error.message);

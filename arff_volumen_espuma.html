@@ -211,6 +211,25 @@
       max-width: 720px
     }
 
+    /* Selector de Aeropuerto (Admin) */
+    .admin-controls {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: 14px;
+      padding: 10px;
+      background: rgba(11, 197, 160, 0.05);
+      border: 1px solid rgba(11, 197, 160, 0.2);
+      border-radius: var(--rs);
+    }
+
+    .admin-controls label {
+      font-family: var(--ff-m);
+      font-size: 10px;
+      color: var(--teal);
+      text-transform: uppercase;
+    }
+
     .meta-row {
       display: flex;
       flex-wrap: wrap;
@@ -455,6 +474,13 @@
       font-size: 10px;
       color: var(--text-muted);
       pointer-events: none
+    }
+
+    input[readonly] {
+      background: rgba(255, 255, 255, 0.02) !important;
+      color: var(--text-dim) !important;
+      border-color: var(--border) !important;
+      cursor: not-allowed;
     }
 
     .ferr {
@@ -2184,13 +2210,26 @@
     <!-- MODULE HEADER -->
     <div class="module-header">
       <div class="module-strip"></div>
-      <div class="mhi">
-        <div class="module-eyebrow">Módulo 03 · OACI Doc 9137 Tabla 2-2 · NFPA 403 §5.4 · RAC 14 · Auditoría OACI/IATA
+      <div class="mhi" id="pdf-content">
+        <div class="module-eyebrow">UA-SEI-M03 · OACI Normativa</div>
+        <h1 class="module-title">Capacidad Operativa ARFF <em style="color:var(--teal)">· Cálculo de Espuma</em></h1>
+        <p class="module-subtitle">Cálculo táctico de volumen de solución, concentrado reserva y autonomía de descarga
+          basado en la flota operativa certificada UAEAC.</p>
+
+        <div id="admin-panel" class="admin-controls" style="display: none;">
+          <label>Administración Nacional:</label>
+          <select id="admin-airport-selector" class="ssel" style="width: auto; height: 32px; padding: 0 30px 0 10px;"
+            onchange="changeAirport(this.value)">
+            <option value="">Seleccione Aeropuerto...</option>
+            <option value="SKBO">BOGOTÁ (SKBO)</option>
+            <option value="SKRG">RIONEGRO (SKRG)</option>
+            <option value="SKCL">CALI (SKCL)</option>
+            <option value="SKCC">CÚCUTA (SKCC)</option>
+            <option value="SKCG">CARTAGENA (SKCG)</option>
+            <option value="SKSM">SANTA MARTA (SKSM)</option>
+          </select>
         </div>
-        <h1 class="module-title">Capacidad Operativa ARFF</h1>
-        <p class="module-subtitle">Suma de flota con validación de caudal total, autonomía de descarga continua,
-          desglose agua/concentrado, reservas legales (200% espuma · 100% PQS), dotación mínima OACI Tabla 2-2 y
-          cumplimiento RAC 14 por categoría de aeródromo.</p>
+
         <div class="meta-row">
           <div class="mchip"><span class="dot" style="background:var(--orange)"></span>Σ Flota → Q total</div>
           <div class="mchip"><span class="dot" style="background:var(--teal)"></span>Autonomía continua</div>
@@ -3449,7 +3488,90 @@
           btnReturn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg> Volver al Mapa Nacional';
         }
       }
+
+      // INTEGRACIÓN CON SUPABASE Y FLOTA
+      initFleetIntegration();
     });
+
+    let currentUserAirport = 'SKBO'; // Mock o de sesión
+    let isAdmin = true; // Placeholder para detección de rol
+
+    async function initFleetIntegration() {
+      if (isAdmin) {
+        document.getElementById('admin-panel').style.display = 'flex';
+      }
+
+      const lang = localStorage.getItem('userAirport') || 'SKBO';
+      currentUserAirport = lang;
+      if (document.getElementById('admin-airport-selector')) {
+        document.getElementById('admin-airport-selector').value = currentUserAirport;
+      }
+
+      loadOperationalFleet(currentUserAirport);
+    }
+
+    async function changeAirport(aeroId) {
+      if (!aeroId) return;
+      currentUserAirport = aeroId;
+      loadOperationalFleet(aeroId);
+    }
+
+    async function loadOperationalFleet(aeroId) {
+      showToast(`⏳ Sincronizando flota operativa: ${aeroId}...`);
+      try {
+        const { data: fleet, error } = await supabaseClient
+          .from('maquinas_sei')
+          .select('*')
+          .eq('aeropuerto_id', aeroId)
+          .eq('estado', 'OPERATIVO');
+
+        if (error) throw error;
+
+        // Limpiar tabla actual
+        document.getElementById('fleet-rows').innerHTML = '';
+        vehId = 0;
+
+        if (fleet && fleet.length > 0) {
+          fleet.forEach(m => {
+            addVehicle(m.numero_interno, m.caudal_torreta_lmin, m.capacidad_agua_gal, true);
+          });
+          calcular();
+          showToast(`✓ Flota sincronizada (${fleet.length} máquinas)`);
+        } else {
+          showToast('⚠ No hay flota operativa en esta base');
+        }
+      } catch (err) {
+        console.error(err);
+        showToast('❌ Error al cargar flota de Supabase');
+      }
+    }
+
+    // REDEFINIR addVehicle PARA SOPORTAR READONLY
+    function addVehicle(name = '', q = '', water = '', isReadonly = false) {
+      const id = ++vehId;
+      const html = `
+      <div id="vrow-${id}">
+        <div class="veh-row">
+          <input type="text" class="veh-name v-name" placeholder="Ej. ARFF-1" value="${name}" ${isReadonly ? 'readonly' : ''}>
+          <div class="veh-q">
+            <input type="number" class="v-q" value="${q}" ${isReadonly ? 'readonly' : ''}>
+            <span class="vu">LPM</span>
+          </div>
+          <button class="btn-del" onclick="removeVehicle(${id})">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6"/></svg>
+          </button>
+        </div>
+        <div class="veh-water-row">
+          <div class="veh-water-label">Capacidad de Agua (Depósito)</div>
+          <div class="veh-water-inp">
+            <input type="number" class="v-water" value="${water}" ${isReadonly ? 'readonly' : ''}>
+            <span class="vu">GAL</span>
+          </div>
+          <div></div>
+        </div>
+      </div>`;
+      document.getElementById('fleet-rows').insertAdjacentHTML('beforeend', html);
+    }
   </script>
 </body>
 
