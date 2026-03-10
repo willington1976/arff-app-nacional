@@ -14,6 +14,8 @@
 
     <!-- Supabase SDK -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
+    <script src="auth-guard.js"></script>
 
     <style>
         :root {
@@ -469,6 +471,7 @@
             </a>
         </header>
 
+        <div id="vista-label" style="font-family:var(--ff-m);font-size:9px;color:var(--teal);letter-spacing:.07em;text-transform:uppercase;margin-bottom:6px;padding:4px 10px;background:rgba(11,197,160,.06);border:1px solid rgba(11,197,160,.15);border-radius:4px;display:inline-block">CARGANDO...</div>
         <div id="admin-panel" class="admin-controls" style="display: none; margin-bottom: 15px;">
             <label>MODO ADMINISTRADOR:</label>
             <select id="admin-airport-selector" class="edit-input"
@@ -529,291 +532,259 @@
         </div>
     </div>
 
-    <script src="supabase-config.js"></script>
     <script>
-        let fleetData = [];
+        let fleetData     = [];
         let noveltiesData = [];
 
-        async function init() {
-            await loadData();
-        }
-
+        /* Estado de sesion - poblado por onSEIReady */
+        let isAdmin            = false;
         let currentUserAirport = 'SKBO';
-        let isAdmin = true; // Placeholder para detección de rol
 
-        document.addEventListener('DOMContentLoaded', async () => {
-            initHierarchy();
-        });
+        /* ================================================================
+           onSEIReady - auth-guard llama aqui cuando la sesion esta lista
+           Firma: (user, rol, nombre, estacion)
+        ================================================================ */
+        window.onSEIReady = function(user, rol, nombre, estacion) {
+            isAdmin = ['admin', 'jefe_nacional'].includes(rol);
 
-        async function initHierarchy() {
             if (isAdmin) {
                 document.getElementById('admin-panel').style.display = 'flex';
+                document.getElementById('vista-label').textContent   = 'VISTA: NACIONAL';
+                currentUserAirport = document.getElementById('admin-airport-selector').value || 'SKBO';
+            } else {
+                currentUserAirport = estacion || 'SKBO';
+                document.getElementById('admin-panel').style.display = 'none';
+                document.getElementById('current-station-tag').textContent = currentUserAirport;
+                document.getElementById('vista-label').textContent = 'ESTACION: ' + currentUserAirport;
+                var regAero = document.getElementById('reg-aero');
+                if (regAero) {
+                    regAero.value    = currentUserAirport;
+                    regAero.readOnly = true;
+                    regAero.style.opacity = '0.6';
+                }
             }
+            loadData();
+        };
 
-            currentUserAirport = localStorage.getItem('userAirport') || 'SKBO';
-            document.getElementById('admin-airport-selector').value = currentUserAirport;
-            document.getElementById('current-station-tag').textContent = currentUserAirport;
-
-            // Auto-llenar el campo de aeropuerto en el registro de nueva máquina
-            document.getElementById('reg-aero').value = currentUserAirport;
-
-            await loadData();
-        }
-
+        /* changeAirport - solo admin/jefe */
         async function changeAirport(aeroId) {
-            if (!aeroId) return;
+            if (!aeroId || !isAdmin) return;
             currentUserAirport = aeroId;
             document.getElementById('current-station-tag').textContent = aeroId;
             document.getElementById('reg-aero').value = aeroId;
             await loadData();
         }
 
+        /* ================================================================
+           loadData - filtra por estacion segun rol
+        ================================================================ */
         async function loadData() {
             document.getElementById('loader').style.display = 'block';
             try {
-                const { data: machines, error: mErr } = await supabaseClient
+                var query = supabaseClient
                     .from('maquinas_sei')
                     .select('*')
-                    .eq('aeropuerto_id', currentUserAirport) // FILTRADO POR JERARQUÍA
                     .order('numero_interno', { ascending: true });
 
-                if (mErr) throw mErr;
+                query = query.eq('aeropuerto_id', currentUserAirport);
 
-                const { data: novs, error: nErr } = await supabaseClient
-                    .from('novedades_maquinas')
-                    .select('*')
-                    .eq('reparado', false);
+                var res = await query;
+                if (res.error) throw res.error;
+                var machines = res.data || [];
 
-                if (nErr) throw nErr;
+                var machineIds = machines.map(function(m){ return m.id; });
+                var novs = [];
+                if (machineIds.length > 0) {
+                    var novRes = await supabaseClient
+                        .from('novedades_maquinas')
+                        .select('*')
+                        .in('maquina_id', machineIds)
+                        .eq('reparado', false);
+                    if (novRes.error) throw novRes.error;
+                    novs = novRes.data || [];
+                }
 
-                fleetData = machines;
+                fleetData     = machines;
                 noveltiesData = novs;
                 renderTable();
+
             } catch (err) {
                 console.error(err);
-                document.getElementById('loader').textContent = "ERROR DE CONEXIÓN";
+                document.getElementById('loader').textContent = 'ERROR: ' + err.message;
             } finally {
                 document.getElementById('loader').style.display = 'none';
             }
         }
 
+        /* ================================================================
+           renderTable
+        ================================================================ */
         function renderTable() {
-            const tbody = document.getElementById('fleet-body');
-            const regRow = tbody.querySelector('.reg-row');
+            var tbody  = document.getElementById('fleet-body');
+            var regRow = tbody.querySelector('.reg-row');
             tbody.innerHTML = '';
             tbody.appendChild(regRow);
 
-            fleetData.forEach(m => {
-                const mNovs = noveltiesData.filter(n => n.maquina_id === m.id);
-                const hasCritical = mNovs.some(n => n.severidad === 'critica' && !n.reparado);
+            fleetData.forEach(function(m) {
+                var mNovs      = noveltiesData.filter(function(n){ return n.maquina_id === m.id; });
+                var hasCritical = mNovs.some(function(n){ return n.severidad === 'critica' && !n.reparado; });
 
-                // Determine effective status
-                let currentStatus = m.estado || 'OPERATIVO';
+                var currentStatus = m.estado || 'OPERATIVO';
                 if (hasCritical && (currentStatus === 'OPERATIVO' || currentStatus === 'OPERATIVA')) {
                     currentStatus = 'FUSER';
                 }
 
-                const isFuser = currentStatus === 'FUSER' || currentStatus === 'Fuera de Servicio';
-                const isMaint = currentStatus === 'MANTENIMIENTO' || currentStatus === 'MANT';
+                var isFuser = currentStatus === 'FUSER' || currentStatus === 'Fuera de Servicio';
+                var isMaint = currentStatus === 'MANTENIMIENTO' || currentStatus === 'MANT';
 
-                // Assign Row Class
-                let rowClass = 'row-operativo';
+                var rowClass = 'row-operativo';
                 if (isFuser) rowClass = 'row-fuser';
                 else if (isMaint) rowClass = 'row-maint';
 
-                // Main row
-                const row = document.createElement('tr');
+                var aeroCell = isAdmin
+                    ? '<input type="text" class="edit-input" value="' + (m.aeropuerto_id || '') + '" onchange="updateField(' + m.id + ',\'aeropuerto_id\',this.value)">'
+                    : '<span style="font-family:var(--ff-m);font-size:11px;color:var(--teal)">' + (m.aeropuerto_id || '') + '</span>';
+
+                var row = document.createElement('tr');
                 row.className = rowClass;
-                row.innerHTML = `
-                    <td style="font-family: var(--ff-m); font-weight: 700;">
-                        <span class="status-dot ${isFuser ? 'dot-fuser' : 'dot-ok'}"></span>
-                        ${m.numero_interno}
-                    </td>
-                    <td>
-                        <div style="font-size: 10px; color: var(--text-dim); text-transform: uppercase; margin-bottom: 2px;">${m.marca} ${m.modelo}</div>
-                        <div class="status-toggle-group">
-                            <button class="btn-toggle ${currentStatus === 'OPERATIVO' ? 'active' : ''}" data-status="OPERATIVO" onclick="setMachineStatus('${m.id}', 'OPERATIVO')">OPERATIVO</button>
-                            <button class="btn-toggle ${(currentStatus === 'FUSER' || currentStatus === 'Fuera de Servicio') ? 'active' : ''}" data-status="FUSER" onclick="setMachineStatus('${m.id}', 'FUSER')">FUSER</button>
-                            <button class="btn-toggle ${currentStatus === 'MANTENIMIENTO' ? 'active' : ''}" data-status="MANTENIMIENTO" onclick="setMachineStatus('${m.id}', 'MANTENIMIENTO')">MANT</button>
-                        </div>
-                    </td>
-                    <td><input type="number" class="edit-input" value="${m.capacidad_agua_gal || 0}" onchange="updateMachineField('${m.id}', 'capacidad_agua_gal', this.value)"></td>
-                    <td><input type="number" class="edit-input" value="${m.capacidad_espuma_gal || 0}" onchange="updateMachineField('${m.id}', 'capacidad_espuma_gal', this.value)"></td>
-                    <td><input type="number" class="edit-input" value="${m.libras_pqs || 0}" onchange="updateMachineField('${m.id}', 'libras_pqs', this.value)"></td>
-                    <td><input type="number" class="edit-input" value="${m.caudal_torreta_lmin || 0}" onchange="updateMachineField('${m.id}', 'caudal_torreta_lmin', this.value)"></td>
-                    <td><input type="text" class="edit-input" value="${m.aeropuerto_id || ''}" onchange="updateMachineField('${m.id}', 'aeropuerto_id', this.value)"></td>
-                    <td>
-                        <button class="btn-action btn-delete" onclick="deleteMachine('${m.id}')">
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
-                        </button>
-                    </td>
-                `;
+                row.innerHTML =
+                    '<td style="font-family:var(--ff-m);font-weight:700">' +
+                        (m.numero_interno || '&mdash;') +
+                        (isFuser ? '<br><span style="color:var(--red);font-size:9px">FUSER</span>' : '') +
+                        (isMaint ? '<br><span style="color:var(--amber);font-size:9px">MANT</span>' : '') +
+                    '</td>' +
+                    '<td>' +
+                        '<input type="text" class="edit-input" value="' + (m.marca || '') + '" onchange="updateField(' + m.id + ',\'marca\',this.value)">' +
+                        '<input type="text" class="edit-input" style="margin-top:3px" value="' + (m.modelo || '') + '" onchange="updateField(' + m.id + ',\'modelo\',this.value)">' +
+                    '</td>' +
+                    '<td><input type="number" class="edit-input" value="' + (m.agua_galones || 0) + '" onchange="updateField(' + m.id + ',\'agua_galones\',this.value)"></td>' +
+                    '<td><input type="number" class="edit-input" value="' + (m.espuma_galones || 0) + '" onchange="updateField(' + m.id + ',\'espuma_galones\',this.value)"></td>' +
+                    '<td><input type="number" class="edit-input" value="' + (m.pqs_lb || 0) + '" onchange="updateField(' + m.id + ',\'pqs_lb\',this.value)"></td>' +
+                    '<td><input type="number" class="edit-input" value="' + (m.q_torreta_lpm || 0) + '" onchange="updateField(' + m.id + ',\'q_torreta_lpm\',this.value)"></td>' +
+                    '<td>' + aeroCell + '</td>' +
+                    '<td style="display:flex;flex-direction:column;gap:4px">' +
+                        '<button class="btn-action btn-nov" onclick="addNovelty(' + m.id + ')" style="font-size:9px;padding:3px 8px">+ NOV</button>' +
+                        '<button class="btn-action btn-del" onclick="deleteMachine(' + m.id + ')" style="font-size:9px;padding:3px 8px;margin-top:2px">DEL</button>' +
+                    '</td>';
                 tbody.appendChild(row);
 
-                // Nested Novelties Table Row
-                const novRow = document.createElement('tr');
-                novRow.className = 'nested-row';
-                novRow.innerHTML = `
-                    <td colspan="8">
-                        <div class="nested-box">
-                            <div class="nov-header">
-                                <div class="nov-title" style="color: #fff; font-weight: 800;">[ LOG DE NOVEDADES OPERATIVAS ]</div>
-                            </div>
-                            <table class="nov-table">
-                                <thead>
-                                    <tr>
-                                        <th style="width: 120px;">Fecha</th>
-                                        <th>Descripción de la Novedad</th>
-                                        <th style="width: 100px;">Gravedad</th>
-                                        <th style="width: 150px;">Acción</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    ${mNovs.map(n => {
-                    const dateStr = n.created_at ? new Date(n.created_at).toLocaleDateString('es-CO') : new Date().toLocaleDateString('es-CO');
-                    return `
-                                        <tr>
-                                            <td style="font-family: var(--ff-m); font-size: 10px;">${dateStr}</td>
-                                            <td class="nov-desc">${n.descripcion}</td>
-                                            <td><span class="badge-sev ${n.severidad === 'critica' ? 'bg-critica' : 'bg-leve'}">${n.severidad}</span></td>
-                                            <td>
-                                                <div style="display: flex; gap: 5px;">
-                                                    <button class="btn-action btn-update" style="padding: 4px 8px;" onclick="resolveNovelty('${n.id}')">REPARADO</button>
-                                                    <button class="btn-action btn-delete" style="padding: 4px 8px;" onclick="deleteNovelty('${n.id}')">✕</button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    `}).join('')}
-                                    <!-- Input Row -->
-                                    <tr style="background: rgba(255,255,255,0.05);">
-                                        <td><div style="font-size: 9px; color: var(--text-dim);">NUEVA NOVEDAD</div></td>
-                                        <td><input type="text" class="nov-input" id="nov-desc-${m.id}" placeholder="Escriba la novedad técnica..."></td>
-                                        <td>
-                                            <select class="nov-select" id="nov-sev-${m.id}">
-                                                <option value="leve">LEVE</option>
-                                                <option value="critica">CRÍTICA</option>
-                                            </select>
-                                        </td>
-                                        <td>
-                                            <button class="btn-action btn-save" style="width: 100%; justify-content: center;" onclick="addNoveltyInline('${m.id}')">AGREGAR</button>
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </td>
-                `;
-                tbody.appendChild(novRow);
+                /* Filas de novedades */
+                mNovs.forEach(function(n) {
+                    var nrow = document.createElement('tr');
+                    nrow.className = 'nov-row ' + (n.severidad === 'critica' ? 'row-fuser' : 'row-maint');
+                    nrow.innerHTML =
+                        '<td colspan="2" style="padding:5px 12px;font-family:var(--ff-m);font-size:10px">' +
+                            '<strong style="color:' + (n.severidad === 'critica' ? 'var(--red)' : 'var(--amber)') + '">' +
+                            '[' + (n.severidad || 'menor').toUpperCase() + '] </strong>' +
+                            (n.descripcion || '') +
+                            '<span style="color:var(--text-muted);margin-left:6px">' + (n.fecha_reporte || '') + '</span>' +
+                        '</td>' +
+                        '<td colspan="3" style="padding:5px;font-family:var(--ff-m);font-size:10px;color:var(--text-dim)">Resp: ' + (n.responsable || '&mdash;') + '</td>' +
+                        '<td colspan="2" style="padding:5px;text-align:right">' +
+                            '<button class="btn-action btn-save" onclick="markRepaired(' + n.id + ')" style="font-size:9px;padding:3px 8px">REPARADO</button>' +
+                            '<button class="btn-action btn-del" onclick="deleteNovelty(' + n.id + ')" style="font-size:9px;padding:3px 6px;margin-left:3px">DEL</button>' +
+                        '</td>';
+                    tbody.appendChild(nrow);
+                });
             });
         }
 
-        async function setMachineStatus(id, newStatus) {
-            // Optimistic update
-            const machine = fleetData.find(m => m.id === id);
-            if (machine) {
-                machine.estado = newStatus;
-                renderTable();
-            }
-
-            const { error } = await supabaseClient
-                .from('maquinas_sei')
-                .update({ estado: newStatus })
-                .eq('id', id);
-
-            if (error) {
-                console.error("Error al actualizar estado:", error);
-                // Rollback on error
-                loadData();
-            }
-        }
-
-        async function addNoveltyInline(mId) {
-            const desc = document.getElementById(`nov-desc-${mId}`).value;
-            const sev = document.getElementById(`nov-sev-${mId}`).value;
-
-            if (!desc) return alert("Ingrese descripción");
-
-            const { error } = await supabaseClient.from('novedades_maquinas').insert([{
-                maquina_id: mId,
-                descripcion: desc,
-                severidad: sev,
-                reparado: false
+        /* addNovelty */
+        async function addNovelty(machineId) {
+            var desc = prompt('Descripcion de la novedad:');
+            if (!desc) return;
+            var sev  = confirm('Es CRITICA? (OK=Critica / Cancelar=Menor)') ? 'critica' : 'menor';
+            var resp = prompt('Responsable asignado:') || 'Sin asignar';
+            var res  = await supabaseClient.from('novedades_maquinas').insert([{
+                maquina_id:    machineId,
+                descripcion:   desc,
+                severidad:     sev,
+                responsable:   resp,
+                reparado:      false,
+                fecha_reporte: new Date().toISOString().split('T')[0]
             }]);
-
-            if (error) alert(error.message);
+            if (res.error) alert('Error: ' + res.error.message);
             else loadData();
         }
 
-        /* ── SUPABASE OPERATIONS ── */
-
+        /* saveMachine */
         async function saveMachine() {
-            const payload = {
+            var payload = {
                 numero_interno: document.getElementById('reg-numero').value.toUpperCase().trim(),
-                marca: document.getElementById('reg-marca').value,
-                modelo: document.getElementById('reg-modelo').value,
-                capacidad_agua_gal: parseFloat(document.getElementById('reg-agua').value) || 0,
-                capacidad_espuma_gal: parseFloat(document.getElementById('reg-espuma').value) || 0,
-                libras_pqs: parseFloat(document.getElementById('reg-pqs').value) || 0,
-                caudal_torreta_lmin: parseFloat(document.getElementById('reg-torreta').value) || 0,
-                aeropuerto_id: document.getElementById('reg-aero').value.toUpperCase().trim()
+                marca:          document.getElementById('reg-marca').value.trim(),
+                modelo:         document.getElementById('reg-modelo').value.trim(),
+                agua_galones:   parseFloat(document.getElementById('reg-agua').value) || 0,
+                espuma_galones: parseFloat(document.getElementById('reg-espuma').value) || 0,
+                pqs_lb:         parseFloat(document.getElementById('reg-pqs').value) || 0,
+                q_torreta_lpm:  parseFloat(document.getElementById('reg-torreta').value) || 0,
+                aeropuerto_id:  document.getElementById('reg-aero').value.toUpperCase().trim(),
+                estado:         'OPERATIVO'
             };
 
-            if (!payload.numero_interno || !payload.aeropuerto_id) return alert("Número Interno y Aeropuerto ID son obligatorios");
+            if (!payload.numero_interno || !payload.aeropuerto_id) {
+                alert('Numero Interno y Aeropuerto ID son obligatorios.');
+                return;
+            }
 
-            // VALIDACIÓN DE UNICIDAD (Llave Compuesta)
-            const { data: existing, error: checkErr } = await supabaseClient
+            if (!isAdmin && payload.aeropuerto_id !== currentUserAirport) {
+                alert('Solo puede registrar maquinas en su estacion asignada: ' + currentUserAirport);
+                return;
+            }
+
+            var chk = await supabaseClient
                 .from('maquinas_sei')
-                .select('numero_interno')
+                .select('id')
                 .eq('numero_interno', payload.numero_interno)
-                .eq('aeropuerto_id', payload.aeropuerto_id)
-                .maybeSingle();
+                .eq('aeropuerto_id',  payload.aeropuerto_id)
+                .single();
 
-            if (checkErr) return console.error(checkErr);
-            if (existing) {
-                return alert(`ERROR: El vehículo [${payload.numero_interno}] ya está registrado en la base [${payload.aeropuerto_id}].`);
+            if (chk.data) {
+                alert('ERROR: El vehiculo [' + payload.numero_interno + '] ya esta registrado en ' + payload.aeropuerto_id);
+                return;
             }
 
-            const { error } = await supabaseClient.from('maquinas_sei').insert([payload]);
-            if (error) alert("Error: " + error.message);
-            else {
-                // Clear inputs
-                document.querySelectorAll('.reg-row input').forEach(i => i.value = '');
-                loadData();
-            }
+            var res = await supabaseClient.from('maquinas_sei').insert([payload]);
+            if (res.error) { alert('Error al guardar: ' + res.error.message); return; }
+
+            ['reg-numero','reg-marca','reg-modelo','reg-agua','reg-espuma','reg-pqs','reg-torreta'].forEach(function(id) {
+                var el = document.getElementById(id); if (el) el.value = '';
+            });
+            loadData();
         }
 
-        async function updateMachineField(id, field, value) {
-            const updateVal = (field === 'aeropuerto_id') ? value : (parseFloat(value) || 0);
-            const { error } = await supabaseClient.from('maquinas_sei').update({ [field]: updateVal }).eq('id', id);
-            if (error) alert("Error al actualizar: " + error.message);
-            // Non-blocking load
+        /* updateField */
+        async function updateField(id, field, value) {
+            if (field === 'aeropuerto_id' && !isAdmin) return;
+            var numFields = ['agua_galones','espuma_galones','pqs_lb','q_torreta_lpm'];
+            var updateVal = numFields.includes(field) ? (parseFloat(value) || 0) : value;
+            var res = await supabaseClient.from('maquinas_sei').update({ [field]: updateVal }).eq('id', id);
+            if (res.error) alert('Error al actualizar: ' + res.error.message);
+            else loadData();
         }
 
+        /* deleteMachine */
         async function deleteMachine(id) {
-            if (!confirm("¿Eliminar máquina permanentemente?")) return;
-            const { error } = await supabaseClient.from('maquinas_sei').delete().eq('id', id);
-            if (error) alert(error.message);
+            if (!confirm('Eliminar esta maquina y todas sus novedades?')) return;
+            var res = await supabaseClient.from('maquinas_sei').delete().eq('id', id);
+            if (res.error) alert(res.error.message);
             else loadData();
         }
 
-        async function promptNovelty(mId) {
-            // Deprecated by addNoveltyInline
-        }
-
-        async function resolveNovelty(nId) {
-            const { error } = await supabaseClient.from('novedades_maquinas').update({ reparado: true }).eq('id', nId);
-            if (error) alert(error.message);
+        /* markRepaired */
+        async function markRepaired(nId) {
+            var res = await supabaseClient.from('novedades_maquinas').update({ reparado: true }).eq('id', nId);
+            if (res.error) alert(res.error.message);
             else loadData();
         }
 
+        /* deleteNovelty */
         async function deleteNovelty(nId) {
-            if (!confirm("¿Eliminar registro de novedad?")) return;
-            const { error } = await supabaseClient.from('novedades_maquinas').delete().eq('id', nId);
-            if (error) alert(error.message);
+            if (!confirm('Eliminar registro de novedad?')) return;
+            var res = await supabaseClient.from('novedades_maquinas').delete().eq('id', nId);
+            if (res.error) alert(res.error.message);
             else loadData();
         }
 
-        init();
     </script>
 </body>
 

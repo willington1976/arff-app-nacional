@@ -1045,6 +1045,7 @@
   <!-- Supabase SDK -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-config.js"></script>
+  <script src="auth-guard.js"></script>
 
   <nav>
     <a class="nav-logo" href="#">
@@ -1327,362 +1328,483 @@
       { id: 'reg-oriente', name: 'Oriente', sede: 'Villavicencio', color: '#40c057', colorDim: 'rgba(64,192,87,.1)', airports: [] }
     ];
 
-    let aeronavesDict = []; // Para el buscador
+    /* ============================================================
+       TABLA DE MINIMOS OACI DOC 9137 — Categoria vs Q minimo
+       Fuente: Doc 9137 Parte 1, Tabla 2-2 / NFPA 403-2018
+       q_min_lpm: caudal minimo total de la flota
+       agua_min_l: agua minima total disponible en tanques
+    ============================================================ */
+    var CAT_MINIMOS = {
+        1: { q_min_lpm: 250,  agua_min_l: 350   },
+        2: { q_min_lpm: 500,  agua_min_l: 700   },
+        3: { q_min_lpm: 1000, agua_min_l: 1800  },
+        4: { q_min_lpm: 1800, agua_min_l: 3600  },
+        5: { q_min_lpm: 2700, agua_min_l: 6600  },
+        6: { q_min_lpm: 4500, agua_min_l: 11800 },
+        7: { q_min_lpm: 6000, agua_min_l: 18200 },
+        8: { q_min_lpm: 7200, agua_min_l: 27300 },
+        9: { q_min_lpm: 9000, agua_min_l: 36400 },
+    };
+
+    /* Evaluacion de cumplimiento de categoria */
+    function evaluarCategoria(cat, q_total, agua_total) {
+        var min = CAT_MINIMOS[cat];
+        if (!min) return { cumple: true, alertas: [] };
+        var alertas = [];
+        if (q_total < min.q_min_lpm) {
+            alertas.push('Q INSUFICIENTE: ' + q_total.toLocaleString() + ' / ' + min.q_min_lpm.toLocaleString() + ' L/min requeridos');
+        }
+        if (agua_total < min.agua_min_l) {
+            alertas.push('AGUA INSUFICIENTE: ' + agua_total.toLocaleString() + ' / ' + min.agua_min_l.toLocaleString() + ' L requeridos');
+        }
+        return { cumple: alertas.length === 0, alertas: alertas };
+    }
+
+    /* ============================================================
+       initDashboard — carga estaciones + flota real
+    ============================================================ */
+    var aeronavesDict = [];
+    var realtimeChannel = null;
 
     async function initDashboard() {
-      try {
-        // 1. Validar Sesión y Rol Admin (Seguridad)
-        const { data: { user }, error: userErr } = await supabaseClient.auth.getUser();
-        if (userErr || !user) {
-          window.location.href = 'index.html';
-          return;
+        try {
+            document.getElementById('nav-ts').textContent = 'Cargando datos...';
+
+            /* 1. Cargar estaciones */
+            var estRes = await supabaseClient
+                .from('estaciones_sei')
+                .select('*')
+                .order('oaci', { ascending: true });
+
+            if (estRes.error) throw estRes.error;
+            var estaciones = estRes.data || [];
+
+            /* 2. Cargar flota completa (todas las maquinas) */
+            var flotaRes = await supabaseClient
+                .from('maquinas_sei')
+                .select('*');
+            var flotaAll = flotaRes.data || [];
+
+            /* 3. Cargar novedades activas */
+            var novRes = await supabaseClient
+                .from('novedades_maquinas')
+                .select('*')
+                .eq('reparado', false);
+            var novsAll = novRes.data || [];
+
+            /* 4. Cargar aeronaves para buscador */
+            var navRes = await supabaseClient
+                .from('aeronaves')
+                .select('*')
+                .order('modelo', { ascending: true });
+            if (navRes.data) aeronavesDict = navRes.data;
+
+            /* 5. Construir estructura regional */
+            REGIONS.forEach(function(r) { r.airports = []; });
+
+            estaciones.forEach(function(est) {
+                var regionalId = normalizeRegional(est.regional);
+                var regionObj  = REGIONS.find(function(r){ return r.id === regionalId; });
+                if (!regionObj) return;
+
+                /* Flota de esta estacion */
+                var flota = flotaAll.filter(function(m){ return m.aeropuerto_id === est.oaci; });
+
+                /* Aplicar FUSER por novedades criticas */
+                flota.forEach(function(m) {
+                    var novsM = novsAll.filter(function(n){ return n.maquina_id === m.id; });
+                    var hasCrit = novsM.some(function(n){ return n.severidad === 'critica'; });
+                    if (hasCrit && (m.estado === 'OPERATIVO' || m.estado === 'OPERATIVA')) {
+                        m.estado = 'FUSER'; /* copia local para el render */
+                    }
+                });
+
+                /* Calcular capacidades REALES desde la flota operativa */
+                var flotaOp = flota.filter(function(m){
+                    return m.estado !== 'FUSER' && m.estado !== 'Fuera de Servicio' && m.estado !== 'MANTENIMIENTO';
+                });
+
+                var q_total    = flotaOp.reduce(function(s,m){ return s + (m.q_torreta_lpm || 0); }, 0);
+                /* convertir galones a litros (1 gal = 3.785 l) */
+                var agua_total = flotaOp.reduce(function(s,m){ return s + ((m.agua_galones || 0) * 3.785); }, 0);
+                var espuma_l   = flotaOp.reduce(function(s,m){ return s + ((m.espuma_galones || 0) * 3.785); }, 0);
+                var pqs_kg     = flotaOp.reduce(function(s,m){ return s + ((m.pqs_lb || 0) * 0.453); }, 0);
+
+                var maquinasFuser = flota.filter(function(m){
+                    return m.estado === 'FUSER' || m.estado === 'Fuera de Servicio';
+                });
+                var maquinasMant  = flota.filter(function(m){
+                    return m.estado === 'MANTENIMIENTO' || m.estado === 'MANT';
+                });
+
+                var cat     = est.categoria_oaci || 0;
+                var evalCat = evaluarCategoria(cat, q_total, agua_total);
+
+                /* Determinar status: prioridad -> incumplimiento cat > FUSER > mantenimiento > ok */
+                var status = 'ok';
+                var novedadTexto = 'Sin novedades activas.';
+
+                if (!evalCat.cumple) {
+                    status = 'alert';
+                    novedadTexto = '🔴 INCUMPLIMIENTO Cat.' + cat + ': ' + evalCat.alertas.join(' | ');
+                } else if (maquinasFuser.length > 0) {
+                    status = 'alert';
+                    var nomsFuser = maquinasFuser.map(function(m){ return m.numero_interno || 'S/N'; }).join(', ');
+                    novedadTexto = '🔴 FUSER: [' + nomsFuser + '] — ' + maquinasFuser.length + ' vehiculo(s) fuera de servicio.';
+                } else if (maquinasMant.length > 0) {
+                    status = 'warn';
+                    var nomsMant = maquinasMant.map(function(m){ return m.numero_interno || 'S/N'; }).join(', ');
+                    novedadTexto = '⚠ MANT: [' + nomsMant + '] — en mantenimiento programado.';
+                } else if (flota.length === 0) {
+                    status = 'warn';
+                    novedadTexto = '⚠ Sin maquinas registradas en esta estacion.';
+                }
+
+                regionObj.airports.push({
+                    code:          est.oaci,
+                    name:          est.nombre_aeropuerto,
+                    city:          est.ciudad,
+                    cat:           cat,
+                    q:             Math.round(q_total),
+                    agua:          Math.round(agua_total),
+                    reservaEspuma: Math.round(espuma_l),
+                    pqs:           Math.round(pqs_kg),
+                    co2:           0,
+                    status:        status,
+                    vehiculos:     flotaOp.length,
+                    vehiculosTotal: flota.length,
+                    fuser:         maquinasFuser.length,
+                    mant:          maquinasMant.length,
+                    turno:         est.turno_actual || 'N/A',
+                    novedades:     novedadTexto,
+                    tResp:         est.tiempo_respuesta_min || 0,
+                    autonomia:     est.autonomia_min || 0,
+                    id_db:         est.id,
+                    evalCat:       evalCat,
+                    flotaDetalle:  flota
+                });
+            });
+
+            renderAll();
+
+            /* 6. Activar Realtime — escucha cambios en maquinas_sei y novedades_maquinas */
+            activarRealtime();
+
+        } catch(e) {
+            console.error('Error inicializando dashboard nacional:', e);
+            document.getElementById('nav-ts').textContent = 'Error de conexion: ' + e.message;
+        }
+    }
+
+    /* ============================================================
+       REALTIME — Supabase Realtime Subscriptions
+       Cuando un comandante cambia el estado de su flota,
+       el dashboard del jefe se actualiza automaticamente.
+    ============================================================ */
+    function activarRealtime() {
+        if (realtimeChannel) {
+            supabaseClient.removeChannel(realtimeChannel);
         }
 
-        const { data: perfil } = await supabaseClient.from('perfiles_usuarios').select('rol').eq('user_id', user.id).single();
-        if (!perfil || !['admin', 'jefe_nacional'].includes(perfil.rol)) {
-          alert('Acceso denegado. Se requiere nivel directivo.');
-          window.location.href = 'dashboard_principal.html';
-          return;
-        }
+        realtimeChannel = supabaseClient
+            .channel('sei-flota-nacional')
+            .on('postgres_changes',
+                { event: '*', schema: 'public', table: 'maquinas_sei' },
+                function(payload) {
+                    console.log('Realtime: maquinas_sei cambio', payload.eventType);
+                    showRealtimeToast('Flota actualizada — ' + (payload.new && payload.new.aeropuerto_id ? payload.new.aeropuerto_id : 'estacion'));
+                    initDashboard();
+                }
+            )
+            .on('postgres_changes',
+                { event: '*', schema: 'public', table: 'novedades_maquinas' },
+                function(payload) {
+                    console.log('Realtime: novedades_maquinas cambio', payload.eventType);
+                    showRealtimeToast('Nueva novedad reportada');
+                    initDashboard();
+                }
+            )
+            .subscribe(function(status) {
+                console.log('Realtime status:', status);
+            });
+    }
 
-        // 2. Cargar Aeropuertos Reales
-        document.getElementById('nav-ts').textContent = "Cargando datos...";
-        const { data: estaciones, error: estErr } = await supabaseClient.from('estaciones_sei').select('*').order('oaci', { ascending: true });
-
-        if (estaciones) {
-          // Limpiar arreglos antes de inyectar
-          REGIONS.forEach(r => r.airports = []);
-
-          estaciones.forEach(est => {
-            const regionalId = normalizeRegional(est.regional);
-            const regionObj = REGIONS.find(r => r.id === regionalId);
-
-            if (regionObj) {
-              // Mapeo adaptativo desde BD a la estructura del frontend
-              regionObj.airports.push({
-                code: est.oaci,
-                name: est.nombre_aeropuerto,
-                city: est.ciudad,
-                cat: est.categoria_oaci,
-                q: est.q_total_lpm || 0,
-                agua: est.agua_litros || 0,
-                reservaEspuma: est.espuma_litros || 0,
-                pqs: est.pqs_kg || 0,
-                co2: 0,
-                status: mapStatus(est.estado_operativo),
-                vehiculos: est.vehiculos_operativos || 0,
-                turno: est.turno_actual || 'N/A',
-                novedades: est.novedades || 'Sin reporte',
-                tResp: est.tiempo_respuesta_min || 0,
-                autonomia: est.autonomia_min || 0,
-                id_db: est.id
-              });
-            }
-          });
-        }
-
-        // 3. Cargar Aeronaves para el buscador
-        const { data: naves } = await supabaseClient.from('aeronaves').select('*').order('modelo', { ascending: true });
-        if (naves) aeronavesDict = naves;
-
-        // 4. Renderizar UI Completa
-        renderAll();
-
-      } catch (e) {
-        console.error("Error inicializando dashboard nacional:", e);
-        document.getElementById('nav-ts').textContent = "Error de conexión";
-      }
+    function showRealtimeToast(msg) {
+        var toast = document.getElementById('realtime-toast');
+        if (!toast) return;
+        toast.textContent = '⟳ ' + msg;
+        toast.style.opacity = '1';
+        clearTimeout(toast._t);
+        toast._t = setTimeout(function(){ toast.style.opacity = '0'; }, 4000);
     }
 
     function normalizeRegional(str) {
-      if (!str) return 'reg-centrosur';
-      const s = str.toLowerCase();
-      if (s.includes('centro sur')) return 'reg-centrosur';
-      if (s.includes('noroccidente')) return 'reg-noroccidente';
-      if (s.includes('norte') && !s.includes('nororiente')) return 'reg-norte';
-      if (s.includes('occidente') && !s.includes('noroccidente')) return 'reg-occidente';
-      if (s.includes('nororiente')) return 'reg-nororiente';
-      if (s.includes('oriente') && !s.includes('nororiente')) return 'reg-oriente';
-      return 'reg-centrosur'; // fallback
+        if (!str) return 'reg-centrosur';
+        var s = str.toLowerCase();
+        if (s.includes('centro sur') || s.includes('centrosur')) return 'reg-centrosur';
+        if (s.includes('noroccidente')) return 'reg-noroccidente';
+        if (s.includes('nororiente'))  return 'reg-nororiente';
+        if (s.includes('norte'))       return 'reg-norte';
+        if (s.includes('occidente'))   return 'reg-occidente';
+        if (s.includes('oriente'))     return 'reg-oriente';
+        return 'reg-centrosur';
     }
 
-    function mapStatus(str) {
-      if (!str) return 'ok';
-      const s = str.toLowerCase();
-      if (s.includes('operativo') || s.includes('normal')) return 'ok';
-      if (s.includes('alerta') || s.includes('critico') || s.includes('inoperativo')) return 'alert';
-      return 'warn';
-    }
-
+    /* ============================================================
+       renderAll
+    ============================================================ */
     function renderAll() {
-      /* ═══════════════════════════ COMPUTED STATS ═════════════════════════ */
-      let totalAlertas = 0, totalWarn = 0, totalOk = 0, totalAgua = 0;
-      REGIONS.forEach(r => r.airports.forEach(a => {
-        if (a.status === 'ok') totalOk++;
-        else if (a.status === 'warn') totalWarn++;
-        else totalAlertas++;
-        totalAgua += (a.agua || 0);
-      }));
+        var totalAlertas = 0, totalWarn = 0, totalOk = 0, totalAgua = 0;
+        REGIONS.forEach(function(r){ r.airports.forEach(function(a){
+            if (a.status === 'ok') totalOk++;
+            else if (a.status === 'warn') totalWarn++;
+            else totalAlertas++;
+            totalAgua += (a.agua || 0);
+        });});
 
-      const totalAps = 38;
-      const pctOp = Math.round((totalOk / totalAps) * 100);
-      const alertCount = totalAlertas + totalWarn;
+        var totalAps = 38;
+        var pctOp    = Math.round((totalOk / totalAps) * 100);
+        var alertCount = totalAlertas + totalWarn;
 
-      /* ═══════════════════════════ KPIs ═════════════════════════ */
-      document.getElementById('kpi-op').textContent = pctOp + '%';
-      document.getElementById('kpi-op-sub').innerHTML = `<strong style="color:#40c057">${totalOk}</strong> en cumplimiento · <strong style="color:#f59f00">${totalWarn}</strong> novedades · <strong style="color:#f03e3e">${totalAlertas}</strong> críticos`;
-      document.getElementById('kpi-op-badge').textContent = totalAlertas > 0 ? '⚠ ALERTA' : '✓ NORMAL';
-      document.getElementById('kpi-op-badge').style.color = totalAlertas > 0 ? '#f59f00' : '#40c057';
-      document.getElementById('kpi-alerts').textContent = alertCount;
-      document.getElementById('kpi-alerts-sub').innerHTML = `<strong style="color:#f03e3e">${totalAlertas}</strong> críticos · <strong style="color:#f59f00">${totalWarn}</strong> con novedad<br>Seguimiento requerido`;
-      document.getElementById('kpi-al-badge').textContent = totalAlertas + ' CRÍTICOS';
-      document.getElementById('kpi-al-badge').style.color = totalAlertas > 0 ? '#f03e3e' : '#40c057';
-      const aguaTotal = (totalAgua / 1000).toFixed(0);
-      document.getElementById('kpi-agua').textContent = Number(aguaTotal).toLocaleString() + 'K';
+        /* KPIs */
+        document.getElementById('kpi-op').textContent = pctOp + '%';
+        document.getElementById('kpi-op-sub').innerHTML =
+            '<strong style="color:#40c057">' + totalOk + '</strong> en cumplimiento &nbsp;·&nbsp; ' +
+            '<strong style="color:#f59f00">' + totalWarn + '</strong> novedades &nbsp;·&nbsp; ' +
+            '<strong style="color:#f03e3e">' + totalAlertas + '</strong> criticos';
+        document.getElementById('kpi-op-badge').textContent = totalAlertas > 0 ? '⚠ ALERTA' : '✓ NORMAL';
+        document.getElementById('kpi-op-badge').style.color = totalAlertas > 0 ? '#f59f00' : '#40c057';
+        document.getElementById('kpi-alerts').textContent = alertCount;
+        document.getElementById('kpi-alerts-sub').innerHTML =
+            '<strong style="color:#f03e3e">' + totalAlertas + '</strong> criticos &nbsp;·&nbsp; ' +
+            '<strong style="color:#f59f00">' + totalWarn + '</strong> con novedad<br>Seguimiento requerido';
+        document.getElementById('kpi-al-badge').textContent = totalAlertas + ' CRITICOS';
+        document.getElementById('kpi-al-badge').style.color = totalAlertas > 0 ? '#f03e3e' : '#40c057';
+        var aguaTotal = (totalAgua / 1000).toFixed(0);
+        document.getElementById('kpi-agua').textContent = Number(aguaTotal).toLocaleString() + 'K';
 
-      /* ═══════════════════════════ TIMESTAMP ═════════════════════════ */
-      function updateTS() {
-        const now = new Date();
-        document.getElementById('nav-ts').textContent = now.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-      }
-      updateTS(); setInterval(updateTS, 1000);
+        /* Timestamp */
+        function updateTS() {
+            var now = new Date();
+            document.getElementById('nav-ts').textContent = now.toLocaleTimeString('es-CO',{ hour:'2-digit',minute:'2-digit',second:'2-digit'});
+        }
+        updateTS(); setInterval(updateTS, 1000);
 
-      /* ═══════════════════════════ REGIONAL BARS ═════════════════════════ */
-      const barsEl = document.getElementById('reg-bars');
-      REGIONS.forEach(r => {
-        const ok = r.airports.filter(a => a.status === 'ok').length;
-        const tot = r.airports.length;
-        const pct = Math.round(ok / tot * 100);
-        const col = pct === 100 ? '#40c057' : pct >= 70 ? '#f59f00' : '#f03e3e';
-        barsEl.insertAdjacentHTML('beforeend', `
-    <div class="rb-row">
-      <div class="rb-head">
-        <span class="rb-name" style="color:${r.color}">${r.name}</span>
-        <span class="rb-pct" style="color:${col}">${pct}%</span>
-      </div>
-      <div class="rb-bar"><div class="rb-fill" style="width:0%;background:${col}" data-w="${pct}"></div></div>
-      <div class="rb-ap">${ok}/${tot} estaciones sin novedad · ${r.airports.filter(a => a.status !== 'ok').length} con alerta</div>
-    </div>`);
-      });
-      setTimeout(() => document.querySelectorAll('.rb-fill').forEach(el => el.style.width = el.dataset.w + '%'), 200);
-
-      /* ═══════════════════════════ ALERTS PANEL ═════════════════════════ */
-      const alertsEl = document.getElementById('alerts-panel');
-      const allAlerts = [];
-      REGIONS.forEach(r => r.airports.filter(a => a.status !== 'ok').forEach(a => allAlerts.push({ r, a })));
-      if (!allAlerts.length) {
-        alertsEl.innerHTML = `<div style="padding:20px 18px;text-align:center;font-family:var(--ff-m);font-size:10.5px;color:var(--text-muted);letter-spacing:.06em">✓ SIN NOVEDADES ACTIVAS — Todas las estaciones en cumplimiento</div>`;
-      } else {
-        allAlerts.forEach(({ r, a }) => {
-          const isRed = a.status === 'alert';
-          const ic = isRed ? '#f03e3e' : '#f59f00';
-          const bg = isRed ? 'rgba(240,62,62,.1)' : 'rgba(245,159,0,.08)';
-          const tag = isRed ? 'CRÍTICO' : 'NOVEDAD';
-          alertsEl.insertAdjacentHTML('beforeend', `
-      <div class="alert-item">
-        <div class="alert-icon" style="background:${bg}">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="${ic}" stroke-width="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-        </div>
-        <div class="alert-body">
-          <div class="alert-title">${a.name} · ${a.city}</div>
-          <div class="alert-meta">
-            <span style="color:${r.color}">${r.name}</span>
-            <span>Cat.${a.cat} OACI</span>
-            <span>${a.novedades.replace(/[🔴⚠]/g, '').trim().substring(0, 90)}${a.novedades.length > 90 ? '…' : ''}</span>
-          </div>
-        </div>
-        <div class="alert-time" style="font-size:9.5px;color:${ic}">Q1 2026</div>
-        <div class="alert-badge" style="color:${ic};border-color:${ic}44;background:${ic}0d">${tag}</div>
-      </div>`);
+        /* Regional bars */
+        var barsEl = document.getElementById('reg-bars');
+        barsEl.innerHTML = '';
+        REGIONS.forEach(function(r) {
+            var ok  = r.airports.filter(function(a){ return a.status === 'ok'; }).length;
+            var tot = r.airports.length;
+            var pct = tot > 0 ? Math.round(ok / tot * 100) : 0;
+            var col = pct === 100 ? '#40c057' : pct >= 70 ? '#f59f00' : '#f03e3e';
+            barsEl.insertAdjacentHTML('beforeend',
+                '<div class="rb-row">' +
+                '<div class="rb-head"><span class="rb-name" style="color:' + r.color + '">' + r.name + '</span><span class="rb-pct" style="color:' + col + '">' + pct + '%</span></div>' +
+                '<div class="rb-bar"><div class="rb-fill" style="width:0%;background:' + col + '" data-w="' + pct + '"></div></div>' +
+                '<div class="rb-ap">' + ok + '/' + tot + ' sin novedad &nbsp;·&nbsp; ' + r.airports.filter(function(a){ return a.status !== 'ok'; }).length + ' con alerta</div>' +
+                '</div>');
         });
-      }
+        setTimeout(function(){ document.querySelectorAll('.rb-fill').forEach(function(el){ el.style.width = el.dataset.w + '%'; }); }, 200);
 
-      /* ═══════════════════════════ REGIONAL ACCORDION ═════════════════════════ */
-      const regGrid = document.getElementById('reg-grid');
+        /* Alerts panel */
+        var alertsEl = document.getElementById('alerts-panel');
+        alertsEl.innerHTML = '';
+        var allAlerts = [];
+        REGIONS.forEach(function(r){ r.airports.filter(function(a){ return a.status !== 'ok'; }).forEach(function(a){ allAlerts.push({ r: r, a: a }); }); });
 
-      REGIONS.forEach(r => {
-        const sems = r.airports.map(a => {
-          const c = a.status === 'ok' ? '#40c057' : a.status === 'warn' ? '#f59f00' : '#f03e3e';
-          return `<div class="sem-dot" style="background:${c};box-shadow:0 0 4px ${c}" title="${a.city}: ${a.status}"></div>`;
-        }).join('');
+        if (!allAlerts.length) {
+            alertsEl.innerHTML = '<div style="padding:20px 18px;text-align:center;font-family:var(--ff-m);font-size:10.5px;color:var(--text-muted);letter-spacing:.06em">✓ SIN NOVEDADES ACTIVAS — Todas las estaciones en cumplimiento</div>';
+        } else {
+            allAlerts.forEach(function(x) {
+                var a = x.a, r = x.r;
+                var isRed = a.status === 'alert';
+                var ic    = isRed ? '#f03e3e' : '#f59f00';
+                var bg    = isRed ? 'rgba(240,62,62,.1)' : 'rgba(245,159,0,.08)';
+                var tag   = isRed ? 'CRITICO' : 'NOVEDAD';
+                var novTxt = a.novedades.replace(/[🔴⚠]/g, '').trim();
+                if (novTxt.length > 100) novTxt = novTxt.substring(0, 100) + '…';
+                alertsEl.insertAdjacentHTML('beforeend',
+                    '<div class="alert-item">' +
+                    '<div class="alert-icon" style="background:' + bg + '"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="' + ic + '" stroke-width="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>' +
+                    '<div class="alert-body">' +
+                    '<div class="alert-title">' + a.name + ' · ' + a.city + '</div>' +
+                    '<div class="alert-meta">' +
+                    '<span style="color:' + r.color + '">' + r.name + '</span>' +
+                    '<span>Cat.' + a.cat + ' OACI</span>' +
+                    '<span>' + novTxt + '</span>' +
+                    '</div></div>' +
+                    '<div class="alert-time" style="font-size:9.5px;color:' + ic + '">TIEMPO REAL</div>' +
+                    '<div class="alert-badge" style="color:' + ic + ';border-color:' + ic + '44;background:' + ic + '0d">' + tag + '</div>' +
+                    '</div>');
+            });
+        }
 
-        const card = document.createElement('div');
-        card.className = 'reg-card'; card.id = r.id;
-        card.innerHTML = `
-    <div class="reg-header" onclick="toggleReg('${r.id}')">
-      <div class="reg-accent" style="background:${r.color}"></div>
-      <div class="reg-info">
-        <div class="reg-name" style="color:${r.color}">${r.name}</div>
-        <div class="reg-sede">Sede Regional · ${r.sede} · ${r.airports.length} estaciones</div>
-      </div>
-      <div class="reg-stats">
-        <div class="reg-count">${r.airports.length} APTs</div>
-        <div class="sem-row">${sems}</div>
-        <svg class="reg-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
-      </div>
-    </div>
-    <div class="ap-list" id="list-${r.id}">
-      ${r.airports.map(a => buildApRow(r, a)).join('')}
-    </div>`;
-        regGrid.appendChild(card);
-      });
+        /* Regional accordion */
+        var regGrid = document.getElementById('reg-grid');
+        regGrid.innerHTML = '';
+        REGIONS.forEach(function(r) {
+            var sems = r.airports.map(function(a) {
+                var c = a.status === 'ok' ? '#40c057' : a.status === 'warn' ? '#f59f00' : '#f03e3e';
+                return '<div class="sem-dot" style="background:' + c + ';box-shadow:0 0 4px ' + c + '" title="' + a.city + ': ' + a.status + '"></div>';
+            }).join('');
 
-      function buildApRow(r, a) {
-        const semClass = a.status === 'ok' ? 'sem-green' : a.status === 'warn' ? 'sem-amber' : 'sem-red';
-        const stClass = a.status === 'ok' ? 'st-ok' : a.status === 'warn' ? 'st-warn' : 'st-alert';
-        const stLabel = a.status === 'ok' ? '✓ Operativo' : a.status === 'warn' ? '⚠ Novedad' : '🔴 Alerta';
-        const catCol = a.cat >= 8 ? '#f03e3e' : a.cat >= 6 ? '#f59f00' : a.cat >= 4 ? '#0bc5a0' : '#38bdf8';
-        return `
-    <div class="ap-item" id="ap-${a.code}" onclick="toggleDrawer('${a.code}')">
-      <div class="ap-semaphore ${semClass}"></div>
-      <div>
-        <div class="ap-name">${a.name}</div>
-        <div class="ap-city">${a.code} · ${a.city}</div>
-      </div>
-      <div class="ap-cat" style="color:${catCol};border-color:${catCol}44">Cat.${a.cat}</div>
-      <div class="ap-status ${stClass}">${stLabel}</div>
-    </div>
-    <div class="ap-drawer" id="drawer-${a.code}">
-      ${buildDrawer(a, r)}
-    </div>`;
-      }
-
-      function buildDrawer(a, r) {
-        const novClass = a.status === 'ok' ? 'nov-ok' : a.status === 'warn' ? 'nov-warn' : 'nov-alert';
-        const waterPct = Math.min(Math.round(a.agua / (a.agua * 1.1) * 100), 100);
-        const qColor = a.status === 'alert' ? '#f03e3e' : a.status === 'warn' ? '#f59f00' : '#0bc5a0';
-        const tColor = a.tResp <= 3 ? '#40c057' : a.tResp <= 4 ? '#f59f00' : '#f03e3e';
-        return `
-    <div class="drawer-inner">
-      <div class="drawer-title">
-        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-        Tarjeta Técnica — ${a.name} · ${a.city}
-      </div>
-      <div class="drawer-grid">
-        <div class="dr-cell">
-          <div class="dr-lbl">Categoría OACI</div>
-          <div class="dr-val" style="color:${a.cat >= 7 ? '#f03e3e' : a.cat >= 5 ? '#f59f00' : '#38bdf8'}">Cat.${a.cat}</div>
-          <div class="dr-note">OACI Doc 9137 Tabla 2-2</div>
-        </div>
-        <div class="dr-cell">
-          <div class="dr-lbl">Caudal Σ Q</div>
-          <div class="dr-val" style="color:${qColor}">${a.q.toLocaleString()}</div>
-          <div class="dr-note">L/min · Flota total</div>
-        </div>
-        <div class="dr-cell">
-          <div class="dr-lbl">Agua disponible</div>
-          <div class="dr-val" style="color:#38bdf8">${a.agua.toLocaleString()}</div>
-          <div class="dr-note">Litros · Tanques flota</div>
-        </div>
-        <div class="dr-cell">
-          <div class="dr-lbl">Reserva bodega</div>
-          <div class="dr-val" style="color:#f59f00">${a.reservaEspuma.toLocaleString()}</div>
-          <div class="dr-note">L espuma · NFPA §5.4</div>
-        </div>
-        <div class="dr-cell">
-          <div class="dr-lbl">PQS disponible</div>
-          <div class="dr-val" style="color:#f76707">${a.pqs}</div>
-          <div class="dr-note">kg · Tabla 2-2 mín.</div>
-        </div>
-        <div class="dr-cell">
-          <div class="dr-lbl">T° de respuesta</div>
-          <div class="dr-val" style="color:${tColor}">${a.tResp.toFixed(1)}</div>
-          <div class="dr-note">min · OACI ≤ 3 min</div>
-        </div>
-        <div class="dr-cell">
-          <div class="dr-lbl">Vehículos</div>
-          <div class="dr-val" style="color:#dde4ee">${a.vehiculos}</div>
-          <div class="dr-note">Turno ${a.turno}</div>
-        </div>
-        <div class="dr-cell">
-          <div class="dr-lbl">Autonomía</div>
-          <div class="dr-val" style="color:#0bc5a0">${a.autonomia.toFixed(1)}</div>
-          <div class="dr-note">min · descarga continua</div>
-        </div>
-      </div>
-      <div style="margin-top:9px">
-        <div style="font-family:var(--ff-m);font-size:8.5px;color:var(--text-muted);letter-spacing:.07em;text-transform:uppercase;margin-bottom:5px">Indicador de capacidad hídrica</div>
-        <div class="gauge-wrap">
-          <div style="font-family:var(--ff-m);font-size:9px;color:var(--text-muted);width:56px">Agua</div>
-          <div class="gauge-bar"><div class="gauge-fill" style="width:${Math.min(a.agua / 500, 100)}%;background:#38bdf8"></div></div>
-          <div class="gauge-pct" style="color:#38bdf8">${a.agua.toLocaleString()}</div>
-        </div>
-        <div class="gauge-wrap">
-          <div style="font-family:var(--ff-m);font-size:9px;color:var(--text-muted);width:56px">Q flota</div>
-          <div class="gauge-bar"><div class="gauge-fill" style="width:${Math.min(a.q / 120, 100)}%;background:#0bc5a0"></div></div>
-          <div class="gauge-pct" style="color:#0bc5a0">${a.q.toLocaleString()}</div>
-        </div>
-      </div>
-      </div>
-      <div class="drawer-novedad ${novClass}">
-        <div style="margin-bottom:10px">${a.novedades}</div>
-        
-        <!-- BUSCADOR DE AERONAVES PARA AUDITORIA -->
-        <div style="display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-top:12px; padding-top:12px; border-top:1px solid rgba(255,255,255,0.05)">
-            <select id="sel-nave-${a.code}" style="background:var(--s3); border:1px solid var(--border); color:var(--text); padding:6px 10px; border-radius:4px; font-family:var(--ff-m); font-size:11px; flex:1; min-width:180px; outline:none">
-                <option value="">Seleccione Aeronave para Simular...</option>
-                ${aeronavesDict.map(n => `<option value="${n.longitud_m}|${n.ancho_fuselaje_m}|${n.categoria_oaci}">${n.modelo} (Cat.${n.categoria_oaci})</option>`).join('')}
-            </select>
-            
-            <button onclick="auditarAeropuerto('${a.code}')" style="display:inline-flex;align-items:center;gap:6px;background:var(--teal);border:none;padding:6px 14px;border-radius:4px;color:#000;font-family:var(--ff-m);font-weight:700;font-size:10px;text-transform:uppercase;letter-spacing:.05em;cursor:pointer;transition:transform .2s">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-              Simular Área Crítica
-            </button>
-        </div>
-        
-      </div>
-    </div>`;
-      } // Fin de buildDrawer()
-    } // Fin de renderAll()
-
-    /* ═════════ Funciones de Auditoría ═════════ */
-    function auditarAeropuerto(code) {
-      const sel = document.getElementById(`sel-nave-${code}`);
-      if (!sel || !sel.value) {
-        // Si no elige nave, pasa sin parámetros
-        window.location.href = `arff_area_critica.html?from=nacional&apto=${code}`;
-        return;
-      }
-      const [l, wf, cat] = sel.value.split('|');
-      window.location.href = `arff_area_critica.html?from=nacional&apto=${code}&l=${l}&wf=${wf}&cat=${cat}`;
+            var card = document.createElement('div');
+            card.className = 'reg-card'; card.id = r.id;
+            card.innerHTML =
+                '<div class="reg-header" onclick="toggleReg(\'' + r.id + '\')">' +
+                '<div class="reg-accent" style="background:' + r.color + '"></div>' +
+                '<div class="reg-info"><div class="reg-name" style="color:' + r.color + '">' + r.name + '</div>' +
+                '<div class="reg-sede">Sede Regional · ' + r.sede + ' · ' + r.airports.length + ' estaciones</div></div>' +
+                '<div class="reg-stats"><div class="reg-count">' + r.airports.length + ' APTs</div>' +
+                '<div class="sem-row">' + sems + '</div>' +
+                '<svg class="reg-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div></div>' +
+                '<div class="ap-list" id="list-' + r.id + '">' +
+                r.airports.map(function(a){ return buildApRow(r, a); }).join('') +
+                '</div>';
+            regGrid.appendChild(card);
+        });
     }
 
-    /* ═════════ INTERACTIONS ═════════ */
+    function buildApRow(r, a) {
+        var semClass = a.status === 'ok' ? 'sem-green' : a.status === 'warn' ? 'sem-amber' : 'sem-red';
+        var stClass  = a.status === 'ok' ? 'st-ok' : a.status === 'warn' ? 'st-warn' : 'st-alert';
+        var stLabel  = a.status === 'ok' ? '✓ Operativo' : a.status === 'warn' ? '⚠ Novedad' : '🔴 Alerta';
+        var catCol   = a.cat >= 8 ? '#f03e3e' : a.cat >= 6 ? '#f59f00' : a.cat >= 4 ? '#0bc5a0' : '#38bdf8';
+        return (
+            '<div class="ap-item" id="ap-' + a.code + '" onclick="toggleDrawer(\'' + a.code + '\')">' +
+            '<div class="ap-semaphore ' + semClass + '"></div>' +
+            '<div><div class="ap-name">' + a.name + '</div><div class="ap-city">' + a.code + ' · ' + a.city + '</div></div>' +
+            '<div class="ap-cat" style="color:' + catCol + ';border-color:' + catCol + '44">Cat.' + a.cat + '</div>' +
+            '<div class="ap-status ' + stClass + '">' + stLabel + '</div></div>' +
+            '<div class="ap-drawer" id="drawer-' + a.code + '">' + buildDrawer(a, r) + '</div>'
+        );
+    }
+
+    function buildDrawer(a, r) {
+        var novClass = a.status === 'ok' ? 'nov-ok' : a.status === 'warn' ? 'nov-warn' : 'nov-alert';
+        var qColor   = a.status === 'alert' ? '#f03e3e' : a.status === 'warn' ? '#f59f00' : '#0bc5a0';
+        var tColor   = a.tResp <= 3 ? '#40c057' : a.tResp <= 4 ? '#f59f00' : '#f03e3e';
+
+        /* Alerta de incumplimiento de categoria */
+        var catAlertHtml = '';
+        if (a.evalCat && !a.evalCat.cumple) {
+            catAlertHtml =
+                '<div style="margin:8px 0;padding:8px 12px;background:rgba(240,62,62,.12);border-left:3px solid #f03e3e;border-radius:4px;font-family:var(--ff-m);font-size:10px;color:#ff8787">' +
+                '⚠ INCUMPLIMIENTO NORMATIVO Cat.' + a.cat + '<br>' +
+                a.evalCat.alertas.map(function(al){ return '&nbsp;· ' + al; }).join('<br>') +
+                '</div>';
+        }
+
+        /* Detalle de flota */
+        var flotaHtml = '';
+        if (a.flotaDetalle && a.flotaDetalle.length > 0) {
+            flotaHtml =
+                '<div style="font-family:var(--ff-m);font-size:8.5px;color:var(--text-muted);letter-spacing:.07em;text-transform:uppercase;margin:10px 0 5px">Flota registrada (' + a.flotaDetalle.length + ' vehiculos)</div>' +
+                a.flotaDetalle.map(function(m){
+                    var isFuser = m.estado === 'FUSER' || m.estado === 'Fuera de Servicio';
+                    var isMant  = m.estado === 'MANTENIMIENTO' || m.estado === 'MANT';
+                    var col     = isFuser ? '#f03e3e' : isMant ? '#f59f00' : '#40c057';
+                    var etiq    = isFuser ? 'FUSER' : isMant ? 'MANT' : 'OP';
+                    return '<div style="display:flex;align-items:center;gap:8px;padding:3px 0;border-bottom:1px solid rgba(255,255,255,.03)">' +
+                        '<span style="font-family:var(--ff-m);font-size:9px;color:var(--text-dim);min-width:50px">' + (m.numero_interno || 'S/N') + '</span>' +
+                        '<span style="font-family:var(--ff-b);font-size:9px;color:var(--text-dim);flex:1">' + (m.marca || '') + ' ' + (m.modelo || '') + '</span>' +
+                        '<span style="font-family:var(--ff-m);font-size:8px;padding:1px 6px;border-radius:3px;color:' + col + ';background:' + col + '18;border:1px solid ' + col + '44">' + etiq + '</span>' +
+                        '</div>';
+                }).join('');
+        } else {
+            flotaHtml = '<div style="font-family:var(--ff-m);font-size:9px;color:var(--text-muted);padding:6px 0">Sin maquinas registradas en Supabase.</div>';
+        }
+
+        return (
+            '<div class="drawer-inner">' +
+            '<div class="drawer-title">' +
+            '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>' +
+            ' Tarjeta Tecnica — ' + a.name + ' · ' + a.city +
+            '</div>' +
+            catAlertHtml +
+            '<div class="drawer-grid">' +
+            '<div class="dr-cell"><div class="dr-lbl">Categoria OACI</div><div class="dr-val" style="color:' + (a.cat>=7?'#f03e3e':a.cat>=5?'#f59f00':'#38bdf8') + '">Cat.' + a.cat + '</div><div class="dr-note">OACI Doc 9137 Tabla 2-2</div></div>' +
+            '<div class="dr-cell"><div class="dr-lbl">Caudal Flota Op.</div><div class="dr-val" style="color:' + qColor + '">' + a.q.toLocaleString() + '</div><div class="dr-note">L/min · Vehiculos operativos</div></div>' +
+            '<div class="dr-cell"><div class="dr-lbl">Agua disponible</div><div class="dr-val" style="color:#38bdf8">' + a.agua.toLocaleString() + '</div><div class="dr-note">Litros · Tanques flota op.</div></div>' +
+            '<div class="dr-cell"><div class="dr-lbl">Reserva bodega</div><div class="dr-val" style="color:#f59f00">' + a.reservaEspuma.toLocaleString() + '</div><div class="dr-note">L espuma · NFPA 5.4</div></div>' +
+            '<div class="dr-cell"><div class="dr-lbl">PQS disponible</div><div class="dr-val" style="color:#f76707">' + a.pqs + '</div><div class="dr-note">kg</div></div>' +
+            '<div class="dr-cell"><div class="dr-lbl">Tiempo respuesta</div><div class="dr-val" style="color:' + tColor + '">' + a.tResp.toFixed(1) + '</div><div class="dr-note">min · OACI max 3 min</div></div>' +
+            '<div class="dr-cell"><div class="dr-lbl">Vehiculos Operativos</div><div class="dr-val" style="color:#dde4ee">' + a.vehiculos + ' / ' + a.vehiculosTotal + '</div><div class="dr-note">Op. / Total · Turno ' + a.turno + '</div></div>' +
+            '<div class="dr-cell"><div class="dr-lbl">FUSER / MANT</div><div class="dr-val" style="color:' + (a.fuser>0?'#f03e3e':'#40c057') + '">' + a.fuser + ' / ' + a.mant + '</div><div class="dr-note">Fuera servicio / Mantenimiento</div></div>' +
+            '</div>' +
+            '<div style="margin-top:8px"><div style="font-family:var(--ff-m);font-size:8.5px;color:var(--text-muted);letter-spacing:.07em;text-transform:uppercase;margin-bottom:5px">Capacidad hidrica flota operativa</div>' +
+            '<div class="gauge-wrap"><div style="font-family:var(--ff-m);font-size:9px;color:var(--text-muted);width:56px">Agua</div><div class="gauge-bar"><div class="gauge-fill" style="width:' + Math.min(a.agua/500,100) + '%;background:#38bdf8"></div></div><div class="gauge-pct" style="color:#38bdf8">' + a.agua.toLocaleString() + '</div></div>' +
+            '<div class="gauge-wrap"><div style="font-family:var(--ff-m);font-size:9px;color:var(--text-muted);width:56px">Q flota</div><div class="gauge-bar"><div class="gauge-fill" style="width:' + Math.min(a.q/120,100) + '%;background:#0bc5a0"></div></div><div class="gauge-pct" style="color:#0bc5a0">' + a.q.toLocaleString() + '</div></div>' +
+            '</div>' +
+            flotaHtml +
+            '</div>' +
+            '<div class="drawer-novedad ' + novClass + '">' +
+            '<div style="margin-bottom:8px">' + a.novedades + '</div>' +
+            '<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,.05)">' +
+            '<select id="sel-nave-' + a.code + '" style="background:var(--s3);border:1px solid var(--border);color:var(--text);padding:6px 10px;border-radius:4px;font-family:var(--ff-m);font-size:11px;flex:1;min-width:180px;outline:none">' +
+            '<option value="">Seleccione Aeronave para Simular...</option>' +
+            aeronavesDict.map(function(n){ return '<option value="' + n.longitud_m + '|' + n.ancho_fuselaje_m + '|' + n.categoria_oaci + '">' + n.modelo + ' (Cat.' + n.categoria_oaci + ')</option>'; }).join('') +
+            '</select>' +
+            '<button onclick="auditarAeropuerto(\'' + a.code + '\')" style="display:inline-flex;align-items:center;gap:6px;background:var(--teal);border:none;padding:6px 14px;border-radius:4px;color:#000;font-family:var(--ff-m);font-weight:700;font-size:10px;text-transform:uppercase;letter-spacing:.05em;cursor:pointer">' +
+            '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> Simular Area Critica</button>' +
+            '</div></div></div>'
+        );
+    }
+
+    /* ============================================================
+       Auditar aeropuerto
+    ============================================================ */
+    function auditarAeropuerto(code) {
+        var sel = document.getElementById('sel-nave-' + code);
+        if (!sel || !sel.value) {
+            window.location.href = 'arff_area_critica.html?from=nacional&apto=' + code;
+            return;
+        }
+        var parts = sel.value.split('|');
+        window.location.href = 'arff_area_critica.html?from=nacional&apto=' + code + '&l=' + parts[0] + '&wf=' + parts[1] + '&cat=' + parts[2];
+    }
+
+    /* ============================================================
+       Interacciones UI
+    ============================================================ */
     function toggleReg(id) {
-      const card = document.getElementById(id);
-      if (card) card.classList.toggle('open');
+        var card = document.getElementById(id);
+        if (card) card.classList.toggle('open');
     }
 
     function toggleDrawer(code) {
-      const drawer = document.getElementById('drawer-' + code);
-      const item = document.getElementById('ap-' + code);
-      if (!drawer || !item) return;
-      const isOpen = drawer.classList.contains('open');
-      // close all in same list
-      drawer.closest('.ap-list').querySelectorAll('.ap-drawer.open').forEach(d => {
-        d.classList.remove('open');
-        d.previousElementSibling?.classList.remove('expanded-row');
-      });
-      if (!isOpen) {
-        drawer.classList.add('open');
-        item.classList.add('expanded-row');
-      }
+        var drawer = document.getElementById('drawer-' + code);
+        var item   = document.getElementById('ap-' + code);
+        if (!drawer || !item) return;
+        var isOpen = drawer.classList.contains('open');
+        drawer.closest('.ap-list').querySelectorAll('.ap-drawer.open').forEach(function(d){
+            d.classList.remove('open');
+            if (d.previousElementSibling) d.previousElementSibling.classList.remove('expanded-row');
+        });
+        if (!isOpen) {
+            drawer.classList.add('open');
+            item.classList.add('expanded-row');
+        }
     }
 
     function scrollToRegion(id) {
-      const el = document.getElementById(id);
-      if (!el) return;
-      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      if (!el.classList.contains('open')) el.classList.add('open');
-      el.style.boxShadow = '0 0 0 2px var(--teal)';
-      setTimeout(() => el.style.boxShadow = '', 2000);
+        var el = document.getElementById(id);
+        if (!el) return;
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        if (!el.classList.contains('open')) el.classList.add('open');
+        el.style.boxShadow = '0 0 0 2px var(--teal)';
+        setTimeout(function(){ el.style.boxShadow = ''; }, 2000);
     }
 
-    /* Iniciar Carga de Supabase */
-    document.addEventListener('DOMContentLoaded', () => {
-      initDashboard();
-    });
+    /* auth-guard dispara onSEIReady cuando la sesion esta lista */
+    window.onSEIReady = function(user, rol, nombre) {
+        initDashboard();
+    };
+
   </script>
+  <!-- Toast de actualizacion en tiempo real -->
+  <div id="realtime-toast" style="position:fixed;bottom:24px;right:24px;z-index:999;background:rgba(11,197,160,.15);border:1px solid rgba(11,197,160,.4);color:#0bc5a0;font-family:var(--ff-m);font-size:10px;padding:8px 16px;border-radius:6px;letter-spacing:.06em;opacity:0;transition:opacity .4s ease;pointer-events:none">⟳ Actualizando...</div>
 </body>
 
 </html>

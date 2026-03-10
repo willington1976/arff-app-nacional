@@ -1183,112 +1183,73 @@
         </footer>
 
     </div><!-- /main-content -->
-
-    <!-- Supabase SDK -->
+    <!-- Supabase SDK + config compartida + guardia de autenticación -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase-config.js"></script>
+    <script src="auth-guard.js"></script>
 
     <script>
-        /* ══════════════════════════════════════════════════
+        /* ==================================================
+           LABELS DE ROL (dashboard unificado)
+        ================================================== */
+        const ROL_LABELS_LOCAL = {
+            admin:         { label: 'JEFE NACIONAL — SEI COLOMBIA', color: '#f59f00', bg: 'linear-gradient(90deg, #b52525, #f59f00)', border: '#f59f00', emoji: '🛡️' },
+            jefe_nacional: { label: 'Jefe Nacional',                color: '#f59f00', bg: 'rgba(245,159,0,.1)',                       border: 'rgba(245,159,0,.3)', emoji: '🎖️' },
+            comandante:    { label: 'Comandante',                   color: '#0bc5a0', bg: 'rgba(11,197,160,.1)',                      border: 'rgba(11,197,160,.3)', emoji: '🚒' },
+        };
+
+        /* ==================================================
+           CALLBACK — se ejecuta cuando auth-guard confirma sesión
+        ================================================== */
+        window.onSEIReady = function (user, rol, nombre) {
+            const rolInfo    = ROL_LABELS_LOCAL[rol] || ROL_LABELS_LOCAL['comandante'];
+            const displayName = nombre || user.email.split('@')[0];
+
+            document.getElementById('user-display-name').textContent = displayName;
+            document.getElementById('user-rol-name').textContent     = rolInfo.label;
+            document.getElementById('sb-user-name').textContent      = displayName;
+            document.getElementById('sb-user-rol').textContent       = rolInfo.label;
+            document.getElementById('sb-user-rol').style.color       = rolInfo.color;
+            document.getElementById('welcome-avatar').textContent    = rolInfo.emoji;
+
+            const badge = document.getElementById('welcome-rol-badge');
+            badge.textContent       = rolInfo.label;
+            badge.style.color       = rolInfo.color;
+            badge.style.background  = rolInfo.bg;
+            badge.style.borderColor = rolInfo.border;
+
+            // Sección Supervisión: visible solo para admin y jefe_nacional
+            if (['admin', 'jefe_nacional'].includes(rol)) {
+                document.getElementById('section-supervision').style.display = 'block';
+                document.getElementById('sb-admin-section').style.display   = 'block';
+            }
+        };
+
+        /* ==================================================
            RELOJ
-        ══════════════════════════════════════════════════ */
+        ================================================== */
         function updateClocks() {
             const t = new Date().toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
             document.getElementById('topbar-ts').textContent = t;
-            document.getElementById('sb-ts').textContent = t;
+            document.getElementById('sb-ts').textContent     = t;
         }
         updateClocks();
         setInterval(updateClocks, 1000);
 
-        /* ══════════════════════════════════════════════════
-           CARGA DE SESIÓN Y PERFIL
-        ══════════════════════════════════════════════════ */
-        const ROL_LABELS = {
-            admin: { label: 'JEFE NACIONAL - SEI COLOMBIA', color: '#f59f00', bg: 'linear-gradient(90deg, #b52525, #f59f00)', border: '#f59f00', emoji: '🛡️' },
-            jefe_nacional: { label: 'Jefe Nacional', color: '#f59f00', bg: 'rgba(245,159,0,.1)', border: 'rgba(245,159,0,.3)', emoji: '🎖️' },
-            comandante: { label: 'Comandante', color: '#0bc5a0', bg: 'rgba(11,197,160,.1)', border: 'rgba(11,197,160,.3)', emoji: '🚒' },
-        };
-
-        async function loadSession() {
-            try {
-                // Obtener el usuario directamente (más seguro que getSession)
-                const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
-
-                if (userError || !user) {
-                    console.warn("No hay usuario autenticado:", userError);
-                    window.location.href = 'index.html';
-                    return;
-                }
-
-                // Consultar perfil en perfiles_usuarios
-                let rol = 'comandante'; // fallback por defecto si RLS bloquea o no existe
-
-                const { data: perfil, error: perfilError } = await supabaseClient
-                    .from('perfiles_usuarios')
-                    .select('rol, nombre_completo')
-                    .eq('user_id', user.id)
-                    .single();
-
-                if (perfilError) {
-                    console.error("Error al leer perfiles_usuarios (Posible RLS):", perfilError.message);
-                } else if (perfil) {
-                    // Si se pudo leer la base de datos, asignamos el rol
-                    rol = perfil.rol;
-                }
-
-                // Nombre a mostrar: primero nombre_completo del perfil, luego metadata, luego email
-                const displayName = (perfil && perfil.nombre_completo)
-                    || user.user_metadata?.full_name
-                    || user.email.split('@')[0];
-
-                // Aplicar datos al DOM
-                const rolInfo = ROL_LABELS[rol] || ROL_LABELS['comandante'];
-
-                document.getElementById('user-display-name').textContent = displayName;
-                document.getElementById('user-rol-name').textContent = rolInfo.label;
-                document.getElementById('sb-user-name').textContent = displayName;
-                document.getElementById('sb-user-rol').textContent = rolInfo.label;
-                document.getElementById('sb-user-rol').style.color = rolInfo.color;
-                document.getElementById('welcome-avatar').textContent = rolInfo.emoji;
-
-                // Badge de rol
-                const badge = document.getElementById('welcome-rol-badge');
-                badge.textContent = rolInfo.label;
-                badge.style.color = rolInfo.color;
-                badge.style.background = rolInfo.bg;
-                badge.style.borderColor = rolInfo.border;
-
-                // Visibilidad de sección Supervisión (solo admin y jefe_nacional)
-                const esAdmin = ['admin', 'jefe_nacional'].includes(rol);
-                if (esAdmin) {
-                    document.getElementById('section-supervision').style.display = 'block';
-                    document.getElementById('sb-admin-section').style.display = 'block';
-                }
-            } catch (err) {
-                console.error("Error crítico en loadSession:", err);
-            }
+        /* ==================================================
+           CIERRE DE SESIÓN — usa seiLogout() del auth-guard
+        ================================================== */
+        function handleLogout() {
+            if (typeof window.seiLogout === 'function') window.seiLogout();
         }
 
-        loadSession();
-
-        /* ══════════════════════════════════════════════════
-           CIERRE DE SESIÓN
-        ══════════════════════════════════════════════════ */
-        async function handleLogout() {
-            await supabaseClient.auth.signOut();
-            window.location.href = 'index.html';
-        }
-
-        /* ══════════════════════════════════════════════════
+        /* ==================================================
            SIDEBAR MOBILE
-        ══════════════════════════════════════════════════ */
+        ================================================== */
         function toggleSidebar() {
-            const sb = document.getElementById('sidebar');
-            const ov = document.getElementById('sb-overlay');
-            sb.classList.toggle('open');
-            ov.classList.toggle('show');
+            document.getElementById('sidebar').classList.toggle('open');
+            document.getElementById('sb-overlay').classList.toggle('show');
         }
-
         function closeSidebar() {
             document.getElementById('sidebar').classList.remove('open');
             document.getElementById('sb-overlay').classList.remove('show');

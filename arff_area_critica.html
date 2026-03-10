@@ -19,6 +19,8 @@
 
   <!-- Supabase SDK -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-config.js"></script>
+  <script src="auth-guard.js"></script>
 
   <style>
     /* ──────────────────────────────────────────────
@@ -1986,11 +1988,7 @@
         .then(() => showToast('✓ PDF exportado correctamente'));
     }
 
-    /* ─── SUPABASE CONNECTION ───────────────────────── */
-    // DNS Fix: mctrdchacgwtqimsdpvn.supabase.co resuelve correctamente.
-    const SUPABASE_URL = 'https://mctrdchacgwtqimsdpvn.supabase.co';
-    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1jdHJkY2hhY2d3dHFpbXNkcHZuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5NjY4MDYsImV4cCI6MjA4ODU0MjgwNn0.RypOxjmrjrGXMM2ujRAwxanAkOKLzH4qZEKE4IQTFsQ';
-    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    // supabaseClient disponible via supabase-config.js
 
     // Variables globales para aeronaves
     let aeronavesData = [];
