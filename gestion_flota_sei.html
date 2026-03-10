@@ -34,8 +34,8 @@
             --maint: #38bdf8;
             /* Mantenimiento (Sky) */
             --sky: #38bdf8;
-            --text: #dde4ee;
-            --text-dim: #7a90aa;
+            --text: #ffffff;
+            --text-dim: #a0aec0;
             --ff-t: 'Syne', sans-serif;
             --ff-b: 'DM Sans', sans-serif;
             --ff-m: 'DM Mono', monospace;
@@ -98,7 +98,7 @@
         }
 
         /* Header */
-        .header {
+        header {
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -455,51 +455,75 @@
 <body>
 
     <div class="container">
-        <div class="header">
-            <div>
-                <div class="eyebrow"
-                    style="color: var(--teal); font-family: var(--ff-m); font-size: 10px; letter-spacing: 2px;">
-                    LOGÍSTICA TÁCTICA · UAEAC</div>
-                <h1 style="font-family: var(--ff-t); font-weight: 800; font-size: 28px; margin-top: 5px;">Gestión de
-                    Flota Operativa <em style="color: var(--teal); font-style: normal;">SEI</em></h1>
+        <header>
+            <div class="title-block">
+                <h1>PANEL TÉCNICO · FLOTA SEI</h1>
+                <p style="color: var(--text-dim); font-size: 11px; margin-top: 4px; font-family: var(--ff-m);">
+                    Sincronización de Capacidades Extintoras e Inventario</p>
             </div>
             <a href="dashboard_principal.html" class="btn-back">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                     <path d="M19 12H5M12 19l-7-7 7-7" />
                 </svg>
-                PANEL PRINCIPAL
+                Dashboard
             </a>
-            <th style="width: 90px;">Agua (Gal)</th>
-            <th style="width: 90px;">Espuma (Gal)</th>
-            <th style="width: 90px;">PQS (Lb)</th>
-            <th style="width: 110px;">Q Torreta (Lpm)</th>
-            <th style="width: 120px;">Aeropuerto ID</th>
-            <th style="width: 100px;">Control</th>
-            </tr>
-            </thead>
-            <tbody id="fleet-body">
-                <!-- Registro Fila -->
-                <tr class="reg-row">
-                    <td><input type="text" id="reg-numero" placeholder="P-01"></td>
-                    <td>
-                        <div style="display: flex; gap: 4px;">
-                            <input type="text" id="reg-marca" placeholder="Oshkosh" style="width: 40%;">
-                            <input type="text" id="reg-modelo" placeholder="Striker 3000" style="width: 60%;">
-                        </div>
-                    </td>
-                    <td><input type="number" id="reg-agua" placeholder="3000"></td>
-                    <td><input type="number" id="reg-espuma" placeholder="420"></td>
-                    <td><input type="number" id="reg-pqs" placeholder="500"></td>
-                    <td><input type="number" id="reg-torreta" placeholder="1200"></td>
-                    <td><input type="text" id="reg-aero" placeholder="SKBO"></td>
-                    <td>
-                        <button class="btn-action btn-save" onclick="saveMachine()">
-                            <span>GUARDAR</span>
-                        </button>
-                    </td>
-                </tr>
-                <!-- Data rows will be injected here -->
-            </tbody>
+        </header>
+
+        <div id="admin-panel" class="admin-controls" style="display: none; margin-bottom: 15px;">
+            <label>MODO ADMINISTRADOR:</label>
+            <select id="admin-airport-selector" class="edit-input"
+                style="width: auto; height: 32px; background: var(--surface); padding: 5px 30px 5px 10px;"
+                onchange="changeAirport(this.value)">
+                <option value="">Seleccione Aeropuerto...</option>
+                <option value="SKBO">BOGOTÁ (SKBO)</option>
+                <option value="SKRG">RIONEGRO (SKRG)</option>
+                <option value="SKCL">CALI (SKCL)</option>
+                <option value="SKCC">CÚCUTA (SKCC)</option>
+                <option value="SKCG">CARTAGENA (SKCG)</option>
+                <option value="SKSM">SANTA MARTA (SKSM)</option>
+            </select>
+            <span
+                style="font-family: var(--ff-m); font-size: 10px; color: var(--text-dim); margin-left: auto; letter-spacing: 1px;">BASE:
+                <strong id="current-station-tag" style="color: var(--teal);">...</strong></span>
+        </div>
+
+        <div class="table-panel">
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 100px;">Nº Interno</th>
+                        <th>Marca / Modelo</th>
+                        <th style="width: 90px;">Agua (Gal)</th>
+                        <th style="width: 90px;">Espuma (Gal)</th>
+                        <th style="width: 90px;">PQS (Lb)</th>
+                        <th style="width: 110px;">Q Torreta (Lpm)</th>
+                        <th style="width: 120px;">Aeropuerto ID</th>
+                        <th style="width: 100px;">Control</th>
+                    </tr>
+                </thead>
+                <tbody id="fleet-body">
+                    <!-- Registro Fila -->
+                    <tr class="reg-row">
+                        <td><input type="text" id="reg-numero" placeholder="P-01"></td>
+                        <td>
+                            <div style="display: flex; gap: 4px;">
+                                <input type="text" id="reg-marca" placeholder="Oshkosh" style="width: 40%;">
+                                <input type="text" id="reg-modelo" placeholder="Striker 3000" style="width: 60%;">
+                            </div>
+                        </td>
+                        <td><input type="number" id="reg-agua" placeholder="3000"></td>
+                        <td><input type="number" id="reg-espuma" placeholder="420"></td>
+                        <td><input type="number" id="reg-pqs" placeholder="500"></td>
+                        <td><input type="number" id="reg-torreta" placeholder="1200"></td>
+                        <td><input type="text" id="reg-aero" placeholder="SKBO"></td>
+                        <td>
+                            <button class="btn-action btn-save" onclick="saveMachine()">
+                                <span>GUARDAR</span>
+                            </button>
+                        </td>
+                    </tr>
+                    <!-- Data rows will be injected here -->
+                </tbody>
             </table>
             <div id="loader" class="loader-wrap">CONECTANDO A SUPABASE...</div>
         </div>
