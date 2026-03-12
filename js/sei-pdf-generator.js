@@ -62,18 +62,20 @@
   }
 
   function codigoReporte(est) {
+    var oaci = localStorage.getItem("aeropuerto_oaci") || est || 'SEI';
     var d  = new Date();
     var yy = d.getFullYear();
     var mm = String(d.getMonth()+1).padStart(2,'0');
     var dd = String(d.getDate()).padStart(2,'0');
     var hh = String(d.getHours()).padStart(2,'0') + String(d.getMinutes()).padStart(2,'0');
-    return 'SEI-' + (est||'XX').toUpperCase() + '-' + yy + mm + dd + '-' + hh;
+    return 'SEI-' + (oaci).toUpperCase() + '-' + yy + mm + dd + '-' + hh;
   }
 
   /* ═══════════════════════════════════════════════════════════════
      GENERADOR DE HTML — ENCABEZADO INSTITUCIONAL
   ═══════════════════════════════════════════════════════════════ */
   function htmlEncabezado(opts) {
+    var oaci = localStorage.getItem("aeropuerto_oaci") || opts.estacion || '—';
     return (
       '<div class="sei-pdf-header">' +
         '<img class="sei-pdf-header-logo" src="' + LOGO_1 + '" ' +
@@ -93,7 +95,7 @@
       (opts.subtitulo ? '<div class="sei-pdf-report-subtitle">' + opts.subtitulo + '</div>' : '') +
       '<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;">' +
         '<div style="font-size:8pt;color:#444;border:1px solid #c8cedc;border-radius:3px;padding:2px 9px;">' +
-          '📍 Estación: <strong>' + (opts.estacion || '—') + '</strong>' +
+          '📍 OACI: <strong>' + oaci.toUpperCase() + '</strong>' +
         '</div>' +
         (opts.norma ?
           '<div style="font-size:8pt;color:#444;border:1px solid #c8cedc;border-radius:3px;padding:2px 9px;">' +
@@ -101,7 +103,7 @@
           '</div>'
         : '') +
         '<div style="font-size:8pt;color:#444;border:1px solid #c8cedc;border-radius:3px;padding:2px 9px;">' +
-          '🗂️ N°: <strong>' + codigoReporte(opts.estacion) + '</strong>' +
+          '🗂️ N°: <strong>' + codigoReporte(oaci) + '</strong>' +
         '</div>' +
       '</div>'
     );
@@ -111,11 +113,12 @@
      GENERADOR DE HTML — PIE DE PÁGINA
   ═══════════════════════════════════════════════════════════════ */
   function htmlPiePagina(opts) {
+    var oaci = localStorage.getItem("aeropuerto_oaci") || opts.estacion || '—';
     return (
       '<div class="sei-pdf-footer">' +
         '<div class="sei-pdf-footer-left">' +
           '<strong>' + ORG_NOMBRE + '</strong><br>' +
-          'Sistema SEI · Estación: ' + (opts.estacion || '—') + '<br>' +
+          'Sistema SEI · Estación: ' + oaci.toUpperCase() + '<br>' +
           'Generado el ' + fechaLarga() +
         '</div>' +
         '<div class="sei-pdf-footer-right">' +
@@ -253,11 +256,25 @@
       return;
     }
 
-    /* ── 1. Obtener el contenedor de origen ──────────────────── */
+    /* ── 1. Obtener el contenedor de origen con validación y fallback ──── */
     var fuente = document.getElementById(idContenedor);
+    
+    // Fallback si el ID no existe
     if (!fuente) {
-      console.error('[SEI-PDF] No se encontró #' + idContenedor);
-      alert('Error: No se encontró el contenedor de resultados (ID: "' + idContenedor + '").\nVerifique que el ID existe en este módulo.');
+      var fallbacks = ['result-box', 'result-panel', 'pdf-content'];
+      for (var i = 0; i < fallbacks.length; i++) {
+        var f = document.getElementById(fallbacks[i]);
+        if (f) {
+          console.warn('[SEI-PDF] ID "' + idContenedor + '" no encontrado. Usando fallback: #' + fallbacks[i]);
+          fuente = f;
+          break;
+        }
+      }
+    }
+
+    if (!fuente) {
+      console.error('[SEI-PDF] Error crítico: No se encontró el contenedor "' + idContenedor + '" ni ningún fallback.');
+      alert('Error: No se encontró el contenedor de resultados.\nVerifique que el formulario tenga resultados generados.');
       return;
     }
 
@@ -278,68 +295,77 @@
     /* ── 3. Asegurar hoja de estilos PDF ─────────────────────── */
     asegurarCSS();
 
-    /* ── 4. Clonar y limpiar el contenido ────────────────────── */
-    var clon = fuente.cloneNode(true);
-    clon.removeAttribute('id');
-    limpiarClon(clon);
-
-    /* ── 5. Construir el documento PDF completo ──────────────── */
-    var wrapper = document.createElement('div');
-    wrapper.className = 'sei-pdf-root';
-    wrapper.innerHTML = (
-      htmlEncabezado(opts) +
-      '<hr class="sei-pdf-divider">' +
-      '<div class="sei-pdf-section">' +
-        clon.innerHTML +
-      '</div>' +
-      (opts.mostrarFirmas ? htmlFirmas() : '') +
-      '<hr class="sei-pdf-divider" style="margin-top:20px;">' +
-      htmlPiePagina(opts)
-    );
-
-    /* Montar en DOM fuera de pantalla para que html2canvas pueda renderizarlo */
-    wrapper.style.cssText = 'position:absolute;left:-9999px;top:0;z-index:-1;';
-    document.body.appendChild(wrapper);
-
-    /* ── 6. Mostrar indicador de progreso ────────────────────── */
+    /* ── 4. Mostrar indicador de progreso ────────────────────── */
     var overlay = mostrarOverlay();
 
-    /* ── 7. Configurar html2pdf y descargar ──────────────────── */
-    var pdfConfig = {
-      margin:      [12, 12, 12, 12],
-      filename:    (nombreArchivo || 'reporte-sei') + '.pdf',
-      image:       { type: 'jpeg', quality: 0.97 },
-      html2canvas: {
-        scale:           2,
-        useCORS:         true,
-        allowTaint:      true,
-        backgroundColor: '#ffffff',
-        logging:         false,
-        removeContainer: true
-      },
-      jsPDF: {
-        unit:        'mm',
-        format:      opts.formato || 'a4',
-        orientation: opts.orientacion || 'portrait'
-      },
-      pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
-    };
+    /* ── 5. Delay de renderización antes de capturar ──────────── */
+    setTimeout(function() {
+      try {
+        /* ── 6. Clonar y limpiar el contenido ────────────────────── */
+        var clon = fuente.cloneNode(true);
+        clon.removeAttribute('id');
+        limpiarClon(clon);
 
-    html2pdf()
-      .set(pdfConfig)
-      .from(wrapper)
-      .save()
-      .then(function() {
-        if (wrapper.parentNode) wrapper.parentNode.removeChild(wrapper);
+        /* ── 7. Construir el documento PDF completo ──────────────── */
+        var wrapper = document.createElement('div');
+        wrapper.className = 'sei-pdf-root';
+        wrapper.innerHTML = (
+          htmlEncabezado(opts) +
+          '<hr class="sei-pdf-divider">' +
+          '<div class="sei-pdf-section">' +
+            clon.innerHTML +
+          '</div>' +
+          (opts.mostrarFirmas ? htmlFirmas() : '') +
+          '<hr class="sei-pdf-divider" style="margin-top:20px;">' +
+          htmlPiePagina(opts)
+        );
+
+        /* Montar en DOM fuera de pantalla para que html2canvas pueda renderizarlo */
+        wrapper.style.cssText = 'position:absolute;left:-9999px;top:0;z-index:-1;';
+        document.body.appendChild(wrapper);
+
+        /* ── 8. Configurar html2pdf y descargar ──────────────────── */
+        var pdfConfig = {
+          margin:      [12, 12, 12, 12],
+          filename:    (nombreArchivo || 'reporte-sei') + '.pdf',
+          image:       { type: 'jpeg', quality: 0.97 },
+          html2canvas: {
+            scale:           2,
+            useCORS:         true,
+            allowTaint:      true,
+            backgroundColor: '#ffffff',
+            logging:         false,
+            removeContainer: true
+          },
+          jsPDF: {
+            unit:        'mm',
+            format:      opts.formato || 'a4',
+            orientation: opts.orientacion || 'portrait'
+          },
+          pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+        };
+
+        html2pdf()
+          .set(pdfConfig)
+          .from(wrapper)
+          .save()
+          .then(function() {
+            if (wrapper.parentNode) wrapper.parentNode.removeChild(wrapper);
+            quitarOverlay(overlay);
+            console.log('[SEI-PDF] ✔ PDF generado: ' + pdfConfig.filename);
+          })
+          .catch(function(err) {
+            if (wrapper.parentNode) wrapper.parentNode.removeChild(wrapper);
+            quitarOverlay(overlay);
+            console.error('[SEI-PDF] Error en html2pdf:', err);
+            alert('Error al generar el PDF. Revise la consola.');
+          });
+
+      } catch (e) {
         quitarOverlay(overlay);
-        console.log('[SEI-PDF] ✔ PDF generado: ' + pdfConfig.filename);
-      })
-      .catch(function(err) {
-        if (wrapper.parentNode) wrapper.parentNode.removeChild(wrapper);
-        quitarOverlay(overlay);
-        console.error('[SEI-PDF] Error generando PDF:', err);
-        alert('Error al generar el PDF. Verifique la consola del navegador (F12).');
-      });
+        console.error('[SEI-PDF] Excepción en generarReporteSEI:', e);
+      }
+    }, 200); // 200ms delay para renderización
   };
 
   /* ═══════════════════════════════════════════════════════════════
