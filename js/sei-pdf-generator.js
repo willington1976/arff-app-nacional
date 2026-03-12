@@ -187,10 +187,11 @@
       }
 
       // Limpieza de estilos que rompen html2canvas
-      var props = ['animation', 'transition', 'transform', 'filter', 'backdropFilter', 'opacity'];
+      var props = ['animation', 'transition', 'transform', 'filter', 'backdropFilter'];
       props.forEach(function(p) { nodo.style[p] = 'none'; });
       
       // Forzar visibilidad y colores (Dark Mode Override)
+      nodo.style.opacity = '1';
       nodo.style.setProperty('background', 'transparent', 'important');
       nodo.style.setProperty('color', '#000000', 'important');
       nodo.style.setProperty('box-shadow', 'none', 'important');
