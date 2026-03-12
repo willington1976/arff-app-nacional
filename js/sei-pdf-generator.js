@@ -1,5 +1,5 @@
 /**
- * SEI PDF Generator v3.0 - Captura Directa de DOM
+ * SEI PDF Generator v3.2 - Ajuste A4, Captura Directa + Light Mode Force
  * Desarrollado para Sistema SEI - Bomberos Aeronáuticos
  */
 
@@ -46,7 +46,7 @@
     `;
   }
 
-  function htmlPiePagina(opts) {
+  function htmlPiePagina() {
     const oaci = localStorage.getItem('aeropuerto_oaci') || 'SKXX';
     return `
       <div class="sei-pdf-footer">
@@ -90,28 +90,52 @@
   }
 
   /* ═══════════════════════════════════════════════════════════════
-     FUNCIÓN PRINCIPAL: CAPTURA DIRECTA
+     FUNCIÓN PRINCIPAL: AJUSTE A4 Y CAPTURA + RESET DARK MODE
   ═══════════════════════════════════════════════════════════════ */
 
-  global.generarReporteSEI = async function(nombreArchivo, idContenedor, opciones) {
-    console.log('[SEI-PDF] Iniciando generación directa v3.0...');
+  global.generarReporteSEI = async function(nombreArchivo, idContenedor, opciones = {}) {
+    console.log('[SEI-PDF] Iniciando generación v3.2 (A4 Fit + Light Mode)...');
 
-    /* ── 0. Validar html2pdf ────────────────────────────────── */
-    if (typeof html2pdf === 'undefined') {
-      alert('Error: La librería html2pdf.js no está cargada.');
-      return;
-    }
-
-    /* ── 1. Obtener elemento real ────────────────────────────── */
     const elemento = document.getElementById(idContenedor) || document.getElementById('pdf-content');
     if (!elemento) {
-      console.error('[SEI-PDF] Error: No se encontró el contenedor:', idContenedor);
-      alert('No se encontró el contenedor de resultados.');
+      console.error('[SEI-PDF] Contenedor no encontrado:', idContenedor);
       return;
     }
 
-    /* ── 2. Fijar valores de inputs en el DOM real ──────────── */
-    // Esto es CRÍTICO para que html2canvas capture lo que el usuario escribió
+    /* ── 1. Guardar Estado Original ──────────────────────────── */
+    const originalWidth = elemento.style.width;
+    const originalPosition = elemento.style.position;
+    
+    // Guardar clases de dark mode originales
+    const darkModeClasses = [];
+    const darkModeClassNames = ['dark-mode', 'dark', 'sei-dark', 'modo-oscuro'];
+    
+    // Detectar y guardar clases de dark mode en body, html y elemento
+    [document.documentElement, document.body, elemento].forEach(el => {
+      darkModeClassNames.forEach(className => {
+        if (el.classList.contains(className)) {
+          darkModeClasses.push({ element: el, className });
+        }
+      });
+    });
+
+    // Guardar estilos inline originales del body y html
+    const bodyStyleBackup = document.body.getAttribute('style');
+    const htmlStyleBackup = document.documentElement.getAttribute('style');
+
+    /* ── 2. FORZAR MODO CLARO PARA LA CAPTURA ──────────────────── */
+    // Remover clases de dark mode
+    darkModeClasses.forEach(({ element, className }) => {
+      element.classList.remove(className);
+    });
+
+    // Forzar colores de luz en body y html
+    document.documentElement.style.backgroundColor = '#ffffff';
+    document.documentElement.style.color = '#000000';
+    document.body.style.backgroundColor = '#ffffff';
+    document.body.style.color = '#000000';
+
+    // Fijar valores de inputs
     elemento.querySelectorAll('input, textarea, select').forEach(el => {
       if (el.type === 'checkbox' || el.type === 'radio') {
         if (el.checked) el.setAttribute('checked', 'checked');
@@ -121,10 +145,92 @@
       }
     });
 
-    /* ── 3. Overlay de carga ─────────────────────────────────── */
+    // Ajustar a ancho útil de A4 (718px aprox 190mm)
+    elemento.style.width = "718px";
+    elemento.classList.add('sei-pdf-root');
+
+    /* ── 3. Inyectar CSS de Luz Forzado ────────────────────────── */
+    const lightModeStyle = document.createElement('style');
+    lightModeStyle.id = 'sei-pdf-light-force';
+    lightModeStyle.textContent = `
+      /* Fuerza modo claro para PDF */
+      body, html, .sei-pdf-root, .sei-pdf-root * {
+        background-color: #ffffff !important;
+        color: #000000 !important;
+        background-image: none !important;
+      }
+      
+      /* Elementos específicos del PDF */
+      .sei-pdf-header,
+      .sei-pdf-footer,
+      .sei-pdf-firmas-container {
+        background-color: #ffffff !important;
+        color: #000000 !important;
+      }
+
+      /* Tablas y bordes */
+      table, tr, td, th {
+        background-color: #ffffff !important;
+        color: #000000 !important;
+        border-color: #000000 !important;
+      }
+
+      /* Inputs y formularios */
+      input, textarea, select {
+        background-color: #ffffff !important;
+        color: #000000 !important;
+        border-color: #cccccc !important;
+      }
+
+      /* Resetear estilos oscuros comunes */
+      .dark-mode,
+      .dark,
+      [class*="dark"],
+      [style*="background: #0"],
+      [style*="background: rgb(0"],
+      [style*="background-color: #0"],
+      [style*="background-color: rgb(0"] {
+        background-color: #ffffff !important;
+        color: #000000 !important;
+      }
+    `;
+    document.head.appendChild(lightModeStyle);
+
+    /* ── 4. Inyectar Componentes Temporales ────────────────────── */
+    const headerDiv = document.createElement('div');
+    headerDiv.innerHTML = htmlEncabezado({ titulo: opciones.titulo, subtitulo: opciones.subtitulo });
+    
+    const footerDiv = document.createElement('div');
+    footerDiv.innerHTML = htmlFirmas() + htmlPiePagina();
+
+    elemento.insertBefore(headerDiv, elemento.firstChild);
+    elemento.appendChild(footerDiv);
+
+    /* ── 5. Configuración html2pdf ──────────────────────────────── */
+    const opt = {
+      margin: 10,
+      filename: (nombreArchivo || 'reporte-sei') + '.pdf',
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: {
+        scale: 1.5,
+        useCORS: true,
+        logging: false,
+        scrollY: 0,
+        windowWidth: 1200,
+        backgroundColor: '#ffffff'  // ✅ Asegurar fondo blanco en la captura
+      },
+      jsPDF: {
+        unit: 'mm',
+        format: 'a4',
+        orientation: opciones.orientacion || 'portrait'
+      },
+      pagebreak: { mode: ['css', 'legacy'] }
+    };
+
+    /* ── 6. Overlay de carga ─────────────────────────────────── */
     const overlay = document.createElement('div');
-    overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(6,12,20,0.9);z-index:999999;display:flex;align-items:center;justify-content:center;color:#fff;font-family:Arial,sans-serif;flex-direction:column;gap:15px;';
-    overlay.innerHTML = '<div style="width:40px;height:40px;border:3px solid #0057b8;border-top-color:#fff;border-radius:50%;animation:sei-spin 0.8s linear infinite;"></div><div>PROCESANDO REPORTE DIRECTO</div>';
+    overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(6,12,20,0.85);z-index:999999;display:flex;align-items:center;justify-content:center;color:#fff;font-family:Arial,sans-serif;flex-direction:column;gap:15px;';
+    overlay.innerHTML = '<div style="width:40px;height:40px;border:3px solid #0057b8;border-top-color:#fff;border-radius:50%;animation:sei-spin 0.8s linear infinite;"></div><div>GENERANDO REPORTE A4</div>';
     
     if (!document.getElementById('sei-pdf-spin')) {
       const st = document.createElement('style');
@@ -134,37 +240,47 @@
     }
     document.body.appendChild(overlay);
 
-    /* ── 4. Configuración y Captura ──────────────────────────── */
-    const opt = {
-      margin: [10, 10, 10, 10],
-      filename: (nombreArchivo || 'reporte-sei') + '.pdf',
-      image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: {
-        scale: 2,
-        useCORS: true,
-        logging: false,
-        scrollY: 0,
-        windowWidth: 1200
-      },
-      jsPDF: {
-        unit: 'mm',
-        format: 'a4',
-        orientation: (opciones && opciones.orientacion) || 'portrait'
-      },
-      pagebreak: { mode: ['css', 'legacy'] }
-    };
-
+    /* ── 7. Ejecutar y Restaurar ─────────────────────────────── */
     try {
-      // Pequeña espera para que los cambios de atributo se asienten
-      await new Promise(r => setTimeout(r, 200));
+      await new Promise(r => setTimeout(r, 300)); // Esperar render
 
       await html2pdf().set(opt).from(elemento).save();
-      console.log('[SEI-PDF] ✔ PDF generado exitosamente.');
+      
+      console.log('[SEI-PDF] ✔ Reporte generado y descargado.');
     } catch (err) {
-      console.error('[SEI-PDF] Error en generación directa:', err);
-      alert('Error al generar el PDF. Revise la consola.');
+      console.error('[SEI-PDF] Error:', err);
+      alert('Error al generar el PDF.');
     } finally {
+      // Restauración del DOM original
+      elemento.style.width = originalWidth;
+      elemento.classList.remove('sei-pdf-root');
+      elemento.removeChild(headerDiv);
+      elemento.removeChild(footerDiv);
       document.body.removeChild(overlay);
+
+      // Remover estilos de luz forzado
+      const lightStyleElement = document.getElementById('sei-pdf-light-force');
+      if (lightStyleElement) lightStyleElement.remove();
+
+      // Restaurar estilos originales del body y html
+      if (bodyStyleBackup) {
+        document.body.setAttribute('style', bodyStyleBackup);
+      } else {
+        document.body.removeAttribute('style');
+      }
+      
+      if (htmlStyleBackup) {
+        document.documentElement.setAttribute('style', htmlStyleBackup);
+      } else {
+        document.documentElement.removeAttribute('style');
+      }
+
+      // Restaurar clases de dark mode
+      darkModeClasses.forEach(({ element, className }) => {
+        element.classList.add(className);
+      });
+
+      console.log('[SEI-PDF] ✔ Estilos originales restaurados.');
     }
   };
 
@@ -177,11 +293,11 @@
 
     const btn = document.createElement('button');
     btn.innerHTML = 'Descargar Reporte PDF';
-    btn.className = 'btn-sei-pdf-download'; // Estilo definido en sei-pdf-style.css
+    btn.className = 'btn-sei-pdf-download';
     btn.onclick = () => global.generarReporteSEI(nombrePDF, idContenido, opciones);
     cont.appendChild(btn);
   };
 
-  console.log('[SEI-PDF] Generador v3.0 (Direct DOM) cargado exitosamente ✔');
+  console.log('[SEI-PDF] Generador v3.2 (A4 Fit + Light Mode) cargado ✔');
 
 })(window);
