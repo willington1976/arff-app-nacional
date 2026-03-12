@@ -278,6 +278,13 @@
       return;
     }
 
+    // Validación de contenido visible
+    if (fuente.offsetHeight === 0) {
+      console.warn('[SEI-PDF] El contenedor está oculto o vacío (height 0).');
+      alert('Error: El contenedor de resultados parece estar vacío o no es visible.\nGenere los resultados antes de exportar.');
+      return;
+    }
+
     /* ── 2. Opciones por defecto ─────────────────────────────── */
     var opts = {
       titulo:        'Reporte Técnico SEI',
@@ -298,74 +305,88 @@
     /* ── 4. Mostrar indicador de progreso ────────────────────── */
     var overlay = mostrarOverlay();
 
-    /* ── 5. Delay de renderización antes de capturar ──────────── */
-    setTimeout(function() {
-      try {
-        /* ── 6. Clonar y limpiar el contenido ────────────────────── */
-        var clon = fuente.cloneNode(true);
-        clon.removeAttribute('id');
-        limpiarClon(clon);
+    /* ── 5. Delay de renderización avanzado antes de capturar ──────────── */
+    requestAnimationFrame(function() {
+      setTimeout(function() {
+        try {
+          /* ── 6. Clonar y limpiar el contenido ────────────────────── */
+          var clon = fuente.cloneNode(true);
+          clon.removeAttribute('id');
+          limpiarClon(clon);
 
-        /* ── 7. Construir el documento PDF completo ──────────────── */
-        var wrapper = document.createElement('div');
-        wrapper.className = 'sei-pdf-root';
-        wrapper.innerHTML = (
-          htmlEncabezado(opts) +
-          '<hr class="sei-pdf-divider">' +
-          '<div class="sei-pdf-section">' +
-            clon.innerHTML +
-          '</div>' +
-          (opts.mostrarFirmas ? htmlFirmas() : '') +
-          '<hr class="sei-pdf-divider" style="margin-top:20px;">' +
-          htmlPiePagina(opts)
-        );
+          /* ── 7. Construir el documento PDF completo usando DOM real ── */
+          var wrapper = document.createElement('div');
+          wrapper.className = 'sei-pdf-root';
+          
+          // Encabezado
+          var headerDiv = document.createElement('div');
+          headerDiv.innerHTML = htmlEncabezado(opts);
+          wrapper.appendChild(headerDiv);
 
-        /* Montar en DOM fuera de pantalla para que html2canvas pueda renderizarlo */
-        wrapper.style.cssText = 'position:absolute;left:-9999px;top:0;z-index:-1;';
-        document.body.appendChild(wrapper);
+          // Contenedor de sección (donde va el clon)
+          var section = document.createElement('div');
+          section.className = 'sei-pdf-section';
+          section.appendChild(clon);
+          wrapper.appendChild(section);
 
-        /* ── 8. Configurar html2pdf y descargar ──────────────────── */
-        var pdfConfig = {
-          margin:      [12, 12, 12, 12],
-          filename:    (nombreArchivo || 'reporte-sei') + '.pdf',
-          image:       { type: 'jpeg', quality: 0.97 },
-          html2canvas: {
-            scale:           2,
-            useCORS:         true,
-            allowTaint:      true,
-            backgroundColor: '#ffffff',
-            logging:         false,
-            removeContainer: true
-          },
-          jsPDF: {
-            unit:        'mm',
-            format:      opts.formato || 'a4',
-            orientation: opts.orientacion || 'portrait'
-          },
-          pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
-        };
+          // Firmas opcionales
+          if (opts.mostrarFirmas) {
+            var firmasDiv = document.createElement('div');
+            firmasDiv.innerHTML = '<hr class="sei-pdf-divider" style="margin-top:20px;">' + htmlFirmas();
+            wrapper.appendChild(firmasDiv);
+          }
 
-        html2pdf()
-          .set(pdfConfig)
-          .from(wrapper)
-          .save()
-          .then(function() {
-            if (wrapper.parentNode) wrapper.parentNode.removeChild(wrapper);
-            quitarOverlay(overlay);
-            console.log('[SEI-PDF] ✔ PDF generado: ' + pdfConfig.filename);
-          })
-          .catch(function(err) {
-            if (wrapper.parentNode) wrapper.parentNode.removeChild(wrapper);
-            quitarOverlay(overlay);
-            console.error('[SEI-PDF] Error en html2pdf:', err);
-            alert('Error al generar el PDF. Revise la consola.');
-          });
+          // Pie de página
+          var footerDiv = document.createElement('div');
+          footerDiv.innerHTML = '<hr class="sei-pdf-divider" style="margin-top:20px;">' + htmlPiePagina(opts);
+          wrapper.appendChild(footerDiv);
 
-      } catch (e) {
-        quitarOverlay(overlay);
-        console.error('[SEI-PDF] Excepción en generarReporteSEI:', e);
-      }
-    }, 200); // 200ms delay para renderización
+          /* Montar en DOM fuera de pantalla para que html2canvas pueda renderizarlo */
+          wrapper.style.cssText = 'position:absolute;left:-9999px;top:0;z-index:-1;width:210mm;background:#fff;';
+          document.body.appendChild(wrapper);
+
+          /* ── 8. Configurar html2pdf y descargar ──────────────────── */
+          var pdfConfig = {
+            margin:      [10, 10, 10, 10],
+            filename:    (nombreArchivo || 'reporte-sei') + '.pdf',
+            image:       { type: 'jpeg', quality: 0.98 },
+            html2canvas: {
+              scale:           2,
+              useCORS:         true,
+              allowTaint:      true,
+              backgroundColor: '#ffffff',
+              logging:         false
+            },
+            jsPDF: {
+              unit:        'mm',
+              format:      opts.formato || 'a4',
+              orientation: opts.orientacion || 'portrait'
+            },
+            pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+          };
+
+          html2pdf()
+            .set(pdfConfig)
+            .from(wrapper)
+            .save()
+            .then(function() {
+              if (wrapper.parentNode) wrapper.parentNode.removeChild(wrapper);
+              quitarOverlay(overlay);
+              console.log('[SEI-PDF] ✔ PDF generado: ' + pdfConfig.filename);
+            })
+            .catch(function(err) {
+              if (wrapper.parentNode) wrapper.parentNode.removeChild(wrapper);
+              quitarOverlay(overlay);
+              console.error('[SEI-PDF] Error en html2pdf:', err);
+              alert('Error al generar el PDF. Revise la consola.');
+            });
+
+        } catch (e) {
+          quitarOverlay(overlay);
+          console.error('[SEI-PDF] Excepción en generarReporteSEI:', e);
+        }
+      }, 350); // Timeout de 350ms después del primer frame de animación
+    });
   };
 
   /* ═══════════════════════════════════════════════════════════════
