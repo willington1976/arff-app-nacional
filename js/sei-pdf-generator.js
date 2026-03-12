@@ -151,9 +151,10 @@
 
   /* ═══════════════════════════════════════════════════════════════
      LIMPIEZA DEL CLON — elimina modo oscuro y controles UI
+     Versión Sandbox v2.0 — Conversión de layout a Block
   ═══════════════════════════════════════════════════════════════ */
   function limpiarClon(clon) {
-    /* 1. Ocultar elementos de navegación y botones */
+    /* 1. Ocultar elementos de navegación y controles */
     var selectores = [
       'button', '.btn-calc', '.btn-return', '.btn-back', '.btn-pdf',
       '.btn-eval', '.btn-action', '.btn-save', '.btn-del', '.btn-nov',
@@ -162,12 +163,10 @@
       '[id*="loader"]', '.loader-wrap', '.sb-overlay'
     ];
     selectores.forEach(function(sel) {
-      clon.querySelectorAll(sel).forEach(function(el) {
-        el.style.display = 'none';
-      });
+      clon.querySelectorAll(sel).forEach(function(el) { el.style.display = 'none'; });
     });
 
-    /* 2. Convertir inputs → texto plano visible */
+    /* 2. Convertir inputs → texto plano */
     clon.querySelectorAll('input:not([type="button"]):not([type="submit"]), select, textarea').forEach(function(el) {
       var valorTexto = el.value !== undefined ? el.value : (el.textContent || '');
       var span = document.createElement('span');
@@ -176,20 +175,40 @@
       if (el.parentNode) el.parentNode.replaceChild(span, el);
     });
 
-    /* 3. Limpiar animaciones y sombras de todos los elementos */
-    clon.querySelectorAll('*').forEach(function(el) {
-      el.style.animation  = 'none';
-      el.style.transition = 'none';
-      el.style.textShadow = 'none';
-      el.style.boxShadow  = 'none';
-      /* forzar colores: si el elemento tiene --webkit-text-fill-color, lo eliminamos */
-      el.style.webkitTextFillColor = '';
-    });
+    /* 3. Limpieza Recursiva de Estilos Prohibidos y Estabilización de Layout */
+    function procesarNodo(nodo) {
+      if (nodo.nodeType !== 1) return; // Solo elementos
 
-    /* 4. Limpiar body::before, ::after pseudo-elementos vía clase */
-    clon.querySelectorAll('[class*="scanline"], body::before, body::after').forEach(function(el) {
-      if (el.remove) el.remove();
-    });
+      var style = window.getComputedStyle(nodo);
+      
+      // Estabilización de Layout: Grid/Flex -> Block
+      if (style.display === 'grid' || style.display === 'flex' || style.display === 'inline-flex' || style.display === 'inline-grid') {
+        nodo.style.setProperty('display', 'block', 'important');
+      }
+
+      // Limpieza de estilos que rompen html2canvas
+      var props = ['animation', 'transition', 'transform', 'filter', 'backdropFilter', 'opacity'];
+      props.forEach(function(p) { nodo.style[p] = 'none'; });
+      
+      // Forzar visibilidad y colores (Dark Mode Override)
+      nodo.style.setProperty('background', 'transparent', 'important');
+      nodo.style.setProperty('color', '#000000', 'important');
+      nodo.style.setProperty('box-shadow', 'none', 'important');
+      nodo.style.setProperty('text-shadow', 'none', 'important');
+      nodo.style.setProperty('visibility', 'visible', 'important');
+
+      // Procesar hijos
+      for (var i = 0; i < nodo.children.length; i++) {
+        procesarNodo(nodo.children[i]);
+      }
+    }
+
+    procesarNodo(clon);
+    
+    // Forzar fondo blanco solo al contenedor raíz del clon
+    clon.style.setProperty('background', '#ffffff', 'important');
+    clon.style.setProperty('width', '1000px', 'important');
+    clon.style.setProperty('margin', '0 auto', 'important');
   }
 
   /* ═══════════════════════════════════════════════════════════════
@@ -214,19 +233,18 @@
     ov.id = '_sei_pdf_overlay';
     ov.innerHTML = (
       '<div style="position:fixed;top:0;left:0;right:0;bottom:0;' +
-      'background:rgba(6,12,20,0.85);z-index:999999;display:flex;' +
+      'background:rgba(6,12,20,0.95);z-index:99999999;display:flex;' +
       'flex-direction:column;align-items:center;justify-content:center;gap:14px;">' +
-        '<div style="width:56px;height:56px;border-radius:50%;border:3px solid #003087;' +
-             'border-top-color:#0057b8;animation:_spinseis 0.9s linear infinite;"></div>' +
-        '<div style="color:#fff;font-family:Arial,sans-serif;font-size:14px;font-weight:700;letter-spacing:.07em;">' +
-          'GENERANDO PDF INSTITUCIONAL' +
+        '<div style="width:56px;height:56px;border-radius:50%;border:4px solid #003087;' +
+             'border-top-color:#0057b8;animation:_spinseis 0.8s linear infinite;"></div>' +
+        '<div style="color:#fff;font-family:Arial,sans-serif;font-size:15px;font-weight:700;letter-spacing:.07em;">' +
+          'PROCESANDO PDF INSTITUCIONAL' +
         '</div>' +
-        '<div style="color:#8ab4cc;font-family:Arial,sans-serif;font-size:11px;">' +
-          'Sistema SEI · Formato A4 · Fondo blanco' +
+        '<div style="color:#8ab4cc;font-family:Arial,sans-serif;font-size:12px;">' +
+          'Ajustando Layout · Renderizando Sandbox · Escala 3x' +
         '</div>' +
       '</div>'
     );
-    /* keyframes para el spinner */
     if (!document.getElementById('_sei_spin_style')) {
       var st = document.createElement('style');
       st.id  = '_sei_spin_style';
@@ -245,7 +263,7 @@
      FUNCIÓN PRINCIPAL PÚBLICA
      generarReporteSEI(nombreArchivo, idContenedor [, opciones])
   ═══════════════════════════════════════════════════════════════ */
-  global.generarReporteSEI = function(nombreArchivo, idContenedor, opciones) {
+  global.generarReporteSEI = async function(nombreArchivo, idContenedor, opciones) {
 
     /* ── 0. Validar que html2pdf está disponible ─────────────── */
     if (typeof html2pdf === 'undefined') {
@@ -256,150 +274,115 @@
       return;
     }
 
-    /* ── 1. Obtener el contenedor de origen con validación y fallback ──── */
+    /* ── 1. Obtener fuente y validar ────────────────────────── */
     var fuente = document.getElementById(idContenedor);
-    
-    // Fallback si el ID no existe
     if (!fuente) {
       var fallbacks = ['result-box', 'result-panel', 'pdf-content'];
       for (var i = 0; i < fallbacks.length; i++) {
         var f = document.getElementById(fallbacks[i]);
-        if (f) {
-          console.warn('[SEI-PDF] ID "' + idContenedor + '" no encontrado. Usando fallback: #' + fallbacks[i]);
-          fuente = f;
-          break;
-        }
+        if (f) { fuente = f; break; }
       }
     }
 
     if (!fuente) {
-      console.error('[SEI-PDF] Error crítico: No se encontró el contenedor "' + idContenedor + '" ni ningún fallback.');
-      alert('Error: No se encontró el contenedor de resultados.\nVerifique que el formulario tenga resultados generados.');
+      alert('Error: No se encontró el contenedor "' + idContenedor + '".');
       return;
     }
 
-    // Validación de contenido visible
     if (fuente.offsetHeight === 0) {
-      console.warn('[SEI-PDF] El contenedor está oculto o vacío (height 0).');
-      alert('Error: El contenedor de resultados parece estar vacío o no es visible.\nGenere los resultados antes de exportar.');
+      alert('Error: El contenedor de resultados está vacío o no es visible.');
       return;
     }
 
-    /* ── 2. Opciones por defecto ─────────────────────────────── */
     var opts = {
-      titulo:        'Reporte Técnico SEI',
-      subtitulo:     '',
-      estacion:      '—',
-      norma:         '',
-      orientacion:   'portrait',
-      formato:       'a4',
-      mostrarFirmas: false
+      titulo: 'Reporte Técnico SEI', subtitulo: '', estacion: '—', norma: '',
+      orientacion: 'portrait', formato: 'a4', mostrarFirmas: false
     };
     if (opciones && typeof opciones === 'object') {
       Object.keys(opciones).forEach(function(k) { opts[k] = opciones[k]; });
     }
 
-    /* ── 3. Asegurar hoja de estilos PDF ─────────────────────── */
     asegurarCSS();
-
-    /* ── 4. Mostrar indicador de progreso ────────────────────── */
     var overlay = mostrarOverlay();
 
-    /* ── 5. Delay de renderización avanzado antes de capturar ──────────── */
-    requestAnimationFrame(function() {
-      setTimeout(function() {
-        try {
-          /* ── 6. Clonar y limpiar el contenido ────────────────────── */
-          var clon = fuente.cloneNode(true);
-          clon.removeAttribute('id');
-          limpiarClon(clon);
+    try {
+      /* ── 2. Crear Sandbox de Renderizado ────────────────────── */
+      var sandbox = document.createElement('div');
+      sandbox.id = 'sei-pdf-sandbox';
+      sandbox.style.cssText = 
+        'position:fixed;top:0;left:0;width:1000px;background:white;z-index:9999999;' +
+        'padding:20px;overflow:visible;visibility:visible;opacity:1;';
+      
+      /* ── 3. Clonar y Limpiar ────────────────────────────────── */
+      var clon = fuente.cloneNode(true);
+      clon.removeAttribute('id');
+      limpiarClon(clon);
 
-          /* ── 7. Construir el documento PDF completo usando DOM real ── */
-          var wrapper = document.createElement('div');
-          wrapper.className = 'sei-pdf-root';
-          
-          // Encabezado
-          var headerDiv = document.createElement('div');
-          headerDiv.innerHTML = htmlEncabezado(opts);
-          wrapper.appendChild(headerDiv);
+      /* ── 4. Construir Sandbox con DOM real ──────────────────── */
+      sandbox.innerHTML = 
+        '<div class="sei-pdf-root">' +
+          htmlEncabezado(opts) +
+          '<hr class="sei-pdf-divider">' +
+          '<div class="sei-pdf-section"></div>' +
+          (opts.mostrarFirmas ? '<div class="sei-pdf-firmas-wrap"></div>' : '') +
+          '<hr class="sei-pdf-divider" style="margin-top:20px;">' +
+          htmlPiePagina(opts) +
+        '</div>';
 
-          // Contenedor de sección (donde va el clon)
-          var section = document.createElement('div');
-          section.className = 'sei-pdf-section';
-          section.appendChild(clon);
-          wrapper.appendChild(section);
+      // Insertar clon en la sección
+      sandbox.querySelector('.sei-pdf-section').appendChild(clon);
+      
+      if (opts.mostrarFirmas) {
+        var fwrap = sandbox.querySelector('.sei-pdf-firmas-wrap');
+        fwrap.innerHTML = '<hr class="sei-pdf-divider" style="margin-top:20px;">' + htmlFirmas();
+      }
 
-          // Firmas opcionales
-          if (opts.mostrarFirmas) {
-            var firmasDiv = document.createElement('div');
-            firmasDiv.innerHTML = '<hr class="sei-pdf-divider" style="margin-top:20px;">' + htmlFirmas();
-            wrapper.appendChild(firmasDiv);
-          }
+      document.body.appendChild(sandbox);
 
-          // Pie de página
-          var footerDiv = document.createElement('div');
-          footerDiv.innerHTML = '<hr class="sei-pdf-divider" style="margin-top:20px;">' + htmlPiePagina(opts);
-          wrapper.appendChild(footerDiv);
+      /* ── 5. Ciclo de espera de renderización ────────────────── */
+      await new Promise(resolve => requestAnimationFrame(resolve));
+      await new Promise(resolve => setTimeout(resolve, 450));
 
-          /* Montar en DOM fuera de pantalla para que html2canvas pueda renderizarlo */
-          wrapper.style.cssText = 'position:absolute;left:-9999px;top:0;z-index:-1;width:210mm;background:#fff;';
-          document.body.appendChild(wrapper);
+      /* ── 6. Captura y Descarga ──────────────────────────────── */
+      var pdfConfig = {
+        margin: [10, 10, 10, 10],
+        filename: (nombreArchivo || 'reporte-sei') + '.pdf',
+        image: { type: 'jpeg', quality: 1.0 },
+        html2canvas: {
+          scale: 3,
+          useCORS: true,
+          logging: false,
+          backgroundColor: '#ffffff'
+        },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: opts.orientacion || 'portrait' },
+        pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+      };
 
-          /* ── 8. Configurar html2pdf y descargar ──────────────────── */
-          var pdfConfig = {
-            margin:      [10, 10, 10, 10],
-            filename:    (nombreArchivo || 'reporte-sei') + '.pdf',
-            image:       { type: 'jpeg', quality: 0.98 },
-            html2canvas: {
-              scale:           2,
-              useCORS:         true,
-              allowTaint:      true,
-              backgroundColor: '#ffffff',
-              logging:         false
-            },
-            jsPDF: {
-              unit:        'mm',
-              format:      opts.formato || 'a4',
-              orientation: opts.orientacion || 'portrait'
-            },
-            pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
-          };
+      await html2pdf().set(pdfConfig).from(sandbox).save();
+      
+      console.log('[SEI-PDF] ✔ PDF generado correctamente desde Sandbox.');
 
-          html2pdf()
-            .set(pdfConfig)
-            .from(wrapper)
-            .save()
-            .then(function() {
-              if (wrapper.parentNode) wrapper.parentNode.removeChild(wrapper);
-              quitarOverlay(overlay);
-              console.log('[SEI-PDF] ✔ PDF generado: ' + pdfConfig.filename);
-            })
-            .catch(function(err) {
-              if (wrapper.parentNode) wrapper.parentNode.removeChild(wrapper);
-              quitarOverlay(overlay);
-              console.error('[SEI-PDF] Error en html2pdf:', err);
-              alert('Error al generar el PDF. Revise la consola.');
-            });
-
-        } catch (e) {
-          quitarOverlay(overlay);
-          console.error('[SEI-PDF] Excepción en generarReporteSEI:', e);
-        }
-      }, 350); // Timeout de 350ms después del primer frame de animación
-    });
+    } catch (err) {
+      console.error('[SEI-PDF] Error:', err);
+      alert('Error al generar el PDF institucional.');
+    } finally {
+      if (document.getElementById('sei-pdf-sandbox')) {
+        document.body.removeChild(document.getElementById('sei-pdf-sandbox'));
+      }
+      quitarOverlay(overlay);
+    }
   };
 
   /* ═══════════════════════════════════════════════════════════════
      FUNCIÓN AUXILIAR: insertarBotonPDF
-     Agrega un botón de descarga a cualquier contenedor del DOM.
   ═══════════════════════════════════════════════════════════════ */
   global.insertarBotonPDF = function(idContenedor, nombrePDF, idContenido, opciones) {
     var cont = document.getElementById(idContenedor);
-    if (!cont) { console.warn('[SEI-PDF] insertarBotonPDF: contenedor no encontrado:', idContenedor); return; }
+    if (!cont) return;
 
     var btn = document.createElement('button');
     btn.innerHTML = (
-      '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;">' +
+      '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">' +
         '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>' +
         '<polyline points="14,2 14,8 20,8"/>' +
         '<line x1="12" y1="18" x2="12" y2="12"/><polyline points="9,15 12,18 15,15"/>' +
@@ -409,21 +392,12 @@
       'display:inline-flex;align-items:center;gap:7px;padding:9px 18px;' +
       'background:linear-gradient(135deg,#003087,#0057b8);' +
       'color:#fff;border:none;border-radius:7px;font-family:Arial,sans-serif;' +
-      'font-size:12px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;' +
-      'cursor:pointer;transition:opacity .2s,transform .15s;margin:6px 0;'
+      'font-size:12px;font-weight:700;text-transform:uppercase;cursor:pointer;margin:6px 0;'
     );
-    btn.onmouseover = function() { btn.style.opacity='0.88'; btn.style.transform='translateY(-1px)'; };
-    btn.onmouseout  = function() { btn.style.opacity='1';    btn.style.transform='none'; };
     btn.onclick = function() { global.generarReporteSEI(nombrePDF, idContenido, opciones); };
     cont.appendChild(btn);
   };
 
-  /* ═══════════════════════════════════════════════════════════════
-     LOG DE INICIALIZACIÓN
-  ═══════════════════════════════════════════════════════════════ */
-  console.log(
-    '[SEI-PDF] v2.0 cargado ✔ — ' +
-    'generarReporteSEI() e insertarBotonPDF() disponibles globalmente.'
-  );
+  console.log('[SEI-PDF] Sandbox v2.0 cargado ✔');
 
 })(window);
