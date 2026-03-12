@@ -1400,6 +1400,20 @@
                 .order('modelo', { ascending: true });
             if (navRes.data) aeronavesDict = navRes.data;
 
+            /* 5b. Cargar último ETR por estación */
+            var etrRes = await supabaseClient
+                .from('ejercicios_etr')
+                .select('estacion_oaci, fecha_ejercicio, turno, hora_inicio, tiempo_respuesta_seg, tiempo_obtenido_label, resultado, cabecera_objetivo, nombre_controlador, maquinas_json')
+                .order('fecha_ejercicio', { ascending: false })
+                .order('created_at', { ascending: false });
+            var etrAll = etrRes.data || [];
+
+            /* Construir diccionario: oaci → último ETR */
+            var etrDict = {};
+            etrAll.forEach(function(e) {
+                if (!etrDict[e.estacion_oaci]) etrDict[e.estacion_oaci] = e;
+            });
+
             /* 5. Construir estructura regional */
             REGIONS.forEach(function(r) { r.airports = []; });
 
@@ -1482,7 +1496,8 @@
                     autonomia:     est.autonomia_min || 0,
                     id_db:         est.id,
                     evalCat:       evalCat,
-                    flotaDetalle:  flota
+                    flotaDetalle:  flota,
+                    etrData: etrDict[est.oaci] || null
                 });
             });
 
@@ -1522,6 +1537,14 @@
                 function(payload) {
                     console.log('Realtime: novedades_maquinas cambio', payload.eventType);
                     showRealtimeToast('Nueva novedad reportada');
+                    initDashboard();
+                }
+            )
+            .on('postgres_changes',
+                { event: '*', schema: 'public', table: 'ejercicios_etr' },
+                function(payload) {
+                    console.log('Realtime: ejercicio ETR registrado', payload.eventType);
+                    showRealtimeToast('Nuevo ETR registrado — ' + (payload.new && payload.new.estacion_oaci ? payload.new.estacion_oaci : ''));
                     initDashboard();
                 }
             )
@@ -1740,6 +1763,7 @@
             '</div>' +
             flotaHtml +
             '</div>' +
+            buildEtrBlock(a) +
             '<div class="drawer-novedad ' + novClass + '">' +
             '<div style="margin-bottom:8px">' + a.novedades + '</div>' +
             '<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,.05)">' +
@@ -1750,6 +1774,53 @@
             '<button onclick="auditarAeropuerto(\'' + a.code + '\')" style="display:inline-flex;align-items:center;gap:6px;background:var(--teal);border:none;padding:6px 14px;border-radius:4px;color:#000;font-family:var(--ff-m);font-weight:700;font-size:10px;text-transform:uppercase;letter-spacing:.05em;cursor:pointer">' +
             '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> Simular Area Critica</button>' +
             '</div></div></div>'
+        );
+    }
+
+    function buildEtrBlock(a) {
+        var etr = a.etrData;
+
+        /* Si no hay ETR registrado */
+        if (!etr) {
+            return '<div style="margin-top:10px;padding:10px 12px;background:rgba(122,144,170,.05);border:1px dashed rgba(122,144,170,.15);border-radius:6px;display:flex;align-items:center;justify-content:space-between;gap:8px">' +
+                '<div style="font-family:var(--ff-m);font-size:9px;color:var(--text-muted);letter-spacing:.06em">⏱ ETR — Sin ejercicios registrados</div>' +
+                '<a href="etr_ejercicios.html?oaci=' + a.code + '" style="font-family:var(--ff-m);font-size:9px;color:var(--teal);text-decoration:none;border:1px solid rgba(11,197,160,.3);padding:3px 8px;border-radius:3px">+ Registrar ETR</a>' +
+                '</div>';
+        }
+
+        /* Calcular color según resultado */
+        var cumple   = etr.resultado === 'CUMPLE';
+        var noCumple = etr.resultado === 'NO-CUMPLE';
+        var colR     = cumple ? '#40c057' : noCumple ? '#f03e3e' : '#f59f00';
+        var bgR      = cumple ? 'rgba(64,192,87,.08)' : noCumple ? 'rgba(240,62,62,.08)' : 'rgba(245,159,0,.08)';
+        var bdR      = cumple ? 'rgba(64,192,87,.25)' : noCumple ? 'rgba(240,62,62,.25)' : 'rgba(245,159,0,.25)';
+        var icono    = cumple ? '✅' : noCumple ? '🔴' : '⚠';
+        var label    = cumple ? 'CUMPLE' : noCumple ? 'NO CUMPLE' : (etr.resultado || 'PARCIAL');
+        var tResp    = etr.tiempo_obtenido_label || (etr.tiempo_respuesta_seg ? Math.floor(etr.tiempo_respuesta_seg/60) + ':' + ('0'+(etr.tiempo_respuesta_seg%60)).slice(-2) : '—');
+
+        /* Máquinas del ETR */
+        var maqLabel = '—';
+        try {
+            var mqs = JSON.parse(etr.maquinas_json || '[]');
+            maqLabel = mqs.map(function(m){ return m.numero || '?'; }).join(', ') || '—';
+        } catch(e) {}
+
+        return (
+            '<div style="margin-top:10px;padding:10px 12px;background:' + bgR + ';border:1px solid ' + bdR + ';border-radius:6px">' +
+            '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:7px">' +
+              '<div style="font-family:var(--ff-m);font-size:8.5px;color:var(--text-muted);letter-spacing:.08em;text-transform:uppercase">⏱ Último ETR — ' + (etr.fecha_ejercicio || '—') + '</div>' +
+              '<span style="font-family:var(--ff-m);font-size:9px;color:' + colR + ';background:' + bgR + ';border:1px solid ' + bdR + ';padding:2px 7px;border-radius:3px">' + icono + ' ' + label + '</span>' +
+            '</div>' +
+            '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px">' +
+              '<div style="font-family:var(--ff-m);font-size:8.5px"><div style="color:var(--text-muted);font-size:7.5px;letter-spacing:.06em;margin-bottom:2px">T. RESPUESTA</div><div style="color:' + colR + ';font-size:14px;font-weight:700">' + tResp + '</div></div>' +
+              '<div style="font-family:var(--ff-m);font-size:8.5px"><div style="color:var(--text-muted);font-size:7.5px;letter-spacing:.06em;margin-bottom:2px">CABECERA</div><div style="color:var(--sky)">' + (etr.cabecera_objetivo || '—') + '</div></div>' +
+              '<div style="font-family:var(--ff-m);font-size:8.5px"><div style="color:var(--text-muted);font-size:7.5px;letter-spacing:.06em;margin-bottom:2px">MÁQ. PART.</div><div style="color:var(--text-dim)">' + maqLabel + '</div></div>' +
+              '<div style="font-family:var(--ff-m);font-size:8.5px"><div style="color:var(--text-muted);font-size:7.5px;letter-spacing:.06em;margin-bottom:2px">TURNO · ATC</div><div style="color:var(--text-dim)">T-' + (etr.turno||'—') + ' · ' + (etr.nombre_controlador||'—') + '</div></div>' +
+            '</div>' +
+            '<div style="margin-top:7px;text-align:right">' +
+              '<a href="etr_ejercicios.html?oaci=' + a.code + '" style="font-family:var(--ff-m);font-size:8.5px;color:var(--teal);text-decoration:none;opacity:.7">Ver historial ETR →</a>' +
+            '</div>' +
+            '</div>'
         );
     }
 
