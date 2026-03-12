@@ -289,7 +289,7 @@ footer{text-align:center;padding:22px 20px 18px;border-top:1px solid var(--borde
     <div class="topbar-badge">MÓDULO 05</div>
   </header>
 
-  <div class="page-body">
+  <div class="page-body" id="sei-contenido-personal">
 
     <!-- Header -->
     <div class="page-header">
@@ -417,6 +417,9 @@ footer{text-align:center;padding:22px 20px 18px;border-top:1px solid var(--borde
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="supabase-config.js"></script>
 <script src="auth-guard.js"></script>
+<link rel="stylesheet" href="css/sei-pdf-style.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<script src="js/sei-pdf-generator.js"></script>
 
 <script>
 /* ═══════════════════════════════════════════════
@@ -658,9 +661,18 @@ function exportPDF(){
   } else { _doPDF(); }
 }
 function _doPDF(){
-  const cat=document.getElementById('sel-cat').value||'sin-cat';
-  const est=document.getElementById('inp-estacion').value||'ARFF';
-  html2pdf().set({margin:.6,filename:`RAC14_Personal_Cat${cat}_${est.replace(/\s/g,'_')}.pdf`,image:{type:'jpeg',quality:.95},html2canvas:{scale:2,backgroundColor:'#060c14'},jsPDF:{unit:'cm',format:'a4',orientation:'portrait'}}).from(document.querySelector('.page-body')).save();
+  const cat = document.getElementById('sel-cat').value || 'sin-cat';
+  const est = document.getElementById('inp-estacion').value || 'ARFF';
+  const turno = document.getElementById('sel-turno').value || 'A';
+  const nombre = `RAC14_Personal_Cat${cat}_Turno${turno}_${est.replace(/\s/g,'_')}`;
+  generarReporteSEI(nombre, 'sei-contenido-personal', {
+    titulo:      'Personal Requerido por Categoría SEI',
+    subtitulo:   `RAC 14 § 316 · Categoría ${cat} · Turno ${turno} · Estación: ${est}`,
+    estacion:    est,
+    norma:       'RAC 14 § 316 · OACI Doc 9137 Tabla 2-3',
+    orientacion: 'portrait',
+    formato:     'a4'
+  });
 }
 
 /* ═══════════════════ INIT ═══════════════════ */

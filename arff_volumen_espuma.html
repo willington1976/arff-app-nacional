@@ -13,6 +13,9 @@
     href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap"
     rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <!-- SEI PDF Generator -->
+  <link rel="stylesheet" href="css/sei-pdf-style.css">
+  <script src="js/sei-pdf-generator.js"></script>
   <style>
     /* ═══════════ TOKENS */
     :root {
@@ -3390,16 +3393,17 @@
       clearTimeout(_tt); _tt = setTimeout(() => t.classList.remove('show'), 3600);
     }
     function exportPDF() {
-      showToast('⏳ Generando PDF de auditoría…');
-      html2pdf().set({
-        margin: [9, 8, 9, 8],
-        filename: `ARFF-ColombiaM03_CapacidadOperativa_${new Date().toISOString().slice(0, 10)}.pdf`,
-        image: { type: 'jpeg', quality: .96 },
-        html2canvas: { scale: 2, backgroundColor: '#0d1117', useCORS: true, logging: false },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' },
-        pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
-      }).from(document.getElementById('pdf-content')).save()
-        .then(() => showToast('✓ PDF de auditoría exportado'));
+      showToast('⏳ Generando PDF institucional…');
+      const cat  = document.getElementById('inp-cat') ? document.getElementById('inp-cat').value : 'XX';
+      const nombre = `ARFF-ColombiaM03_CapacidadOperativa_Cat${cat}_${new Date().toISOString().slice(0,10)}`;
+      generarReporteSEI(nombre, 'pdf-content', {
+        titulo:      'Volumen de Espuma — Capacidad Operativa ARFF',
+        subtitulo:   `V = ΣQ × t · Categoría ARFF: ${cat} · OACI Doc 9137 Tabla 2-2`,
+        estacion:    '—',
+        norma:       'OACI Doc 9137 §2.3.4 · RAC 14 · NFPA 403 §5.4',
+        orientacion: 'landscape',
+        formato:     'a4'
+      });
     }
 
     /* ──── INIT ──── */

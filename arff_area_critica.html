@@ -21,6 +21,9 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-config.js"></script>
   <script src="auth-guard.js"></script>
+  <!-- SEI PDF Generator -->
+  <link rel="stylesheet" href="css/sei-pdf-style.css">
+  <script src="js/sei-pdf-generator.js"></script>
 
   <style>
     /* ──────────────────────────────────────────────
@@ -1966,26 +1969,18 @@
 
     /* ─── PDF EXPORT ────────────────────────────────── */
     function exportPDF() {
-      showToast('⏳ Generando PDF...');
-
-      const el = document.getElementById('pdf-content');
-
-      const opt = {
-        margin: [12, 10, 12, 10],
-        filename: `ARFF-Colombia_Area-Critica_${new Date().toISOString().slice(0, 10)}.pdf`,
-        image: { type: 'jpeg', quality: 0.96 },
-        html2canvas: {
-          scale: 2,
-          backgroundColor: '#0d1117',
-          useCORS: true,
-          logging: false
-        },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' },
-        pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
-      };
-
-      html2pdf().set(opt).from(el).save()
-        .then(() => showToast('✓ PDF exportado correctamente'));
+      showToast('⏳ Generando PDF institucional...');
+      const cat  = (document.getElementById('cat')  ? document.getElementById('cat').value  : '') || 'XX';
+      const L    = (document.getElementById('inp-L') ? document.getElementById('inp-L').value : '') || '0';
+      const nombre = `ARFF-Colombia_Area-Critica_Cat${cat}_L${L}_${new Date().toISOString().slice(0,10)}`;
+      generarReporteSEI(nombre, 'pdf-content', {
+        titulo:      'Área Crítica de Aeronave — ICAO Doc 9137',
+        subtitulo:   `Cálculo Ac = L × (Wf + f) · Categoría ARFF: ${cat} · L = ${L} m`,
+        estacion:    '—',
+        norma:       'ICAO Doc 9137 §2.3 · RAC 14 · NFPA 403',
+        orientacion: 'landscape',
+        formato:     'a4'
+      });
     }
 
     // supabaseClient disponible via supabase-config.js

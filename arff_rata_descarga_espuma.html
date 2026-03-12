@@ -16,6 +16,9 @@
     href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap"
     rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <!-- SEI PDF Generator -->
+  <link rel="stylesheet" href="css/sei-pdf-style.css">
+  <script src="js/sei-pdf-generator.js"></script>
 
   <style>
     /* ═══════════════════════════════════════════
@@ -2008,16 +2011,17 @@
 
     /* ─── PDF EXPORT ────────────────────────── */
     function exportPDF() {
-      showToast('⏳ Generando PDF…');
-      html2pdf().set({
-        margin: [10, 8, 10, 8],
-        filename: `ARFF-Colombia_Rata-Espuma_${new Date().toISOString().slice(0, 10)}.pdf`,
-        image: { type: 'jpeg', quality: 0.96 },
-        html2canvas: { scale: 2, backgroundColor: '#0d1117', useCORS: true, logging: false },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' },
-        pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
-      }).from(document.getElementById('pdf-content')).save()
-        .then(() => showToast('✓ PDF exportado'));
+      showToast('⏳ Generando PDF institucional...');
+      const cat  = (window.currentCat || document.getElementById('inp-cat')?.value || 'XX');
+      const nombre = `ARFF-Colombia_Rata-Descarga_Cat${cat}_${new Date().toISOString().slice(0,10)}`;
+      generarReporteSEI(nombre, 'pdf-content', {
+        titulo:      'Rata de Descarga de Espuma — ICAO Doc 9137',
+        subtitulo:   `Cálculo Q = Ac × R · Categoría ARFF: ${cat}`,
+        estacion:    '—',
+        norma:       'ICAO Doc 9137 §2.6 · RAC 14 · NFPA 403',
+        orientacion: 'landscape',
+        formato:     'a4'
+      });
     }
   </script>
 </body>

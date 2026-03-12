@@ -59,7 +59,7 @@ body::before{content:'';position:fixed;inset:0;z-index:0;background-image:radial
 .topbar-clock{font-family:var(--ff-m);font-size:11px;color:var(--text-dim)}
 .topbar-badge{font-family:var(--ff-m);font-size:9.5px;padding:3px 10px;border-radius:4px;background:rgba(247,103,7,.1);border:1px solid rgba(247,103,7,.3);color:var(--orange);letter-spacing:.05em}
 .btn-menu-toggle{display:none;background:var(--s2);border:1px solid var(--border);border-radius:var(--rs);padding:7px;cursor:pointer;color:var(--text-dim)}
-.page-body{padding:28px 28px 60px;max-width:1280px}
+.page-body{padding:28px 28px 60px;max-width:1280px;position:relative;z-index:2;}
 
 /* ══════ PAGE HEADER ══════ */
 .page-header{margin-bottom:24px}
@@ -263,7 +263,7 @@ footer{text-align:center;padding:22px 20px 18px;border-top:1px solid var(--borde
     <div class="topbar-badge">MÓDULO 04</div>
   </header>
 
-  <div class="page-body">
+  <div class="page-body" id="sei-contenido-equipos">
 
     <!-- Header -->
     <div class="page-header">
@@ -411,6 +411,9 @@ footer{text-align:center;padding:22px 20px 18px;border-top:1px solid var(--borde
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="supabase-config.js"></script>
 <script src="auth-guard.js"></script>
+<link rel="stylesheet" href="css/sei-pdf-style.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<script src="js/sei-pdf-generator.js"></script>
 
 <script>
 /* ═══════════════════════════════════════════════
@@ -617,9 +620,17 @@ function exportPDF(){
   } else { _doPDF(); }
 }
 function _doPDF(){
-  const cat=document.getElementById('sel-cat').value||'Sin-cat';
-  const est=document.getElementById('inp-estacion').value||'ARFF';
-  html2pdf().set({margin:.6,filename:`RAC14_Equipos_Cat${cat}_${est.replace(/\s/g,'_')}.pdf`,image:{type:'jpeg',quality:.95},html2canvas:{scale:2,backgroundColor:'#060c14'},jsPDF:{unit:'cm',format:'a4',orientation:'portrait'}}).from(document.querySelector('.page-body')).save();
+  const cat = document.getElementById('sel-cat').value || 'Sin-cat';
+  const est = document.getElementById('inp-estacion').value || 'ARFF';
+  const nombre = `RAC14_Equipos_Cat${cat}_${est.replace(/\s/g,'_')}`;
+  generarReporteSEI(nombre, 'sei-contenido-equipos', {
+    titulo:      'Equipos para Operaciones de Salvamento',
+    subtitulo:   `Verificación RAC 14 § 315 · Categoría ${cat} · Estación: ${est}`,
+    estacion:    est,
+    norma:       'RAC 14 § 315 · OACI Doc 9137 § 6',
+    orientacion: 'portrait',
+    formato:     'a4'
+  });
 }
 
 /* ═══════════════════ AUTH / CLOCKS ═══════════════════ */

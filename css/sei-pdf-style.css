@@ -1,406 +1,348 @@
-/*
- * sei-pdf-style.css
- * Estilos institucionales para reportes PDF del Sistema SEI
- * Bomberos Aeronáuticos de Colombia
+/**
+ * sei-pdf-style.css  v2.0
+ * ─────────────────────────────────────────────────────────────────
+ * Estilos para generación de reportes PDF institucionales
+ * Sistema SEI — Bomberos Aeronáuticos de Colombia
  *
- * USO: Este archivo NO modifica el diseño oscuro de la aplicación.
- *      Solo se aplica dentro del contenedor clonado para PDF.
+ * NOTA: Este archivo es SOLO para el wrapper de PDF que crea
+ * sei-pdf-generator.js. NO afecta los estilos de la app web.
  * ─────────────────────────────────────────────────────────────────
  */
 
-/* ─── Reset base para el contenedor de impresión ─────────────────── */
-.sei-pdf-root,
-.sei-pdf-root * {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-  font-family: 'Arial', 'Helvetica Neue', Helvetica, sans-serif;
-  color: #1a1a2e !important;
-  background: #ffffff !important;
-  text-shadow: none !important;
-  box-shadow: none !important;
-  -webkit-text-fill-color: unset !important;
-}
-
-/* ─── Contenedor raíz del documento PDF ──────────────────────────── */
+/* ════════════════════════════════════════════════
+   ROOT CONTENEDOR DEL PDF
+════════════════════════════════════════════════ */
 .sei-pdf-root {
   background: #ffffff !important;
-  color: #1a1a2e !important;
-  font-size: 11pt;
-  line-height: 1.5;
-  width: 210mm;
-  min-height: 297mm;
-  padding: 18mm 16mm 20mm 16mm;
-  position: relative;
+  color:       #1a1a2e !important;
+  font-family: 'Arial', 'Helvetica', sans-serif !important;
+  font-size:   10.5pt !important;
+  line-height: 1.55 !important;
+  padding:     8mm 10mm !important;
+  box-sizing:  border-box !important;
+  width:       210mm;  /* A4 portrait / 297 para landscape se maneja por jsPDF */
 }
 
-/* ─── ENCABEZADO INSTITUCIONAL ───────────────────────────────────── */
+/* ════════════════════════════════════════════════
+   ENCABEZADO INSTITUCIONAL
+════════════════════════════════════════════════ */
 .sei-pdf-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  border-bottom: 3px solid #003087;
-  padding-bottom: 12px;
-  margin-bottom: 16px;
-  gap: 14px;
+  display:         flex !important;
+  align-items:     center !important;
+  gap:             14px !important;
+  background:      #003087 !important;
+  color:           #ffffff !important;
+  padding:         12px 16px !important;
+  border-radius:   6px !important;
+  margin-bottom:   8px !important;
 }
 
 .sei-pdf-header-logo {
-  width: 70px;
-  height: auto;
-  flex-shrink: 0;
-  object-fit: contain;
-  background: transparent !important;
+  height:      52px !important;
+  width:       auto !important;
+  object-fit:  contain !important;
+  flex-shrink: 0 !important;
+  background:  #ffffff !important;
+  border-radius: 4px !important;
+  padding:     3px !important;
 }
 
 .sei-pdf-header-center {
-  flex: 1;
-  text-align: center;
+  flex: 1 !important;
 }
 
 .sei-pdf-header-org {
-  font-size: 13pt;
-  font-weight: 700;
-  color: #003087 !important;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  line-height: 1.2;
+  font-size:   13pt !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.05em !important;
+  color:       #ffffff !important;
+  text-transform: uppercase !important;
 }
 
 .sei-pdf-header-system {
-  font-size: 9.5pt;
-  font-weight: 600;
-  color: #555 !important;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  margin-top: 3px;
+  font-size:   9.5pt !important;
+  color:       #c0d0f4 !important;
+  margin-top:  2px !important;
+  letter-spacing: 0.04em !important;
 }
 
 .sei-pdf-header-right {
-  text-align: right;
-  flex-shrink: 0;
-  min-width: 90px;
+  text-align:  right !important;
+  font-size:   8.5pt !important;
+  color:       #c0d0f4 !important;
+  flex-shrink: 0 !important;
 }
 
 .sei-pdf-header-date-label {
-  font-size: 7.5pt;
-  color: #888 !important;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  font-size:   7.5pt !important;
+  color:       #8ca8dd !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.06em !important;
 }
 
 .sei-pdf-header-date-val {
-  font-size: 9pt;
-  font-weight: 600;
-  color: #1a1a2e !important;
-  margin-top: 2px;
+  font-weight: 600 !important;
+  color:       #ffffff !important;
+  font-size:   9pt !important;
 }
 
-/* ─── LÍNEA DIVISORIA DECORATIVA ─────────────────────────────────── */
+/* ════════════════════════════════════════════════
+   FRANJA INSTITUCIONAL
+════════════════════════════════════════════════ */
 .sei-pdf-strip {
-  height: 4px;
-  background: linear-gradient(90deg, #003087, #0057b8, #00a0e4);
-  border-radius: 2px;
-  margin-bottom: 18px;
+  height:         4px !important;
+  background:     linear-gradient(90deg, #003087, #0057b8, #f7a71b, #d4421a) !important;
+  margin-bottom:  10px !important;
+  border-radius:  2px !important;
 }
 
-/* ─── TÍTULO DEL REPORTE ─────────────────────────────────────────── */
+/* ════════════════════════════════════════════════
+   TÍTULO DEL REPORTE
+════════════════════════════════════════════════ */
 .sei-pdf-report-title {
-  font-size: 15pt;
-  font-weight: 700;
-  color: #003087 !important;
-  text-transform: uppercase;
-  letter-spacing: 0.02em;
-  margin-bottom: 4px;
-  border-left: 5px solid #003087;
-  padding-left: 10px;
+  font-size:      15pt !important;
+  font-weight:    700 !important;
+  color:          #003087 !important;
+  margin-bottom:  3px !important;
+  letter-spacing: 0.02em !important;
 }
 
 .sei-pdf-report-subtitle {
-  font-size: 10pt;
-  color: #555 !important;
-  margin-bottom: 16px;
-  padding-left: 15px;
+  font-size:   9pt !important;
+  color:       #5566aa !important;
+  margin-bottom: 10px !important;
 }
 
-/* ─── SECCIÓN / BLOQUE ───────────────────────────────────────────── */
+/* ════════════════════════════════════════════════
+   DIVISOR
+════════════════════════════════════════════════ */
+.sei-pdf-divider {
+  border:      none !important;
+  border-top:  2px solid #003087 !important;
+  margin:      10px 0 !important;
+}
+
+/* ════════════════════════════════════════════════
+   SECCIÓN DE CONTENIDO PRINCIPAL
+════════════════════════════════════════════════ */
 .sei-pdf-section {
-  margin-bottom: 18px;
-}
-
-.sei-pdf-section-title {
-  font-size: 10.5pt;
-  font-weight: 700;
-  color: #003087 !important;
-  text-transform: uppercase;
-  letter-spacing: 0.07em;
-  border-bottom: 1.5px solid #003087;
-  padding-bottom: 4px;
-  margin-bottom: 10px;
-}
-
-/* ─── TABLAS ─────────────────────────────────────────────────────── */
-.sei-pdf-root table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 9.5pt;
-  margin-bottom: 14px;
-  page-break-inside: avoid;
   background: #ffffff !important;
+  color:      #1a1a2e !important;
 }
 
-.sei-pdf-root th {
-  background: #003087 !important;
-  color: #ffffff !important;
-  font-weight: 700;
-  font-size: 9pt;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  padding: 7px 10px;
-  border: 1px solid #003087;
-  text-align: left;
-  -webkit-text-fill-color: #ffffff !important;
+/* Eliminar todas las variables CSS del modo oscuro */
+.sei-pdf-section * {
+  color:           #1a1a2e !important;
+  background:      transparent !important;
+  border-color:    #c0c8d8 !important;
+  text-shadow:     none !important;
+  box-shadow:      none !important;
+  animation:       none !important;
+  transition:      none !important;
 }
 
-.sei-pdf-root td {
-  padding: 6px 10px;
-  border: 1px solid #c8cedc;
-  vertical-align: middle;
-  color: #1a1a2e !important;
-  background: #ffffff !important;
+/* ════════════════════════════════════════════════
+   TABLAS INSTITUCIONALES
+════════════════════════════════════════════════ */
+.sei-pdf-section table {
+  width:           100% !important;
+  border-collapse: collapse !important;
+  margin:          10px 0 !important;
+  font-size:       9pt !important;
+  background:      #ffffff !important;
 }
 
-.sei-pdf-root tr:nth-child(even) td {
+.sei-pdf-section th {
+  background:    #003087 !important;
+  color:         #ffffff !important;
+  padding:       6px 8px !important;
+  font-weight:   700 !important;
+  font-size:     8.5pt !important;
+  text-align:    left !important;
+  border:        1px solid #002060 !important;
+  letter-spacing: 0.03em !important;
+}
+
+.sei-pdf-section td {
+  padding:     5px 8px !important;
+  border:      1px solid #c8cedc !important;
+  color:       #1a1a2e !important;
+  background:  #ffffff !important;
+  vertical-align: top !important;
+}
+
+.sei-pdf-section tr:nth-child(even) td {
   background: #f4f6fb !important;
 }
 
-.sei-pdf-root tr:first-child td {
-  background: #ffffff !important;
+.sei-pdf-section tr.active-row td,
+.sei-pdf-section tr.cat-hi td {
+  background: #fef5e0 !important;
+  border-color: #f59f00 !important;
+  font-weight:  700 !important;
 }
 
-/* Celda de énfasis numérico */
-.sei-pdf-root td.sei-num {
-  font-family: 'Courier New', Courier, monospace;
-  font-size: 10pt;
-  font-weight: 700;
-  text-align: right;
-  color: #003087 !important;
+/* ════════════════════════════════════════════════
+   PANELES / CARDS
+════════════════════════════════════════════════ */
+.sei-pdf-section .panel,
+.sei-pdf-section .panel-body,
+.sei-pdf-section .result-box,
+.sei-pdf-section .result-card,
+.sei-pdf-section .info-card,
+.sei-pdf-section .card {
+  background:  #f8f9fc !important;
+  border:      1px solid #c8cedc !important;
+  border-radius: 5px !important;
+  padding:     10px 12px !important;
+  margin:      8px 0 !important;
+  color:       #1a1a2e !important;
 }
 
-.sei-pdf-root td.sei-result {
-  background: #e8f0fe !important;
-  font-weight: 700;
-  color: #003087 !important;
+/* ════════════════════════════════════════════════
+   VALORES NUMÉRICOS GRANDES
+════════════════════════════════════════════════ */
+.sei-pdf-section .result-value,
+.sei-pdf-section .big-value,
+.sei-pdf-section [class*="res-v"],
+.sei-pdf-section [class*="big-num"],
+.sei-pdf-section #res-ac,
+.sei-pdf-section #res-v {
+  font-size:   20pt !important;
+  font-weight: 700 !important;
+  color:       #003087 !important;
 }
 
-/* ─── BADGES / ESTADOS ───────────────────────────────────────────── */
-.sei-pdf-badge {
-  display: inline-block;
-  padding: 2px 8px;
-  border-radius: 3px;
-  font-size: 8pt;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
+.sei-pdf-section .unit,
+.sei-pdf-section .ru {
+  font-size:   11pt !important;
+  color:       #555 !important;
 }
 
-.sei-pdf-badge.operativo {
-  background: #d3f9d8 !important;
-  color: #1a6b2e !important;
-  border: 1px solid #b2e9bc;
+/* ════════════════════════════════════════════════
+   BADGES Y ETIQUETAS
+════════════════════════════════════════════════ */
+.sei-pdf-section .cat-badge,
+.sei-pdf-section .cbadge,
+.sei-pdf-section [class*="badge"] {
+  display:      inline-block !important;
+  padding:      2px 8px !important;
+  border-radius: 4px !important;
+  font-size:    8.5pt !important;
+  font-weight:  700 !important;
+  border:       1px solid #c8cedc !important;
+  color:        #003087 !important;
+  background:   #e8edf8 !important;
 }
 
-.sei-pdf-badge.fuser {
-  background: #ffe3e3 !important;
-  color: #b02020 !important;
-  border: 1px solid #ffb3b3;
+/* ════════════════════════════════════════════════
+   TÍTULOS DE SECCIÓN
+════════════════════════════════════════════════ */
+.sei-pdf-section .section-title,
+.sei-pdf-section .panel-title,
+.sei-pdf-section h2,
+.sei-pdf-section h3,
+.sei-pdf-section h4 {
+  font-size:   11pt !important;
+  font-weight: 700 !important;
+  color:       #003087 !important;
+  margin:      10px 0 5px !important;
+  padding-bottom: 4px !important;
+  border-bottom:  1px solid #c8cedc !important;
 }
 
-.sei-pdf-badge.mantenimiento {
-  background: #fff3e0 !important;
-  color: #8b5e00 !important;
-  border: 1px solid #ffcc80;
+/* ════════════════════════════════════════════════
+   NOTAS Y ADVERTENCIAS
+════════════════════════════════════════════════ */
+.sei-pdf-section .norm-note,
+.sei-pdf-section .alert-box,
+.sei-pdf-section [class*="note"],
+.sei-pdf-section [class*="banner"] {
+  background:   #f0f4ff !important;
+  border-left:  3px solid #003087 !important;
+  padding:      7px 10px !important;
+  font-size:    8.5pt !important;
+  color:        #1a1a2e !important;
+  margin:       6px 0 !important;
+  border-radius: 0 4px 4px 0 !important;
 }
 
-/* ─── CAJAS DE RESULTADO / RESUMEN ───────────────────────────────── */
-.sei-pdf-result-box {
-  border: 2px solid #003087;
-  border-radius: 6px;
-  padding: 12px 16px;
-  margin-bottom: 12px;
-  background: #f0f4ff !important;
-  page-break-inside: avoid;
-}
-
-.sei-pdf-result-label {
-  font-size: 8pt;
-  color: #555 !important;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  margin-bottom: 3px;
-}
-
-.sei-pdf-result-value {
-  font-size: 20pt;
-  font-weight: 700;
-  color: #003087 !important;
-  font-family: 'Courier New', Courier, monospace;
-  line-height: 1.1;
-}
-
-.sei-pdf-result-unit {
-  font-size: 11pt;
-  color: #555 !important;
-  margin-left: 5px;
-}
-
-/* ─── GRILLA DE DATOS CLAVE ──────────────────────────────────────── */
-.sei-pdf-data-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
-  margin-bottom: 14px;
-}
-
-.sei-pdf-data-cell {
-  border: 1px solid #c8cedc;
-  border-radius: 4px;
-  padding: 8px 10px;
-  background: #f9fafb !important;
-}
-
-.sei-pdf-data-cell-label {
-  font-size: 7.5pt;
-  color: #777 !important;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  margin-bottom: 3px;
-}
-
-.sei-pdf-data-cell-value {
-  font-family: 'Courier New', Courier, monospace;
-  font-size: 13pt;
-  font-weight: 700;
-  color: #1a1a2e !important;
-}
-
-/* ─── NOTAS / OBSERVACIONES ──────────────────────────────────────── */
-.sei-pdf-note {
-  border-left: 4px solid #0057b8;
-  background: #f0f4ff !important;
-  padding: 8px 12px;
-  font-size: 9pt;
-  color: #333 !important;
-  margin-bottom: 12px;
-  border-radius: 0 4px 4px 0;
-}
-
-.sei-pdf-note strong {
-  color: #003087 !important;
-}
-
-.sei-pdf-warn {
-  border-left: 4px solid #c0392b;
-  background: #fff5f5 !important;
-  padding: 8px 12px;
-  font-size: 9pt;
-  color: #b02020 !important;
-  margin-bottom: 12px;
-  border-radius: 0 4px 4px 0;
-}
-
-/* ─── PIE DE PÁGINA ──────────────────────────────────────────────── */
-.sei-pdf-footer {
-  margin-top: 24px;
-  border-top: 1.5px solid #c8cedc;
-  padding-top: 10px;
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-end;
-  font-size: 8pt;
-  color: #777 !important;
-}
-
-.sei-pdf-footer-left {
-  line-height: 1.6;
-}
-
-.sei-pdf-footer-right {
-  text-align: right;
-  line-height: 1.6;
-}
-
-.sei-pdf-footer-badge {
-  display: inline-block;
-  border: 1px solid #c8cedc;
-  border-radius: 3px;
-  padding: 2px 8px;
-  font-size: 7.5pt;
-  color: #888 !important;
-  margin-top: 4px;
-}
-
-/* ─── SEPARADORES ────────────────────────────────────────────────── */
-.sei-pdf-divider {
-  border: none;
-  border-top: 1px solid #dde2f0;
-  margin: 14px 0;
-}
-
-/* ─── FORZAR SALTO DE PÁGINA ─────────────────────────────────────── */
-.sei-pdf-page-break {
-  page-break-before: always;
-  display: block;
-  height: 0;
-}
-
-/* ─── OCULTAR ELEMENTOS NO IMPRIMIBLES ───────────────────────────── */
-.sei-pdf-hide,
-.sei-pdf-root .btn-calc,
-.sei-pdf-root .btn-action,
-.sei-pdf-root .btn-return,
-.sei-pdf-root .btn-back,
-.sei-pdf-root button,
-.sei-pdf-root input[type="button"],
-.sei-pdf-root input[type="submit"],
-.sei-pdf-root nav,
-.sei-pdf-root .nav-badge {
+/* ════════════════════════════════════════════════
+   HIDE — Elementos que NO deben aparecer en PDF
+════════════════════════════════════════════════ */
+.sei-pdf-section button,
+.sei-pdf-section input,
+.sei-pdf-section select,
+.sei-pdf-section textarea,
+.sei-pdf-section .fab,
+.sei-pdf-section .toast,
+.sei-pdf-section nav,
+.sei-pdf-section .topbar,
+.sei-pdf-section .sidebar,
+.sei-pdf-section .scanlines,
+.sei-pdf-section .loader-wrap,
+.sei-pdf-section [class*="btn"],
+.sei-pdf-section [class*="loader"],
+.sei-pdf-section [id*="toast"] {
   display: none !important;
 }
 
-/* ─── INPUTS → texto plano en el PDF ─────────────────────────────── */
-.sei-pdf-root input,
-.sei-pdf-root select,
-.sei-pdf-root textarea {
-  border: none !important;
-  background: transparent !important;
-  color: #1a1a2e !important;
-  font-size: 9.5pt;
-  padding: 0 !important;
-  pointer-events: none;
-  -webkit-appearance: none;
-  appearance: none;
-}
-
-/* ─── FIRMA ──────────────────────────────────────────────────────── */
+/* ════════════════════════════════════════════════
+   ÁREA DE FIRMAS
+════════════════════════════════════════════════ */
 .sei-pdf-firma-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 24px;
-  margin-top: 28px;
+  display:               grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  gap:                   20px !important;
+  margin:                16px 0 !important;
 }
 
 .sei-pdf-firma-box {
-  border-top: 1px solid #555;
-  padding-top: 6px;
-  text-align: center;
-  font-size: 8.5pt;
-  color: #333 !important;
+  border-top:  2px solid #003087 !important;
+  padding-top: 6px !important;
+  text-align:  center !important;
 }
 
-.sei-pdf-firma-box .firma-label {
-  text-transform: uppercase;
-  letter-spacing: 0.07em;
-  font-weight: 600;
-  color: #003087 !important;
+.firma-label {
+  font-size:   9pt !important;
+  font-weight: 700 !important;
+  color:       #003087 !important;
+}
+
+/* ════════════════════════════════════════════════
+   PIE DE PÁGINA
+════════════════════════════════════════════════ */
+.sei-pdf-footer {
+  display:         flex !important;
+  justify-content: space-between !important;
+  align-items:     flex-end !important;
+  background:      #f4f6fb !important;
+  border-top:      2px solid #003087 !important;
+  padding:         8px 12px !important;
+  margin-top:      10px !important;
+  border-radius:   0 0 5px 5px !important;
+  font-size:       7.5pt !important;
+  color:           #555 !important;
+}
+
+.sei-pdf-footer-left {
+  color:       #333 !important;
+  line-height: 1.6 !important;
+}
+
+.sei-pdf-footer-right {
+  text-align:  right !important;
+  color:       #555 !important;
+}
+
+.sei-pdf-footer-badge {
+  display:      inline-block !important;
+  margin-top:   4px !important;
+  background:   #003087 !important;
+  color:        #fff !important;
+  border-radius: 3px !important;
+  padding:      2px 8px !important;
+  font-size:    7pt !important;
+  font-weight:  700 !important;
+  letter-spacing: 0.06em !important;
 }
