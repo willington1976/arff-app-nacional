@@ -105,6 +105,8 @@
     /* ── 1. Guardar Estado Original ──────────────────────────── */
     const originalWidth = elemento.style.width;
     const originalPosition = elemento.style.position;
+    const originalLeft = elemento.style.left;
+    const originalMargin = elemento.style.margin;
     
     // Guardar clases de dark mode originales
     const darkModeClasses = [];
@@ -145,8 +147,11 @@
       }
     });
 
-    // Ajustar a ancho útil de A4 (718px aprox 190mm)
-    elemento.style.width = "718px";
+    // Ajustar a ancho útil de A4 (642px para márgenes de 20mm)
+    elemento.style.width = "642px";
+    elemento.style.position = "relative";
+    elemento.style.left = "0";
+    elemento.style.margin = "0";
     elemento.classList.add('sei-pdf-root');
 
     /* ── 3. Inyectar CSS de Luz Forzado ────────────────────────── */
@@ -253,6 +258,9 @@
     } finally {
       // Restauración del DOM original
       elemento.style.width = originalWidth;
+      elemento.style.position = originalPosition;
+      elemento.style.left = originalLeft;
+      elemento.style.margin = originalMargin;
       elemento.classList.remove('sei-pdf-root');
       elemento.removeChild(headerDiv);
       elemento.removeChild(footerDiv);
