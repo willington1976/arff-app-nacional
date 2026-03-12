@@ -208,7 +208,7 @@
 
     /* ── 5. Configuración html2pdf ──────────────────────────────── */
     const opt = {
-      margin: 10,
+      margin: [10, 20, 10, 20],  // ✅ Márgenes iguales (más espacio a los lados)
       filename: (nombreArchivo || 'reporte-sei') + '.pdf',
       image: { type: 'jpeg', quality: 0.98 },
       html2canvas: {
