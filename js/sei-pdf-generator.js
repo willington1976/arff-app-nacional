@@ -148,9 +148,8 @@
       }
     });
 
-    // Ajustar a ancho útil de A4 - CENTRADO Y FLUIDO
-    elemento.style.width = "100%";
-    elemento.style.maxWidth = "210mm";
+    // Ajustar a ancho útil de A4 - 170mm (210mm total - 40mm de márgenes)
+    elemento.style.width = "170mm";
     elemento.style.margin = "0 auto";
     elemento.style.display = "block";
     elemento.classList.add('sei-pdf-root');
@@ -222,7 +221,6 @@
         useCORS: true,
         logging: false,
         scrollY: 0,
-        windowWidth: 1200,
         backgroundColor: '#ffffff'  // ✅ Asegurar fondo blanco en la captura
       },
       jsPDF: {
