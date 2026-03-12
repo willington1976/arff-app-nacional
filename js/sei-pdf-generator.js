@@ -151,7 +151,7 @@
 
   /* ═══════════════════════════════════════════════════════════════
      LIMPIEZA DEL CLON — elimina modo oscuro y controles UI
-     Versión Sandbox v2.0 — Conversión de layout a Block
+     Versión Sandbox v2.5 — Preservación de Layout y Estabilidad
   ═══════════════════════════════════════════════════════════════ */
   function limpiarClon(clon) {
     /* 1. Ocultar elementos de navegación y controles */
@@ -175,30 +175,26 @@
       if (el.parentNode) el.parentNode.replaceChild(span, el);
     });
 
-    /* 3. Limpieza Recursiva de Estilos Prohibidos y Estabilización de Layout */
+    /* 3. Limpieza Quirúrgica de Estilos (Solo Criticos para html2canvas) */
     function procesarNodo(nodo) {
-      if (nodo.nodeType !== 1) return; // Solo elementos
+      if (nodo.nodeType !== 1) return;
 
-      var style = window.getComputedStyle(nodo);
+      // Desactivar efectos que rompen o ralentizan la captura
+      nodo.style.animation  = 'none';
+      nodo.style.transition = 'none';
+      nodo.style.transform  = 'none';
+      nodo.style.filter     = 'none';
+      nodo.style.backdropFilter = 'none';
       
-      // Estabilización de Layout: Grid/Flex -> Block
-      if (style.display === 'grid' || style.display === 'flex' || style.display === 'inline-flex' || style.display === 'inline-grid') {
-        nodo.style.setProperty('display', 'block', 'important');
-      }
-
-      // Limpieza de estilos que rompen html2canvas
-      var props = ['animation', 'transition', 'transform', 'filter', 'backdropFilter'];
-      props.forEach(function(p) { nodo.style[p] = 'none'; });
+      // Forzar visibilidad y opacidad (Evitar elementos fantasma)
+      nodo.style.opacity    = '1';
+      nodo.style.visibility = 'visible';
       
-      // Forzar visibilidad y colores (Dark Mode Override)
-      nodo.style.opacity = '1';
-      nodo.style.setProperty('background', 'transparent', 'important');
-      nodo.style.setProperty('color', '#000000', 'important');
-      nodo.style.setProperty('box-shadow', 'none', 'important');
-      nodo.style.setProperty('text-shadow', 'none', 'important');
-      nodo.style.setProperty('visibility', 'visible', 'important');
+      // Limpiar sombras pesadas
+      nodo.style.boxShadow  = 'none';
+      nodo.style.textShadow = 'none';
 
-      // Procesar hijos
+      // Procesar hijos recursivamente
       for (var i = 0; i < nodo.children.length; i++) {
         procesarNodo(nodo.children[i]);
       }
@@ -206,10 +202,8 @@
 
     procesarNodo(clon);
     
-    // Forzar fondo blanco solo al contenedor raíz del clon
-    clon.style.setProperty('background', '#ffffff', 'important');
-    clon.style.setProperty('width', '1000px', 'important');
-    clon.style.setProperty('margin', '0 auto', 'important');
+    /* Nota: Se conserva el layout original (Grid/Flex) para evitar 
+       el colapso de contenedores y asegurar capturas con altura real. */
   }
 
   /* ═══════════════════════════════════════════════════════════════
@@ -242,7 +236,7 @@
           'PROCESANDO PDF INSTITUCIONAL' +
         '</div>' +
         '<div style="color:#8ab4cc;font-family:Arial,sans-serif;font-size:12px;">' +
-          'Ajustando Layout · Renderizando Sandbox · Escala 3x' +
+          'Layout Original · Sandbox Estabilizado · Escala 3x' +
         '</div>' +
       '</div>'
     );
@@ -307,11 +301,12 @@
     var overlay = mostrarOverlay();
 
     try {
-      /* ── 2. Crear Sandbox de Renderizado ────────────────────── */
+      /* ── 2. Crear Sandbox Corregido ────────────────────────── */
       var sandbox = document.createElement('div');
       sandbox.id = 'sei-pdf-sandbox';
+      // min-height y background sólido son claves para evitar páginas blancas
       sandbox.style.cssText = 
-        'position:fixed;top:0;left:0;width:1000px;background:white;z-index:9999999;' +
+        'position:fixed;top:0;left:0;width:1000px;min-height:1200px;background:#ffffff;z-index:9999999;' +
         'padding:20px;overflow:visible;visibility:visible;opacity:1;';
       
       /* ── 3. Clonar y Limpiar ────────────────────────────────── */
@@ -321,7 +316,7 @@
 
       /* ── 4. Construir Sandbox con DOM real ──────────────────── */
       sandbox.innerHTML = 
-        '<div class="sei-pdf-root">' +
+        '<div class="sei-pdf-root" style="background:#ffffff; color:#000000;">' +
           htmlEncabezado(opts) +
           '<hr class="sei-pdf-divider">' +
           '<div class="sei-pdf-section"></div>' +
@@ -361,7 +356,7 @@
 
       await html2pdf().set(pdfConfig).from(sandbox).save();
       
-      console.log('[SEI-PDF] ✔ PDF generado correctamente desde Sandbox.');
+      console.log('[SEI-PDF] ✔ PDF generado correctamente desde Sandbox Estabilizado.');
 
     } catch (err) {
       console.error('[SEI-PDF] Error:', err);
@@ -399,6 +394,6 @@
     cont.appendChild(btn);
   };
 
-  console.log('[SEI-PDF] Sandbox v2.0 cargado ✔');
+  console.log('[SEI-PDF] Sandbox v2.5 cargado ✔');
 
 })(window);
