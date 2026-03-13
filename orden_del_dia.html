@@ -370,12 +370,11 @@ let NUM_CAMBIOS  = 3;
 /* ══════════════════════════════════════════════════════
    BOOT — con o sin auth-guard
 ══════════════════════════════════════════════════════ */
-window.onSEIReady = async function(session) {
-  ROL  = session.rol;
-  OACI = session.oaci || (window.seiUuidToOaci && window.seiUuidToOaci(session.estacion_id)) || 'SKYP';
-  SUPA = window.supabaseClient;
+window.onSEIReady = async function(user, rol, nombre, estacion) {
+  ROL  = rol;
+  OACI = (window.seiUuidToOaci && window.seiUuidToOaci(estacion)) || 'SKYP';
+  SUPA = typeof supabaseClient !== 'undefined' ? supabaseClient : (window.supabaseClient || null);
   document.getElementById('badgeRol').textContent = (ROL || 'USUARIO').toUpperCase();
-  if (session.nombre_aeropuerto) document.getElementById('f_aero').value = session.nombre_aeropuerto;
   await init();
 };
 
@@ -385,7 +384,7 @@ window.addEventListener('DOMContentLoaded', () => {
     if (!OACI) {
       OACI = 'SKYP';
       ROL  = 'admin';
-      SUPA = window.supabaseClient || null;
+      SUPA = typeof supabaseClient !== 'undefined' ? supabaseClient : (window.supabaseClient || null);
       document.getElementById('badgeRol').textContent = 'ADMIN';
       init();
     }
@@ -467,7 +466,9 @@ function mostrarAC(inp, id, multi) {
   }
   if (q.length < 1) { drop.classList.remove('open'); return; }
 
-  const matches = PERSONAL.filter(p => p.nombre_completo.toUpperCase().includes(q)).slice(0, 8);
+  const normalize = str => str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
+  const nQ = normalize(q);
+  const matches = PERSONAL.filter(p => normalize(p.nombre_completo).includes(nQ)).slice(0, 8);
   if (!matches.length) { drop.classList.remove('open'); return; }
 
   drop.innerHTML = '';
