@@ -1,0 +1,1278 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Orden del Día · SEI</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+:root{
+  --bg:#060c14;--panel:#0d1520;--panel2:#111d2e;--border:#1c2e47;--border2:#243a55;
+  --accent:#00e5ff;--accent2:#0097a7;
+  --green:#00e676;--green-dim:#1b3a2a;
+  --amber:#ffab40;--amber-dim:#3a2a10;
+  --red:#ff5252;--red-dim:#3a1515;
+  --muted:#4a6580;--text:#c8d8e8;--text2:#7a9bb5;--text3:#4a6580;
+  --radius:10px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;overflow-x:hidden;}
+body::before{content:'';position:fixed;inset:0;background-image:radial-gradient(circle,rgba(0,229,255,.06) 1px,transparent 1px);background-size:28px 28px;pointer-events:none;z-index:0;}
+body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.08) 2px,rgba(0,0,0,.08) 4px);pointer-events:none;z-index:0;}
+
+.wrapper{position:relative;z-index:1;display:flex;flex-direction:column;min-height:100vh;}
+
+/* TOPBAR */
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:16px 28px;background:rgba(13,21,32,.95);border-bottom:1px solid var(--border);backdrop-filter:blur(8px);position:sticky;top:0;z-index:100;}
+.topbar-left{display:flex;align-items:center;gap:14px;}
+.topbar-icon{width:36px;height:36px;background:rgba(0,229,255,.12);border:1px solid var(--accent2);border-radius:8px;display:grid;place-items:center;font-size:18px;}
+.topbar-title{font-family:'Syne',sans-serif;font-size:18px;font-weight:800;color:#fff;}
+.topbar-sub{font-size:11px;color:var(--text2);font-family:'DM Mono',monospace;margin-top:1px;}
+.topbar-right{display:flex;align-items:center;gap:10px;}
+.badge-rol{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.08em;padding:4px 10px;border-radius:4px;background:rgba(0,229,255,.1);border:1px solid var(--accent2);color:var(--accent);}
+.btn-back{display:flex;align-items:center;gap:6px;padding:7px 14px;background:transparent;border:1px solid var(--border2);border-radius:var(--radius);color:var(--text2);font-size:12px;cursor:pointer;transition:.2s;text-decoration:none;}
+.btn-back:hover{border-color:var(--accent2);color:var(--accent);}
+
+/* MAIN */
+.main{flex:1;padding:24px 28px 60px;max-width:1300px;width:100%;margin:0 auto;}
+
+/* SECTION HEADER */
+.sec-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px;}
+.sec-title{font-family:'Syne',sans-serif;font-size:13px;font-weight:800;color:var(--text2);text-transform:uppercase;letter-spacing:.1em;display:flex;align-items:center;gap:8px;}
+.sec-title::before{content:'';width:3px;height:14px;background:var(--accent);border-radius:2px;}
+
+/* ACCIONES SUPERIORES */
+.action-bar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px;}
+.btn-primary{display:flex;align-items:center;gap:7px;padding:10px 20px;background:var(--accent);color:#000;font-weight:700;font-size:13px;border:none;border-radius:var(--radius);cursor:pointer;transition:.2s;}
+.btn-primary:hover{background:#33ebff;transform:translateY(-1px);}
+.btn-primary svg{width:15px;height:15px;}
+.btn-secondary{display:flex;align-items:center;gap:7px;padding:10px 18px;background:transparent;border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);font-size:13px;cursor:pointer;transition:.2s;}
+.btn-secondary:hover{border-color:var(--accent2);color:var(--accent);}
+.btn-danger{display:flex;align-items:center;gap:7px;padding:10px 18px;background:rgba(255,82,82,.1);border:1px solid rgba(255,82,82,.3);border-radius:var(--radius);color:var(--red);font-size:13px;cursor:pointer;transition:.2s;}
+.btn-danger:hover{border-color:var(--red);background:rgba(255,82,82,.2);}
+.btn-success{display:flex;align-items:center;gap:7px;padding:10px 18px;background:var(--green-dim);border:1px solid var(--green);border-radius:var(--radius);color:var(--green);font-size:13px;font-weight:600;cursor:pointer;transition:.2s;}
+.btn-success:hover{background:rgba(0,230,118,.15);}
+
+/* HISTORIAL */
+.historial-bar{display:flex;gap:8px;margin-bottom:24px;flex-wrap:wrap;}
+.hist-chip{font-family:'DM Mono',monospace;font-size:11px;padding:6px 14px;border-radius:6px;border:1px solid var(--border);background:var(--panel2);color:var(--text2);cursor:pointer;transition:.2s;}
+.hist-chip:hover{border-color:var(--accent2);color:var(--accent);}
+.hist-chip.active{border-color:var(--accent);background:rgba(0,229,255,.08);color:var(--accent);}
+
+/* FORMULARIO GRID */
+.form-card{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:18px;}
+.form-card-title{font-family:'Syne',sans-serif;font-size:12px;font-weight:800;color:var(--accent);text-transform:uppercase;letter-spacing:.1em;margin-bottom:16px;display:flex;align-items:center;gap:8px;}
+
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;}
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
+.full{grid-column:1/-1;}
+
+/* FIELD */
+.field{display:flex;flex-direction:column;gap:5px;position:relative;}
+.field label{font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.08em;font-weight:500;}
+.field input,.field select,.field textarea{
+  background:var(--panel2);border:1px solid var(--border);border-radius:8px;
+  color:#fff;font-family:'DM Sans',sans-serif;font-size:13px;
+  padding:9px 12px;outline:none;transition:.2s;width:100%;
+}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--accent2);background:#0f1e30;}
+.field input::placeholder{color:var(--text3);}
+.field select option{background:var(--panel2);}
+.field textarea{resize:vertical;min-height:60px;}
+
+/* AUTOCOMPLETE */
+.autocomplete-wrap{position:relative;}
+.autocomplete-list{
+  position:absolute;top:calc(100% + 4px);left:0;right:0;z-index:50;
+  background:#0a1828;border:1px solid var(--accent2);border-radius:8px;
+  max-height:200px;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,.6);
+  display:none;
+}
+.autocomplete-list.open{display:block;}
+.ac-item{
+  padding:8px 12px;cursor:pointer;font-size:13px;color:var(--text);
+  display:flex;align-items:center;gap:8px;transition:.15s;
+  border-bottom:1px solid rgba(28,46,71,.5);
+}
+.ac-item:last-child{border-bottom:none;}
+.ac-item:hover,.ac-item.selected{background:rgba(0,229,255,.08);color:var(--accent);}
+.ac-item .ac-sub{font-size:10px;color:var(--text3);margin-left:auto;font-family:'DM Mono',monospace;}
+
+/* COLUMNAS A/B */
+.cols-ab{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.col-a-header,.col-b-header{
+  text-align:center;font-family:'DM Mono',monospace;font-size:11px;font-weight:500;
+  letter-spacing:.1em;padding:6px;border-radius:6px;margin-bottom:12px;
+}
+.col-a-header{background:rgba(0,229,255,.08);border:1px solid var(--accent2);color:var(--accent);}
+.col-b-header{background:rgba(255,171,64,.08);border:1px solid rgba(255,171,64,.4);color:var(--amber);}
+
+/* MÁQUINAS */
+.maquinas-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.maq-block{background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:14px;}
+.maq-block-title{display:flex;align-items:center;gap:8px;margin-bottom:12px;}
+.maq-num-badge{font-family:'Syne',sans-serif;font-size:14px;font-weight:800;color:var(--accent);background:rgba(0,229,255,.1);border:1px solid var(--accent2);border-radius:6px;padding:3px 10px;}
+.maq-label{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;}
+.maq-inner{display:flex;flex-direction:column;gap:8px;}
+
+/* DIVIDER */
+.divider{border:none;border-top:1px solid var(--border);margin:4px 0;}
+
+/* GUARDIAS */
+.guardias-list{display:flex;flex-direction:column;gap:8px;}
+.guardia-row{display:grid;grid-template-columns:24px 1fr;gap:8px;align-items:center;}
+.guardia-num{font-family:'DM Mono',monospace;font-size:11px;color:var(--text3);text-align:center;}
+
+/* CAMBIOS TURNO */
+.cambio-row{display:grid;grid-template-columns:1fr 30px 1fr;gap:8px;align-items:center;margin-bottom:8px;}
+.cambio-con{font-family:'DM Mono',monospace;font-size:10px;color:var(--text3);text-align:center;font-weight:700;letter-spacing:.05em;}
+
+/* PANEL HISTORIAL */
+.hist-panel{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:20px;}
+.hist-list{display:flex;flex-direction:column;gap:8px;max-height:300px;overflow-y:auto;}
+.hist-item{
+  display:grid;grid-template-columns:60px 80px 1fr auto;align-items:center;gap:12px;
+  padding:10px 14px;border-radius:8px;border:1px solid var(--border);background:var(--panel2);
+  cursor:pointer;transition:.2s;
+}
+.hist-item:hover{border-color:var(--border2);}
+.hi-num{font-family:'Syne',sans-serif;font-size:16px;font-weight:800;color:var(--accent);}
+.hi-fecha{font-family:'DM Mono',monospace;font-size:10px;color:var(--text2);}
+.hi-info{font-size:12px;color:var(--text2);}
+.hi-comp{font-family:'DM Mono',monospace;font-size:10px;color:var(--text3);}
+
+/* TOAST */
+.toast{position:fixed;bottom:24px;right:24px;z-index:500;padding:12px 20px;border-radius:8px;font-size:13px;font-weight:500;pointer-events:none;transform:translateY(20px);opacity:0;transition:.3s;box-shadow:0 8px 32px rgba(0,0,0,.5);}
+.toast.show{opacity:1;transform:translateY(0);}
+.toast.ok{background:#1b3a2a;border:1px solid var(--green);color:var(--green);}
+.toast.err{background:var(--red-dim);border:1px solid var(--red);color:var(--red);}
+.toast.info{background:rgba(0,229,255,.1);border:1px solid var(--accent2);color:var(--accent);}
+
+/* SPINNER */
+.spinner{width:32px;height:32px;border-radius:50%;border:3px solid var(--border);border-top-color:var(--accent);animation:spin .7s linear infinite;margin:40px auto;}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* MODAL NUEVA PERSONA */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:200;display:none;place-items:center;backdrop-filter:blur(4px);}
+.modal-overlay.open{display:grid;}
+.modal{background:var(--panel);border:1px solid var(--border2);border-radius:14px;width:440px;max-width:95vw;box-shadow:0 24px 80px rgba(0,0,0,.7);}
+.modal-header{display:flex;align-items:center;justify-content:space-between;padding:18px 22px;border-bottom:1px solid var(--border);}
+.modal-header h3{font-family:'Syne',sans-serif;font-size:15px;font-weight:800;color:#fff;}
+.btn-close{background:none;border:none;color:var(--text2);cursor:pointer;font-size:18px;}
+.modal-body{padding:22px;}
+.modal-footer{padding:14px 22px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end;}
+.btn-cancel{padding:8px 18px;background:transparent;border:1px solid var(--border);border-radius:8px;color:var(--text2);font-size:12px;cursor:pointer;}
+.btn-save{padding:8px 22px;background:var(--accent);color:#000;font-weight:700;font-size:13px;border:none;border-radius:8px;cursor:pointer;}
+
+footer{text-align:center;padding:14px;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.1em;color:var(--text3);border-top:1px solid var(--border);position:relative;z-index:1;}
+
+@media(max-width:900px){
+  .main{padding:16px 14px 60px;}
+  .cols-ab,.maquinas-grid,.grid-2,.grid-3,.grid-4{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+<div class="wrapper">
+
+<!-- TOPBAR -->
+<header class="topbar">
+  <div class="topbar-left">
+    <div class="topbar-icon">📋</div>
+    <div>
+      <div class="topbar-title">ORDEN DEL DÍA</div>
+      <div class="topbar-sub">MSER 5.0-12-001 · Aeronáutica Civil Colombia</div>
+    </div>
+  </div>
+  <div class="topbar-right">
+    <span class="badge-rol" id="badgeRol">—</span>
+    <a href="dashboard_principal.html" class="btn-back">
+      <svg viewBox="0 0 24 24" width="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+      Dashboard
+    </a>
+  </div>
+</header>
+
+<main class="main">
+
+  <!-- ACCIONES -->
+  <div class="action-bar">
+    <button class="btn-primary" onclick="nuevaOrden()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+      Nueva Orden
+    </button>
+    <button class="btn-secondary" onclick="guardarOrden()">
+      <svg viewBox="0 0 24 24" width="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+      Guardar
+    </button>
+    <button class="btn-success" onclick="generarPDF()">
+      <svg viewBox="0 0 24 24" width="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+      Generar PDF
+    </button>
+    <button class="btn-secondary" onclick="abrirModalPersona()">
+      <svg viewBox="0 0 24 24" width="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      Agregar Personal
+    </button>
+  </div>
+
+  <!-- HISTORIAL -->
+  <div class="sec-head">
+    <span class="sec-title">Órdenes Recientes</span>
+    <span style="font-family:'DM Mono',monospace;font-size:10px;color:var(--text3)" id="totalOrdenes">— registros</span>
+  </div>
+  <div class="hist-panel">
+    <div class="hist-list" id="histList"><div class="spinner"></div></div>
+  </div>
+
+  <!-- ══════════ FORMULARIO ══════════ -->
+  <div class="sec-head">
+    <span class="sec-title" id="formTitleLabel">Nueva Orden del Día</span>
+  </div>
+
+  <!-- CABECERA -->
+  <div class="form-card">
+    <div class="form-card-title">📌 Identificación</div>
+    <div class="grid-4">
+      <div class="field">
+        <label>Nº Orden</label>
+        <input type="number" id="f_numero" placeholder="72" min="1"/>
+      </div>
+      <div class="field">
+        <label>Fecha</label>
+        <input type="date" id="f_fecha"/>
+      </div>
+      <div class="field full">
+        <label>Aeropuerto</label>
+        <input type="text" id="f_aeropuerto" value="" placeholder="EL ALCARAVAN - YOPAL"/>
+      </div>
+    </div>
+  </div>
+
+  <!-- COMPAÑÍAS -->
+  <div class="form-card">
+    <div class="form-card-title">🕐 Compañías y Horarios</div>
+    <div class="cols-ab">
+      <div>
+        <div class="col-a-header">COMPAÑÍA A</div>
+        <div class="grid-3">
+          <div class="field">
+            <label>Compañía</label>
+            <input type="text" id="f_comp_a" value="A" maxlength="5"/>
+          </div>
+          <div class="field">
+            <label>Hora Inicio</label>
+            <input type="time" id="f_h_ini_a"/>
+          </div>
+          <div class="field">
+            <label>Hora Final</label>
+            <input type="time" id="f_h_fin_a"/>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="col-b-header">COMPAÑÍA B</div>
+        <div class="grid-3">
+          <div class="field">
+            <label>Compañía</label>
+            <input type="text" id="f_comp_b" value="B" maxlength="5"/>
+          </div>
+          <div class="field">
+            <label>Hora Inicio</label>
+            <input type="time" id="f_h_ini_b"/>
+          </div>
+          <div class="field">
+            <label>Hora Final</label>
+            <input type="time" id="f_h_fin_b"/>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- OFICIAL Y GUARDIA -->
+  <div class="form-card">
+    <div class="form-card-title">👮 Oficial de Servicio y Guardia</div>
+    <div class="cols-ab">
+      <!-- Col A -->
+      <div>
+        <div class="col-a-header">COMPAÑÍA A</div>
+        <div class="field" style="margin-bottom:12px;">
+          <label>Oficial de Servicio</label>
+          <div class="autocomplete-wrap">
+            <input type="text" id="f_oficial_a" placeholder="Nombre completo" autocomplete="off" oninput="ac(this,'f_oficial_a')"/>
+            <div class="autocomplete-list" id="ac_f_oficial_a"></div>
+          </div>
+        </div>
+        <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;">Servicio de Guardia</div>
+        <div class="guardias-list">
+          <div class="guardia-row">
+            <span class="guardia-num">1</span>
+            <div class="autocomplete-wrap">
+              <input type="text" id="f_guardia_a1" placeholder="Nombre" autocomplete="off" oninput="ac(this,'f_guardia_a1')"/>
+              <div class="autocomplete-list" id="ac_f_guardia_a1"></div>
+            </div>
+          </div>
+          <div class="guardia-row">
+            <span class="guardia-num">2</span>
+            <div class="autocomplete-wrap">
+              <input type="text" id="f_guardia_a2" placeholder="Nombre" autocomplete="off" oninput="ac(this,'f_guardia_a2')"/>
+              <div class="autocomplete-list" id="ac_f_guardia_a2"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Col B -->
+      <div>
+        <div class="col-b-header">COMPAÑÍA B</div>
+        <div class="field" style="margin-bottom:12px;">
+          <label>Oficial de Servicio</label>
+          <div class="autocomplete-wrap">
+            <input type="text" id="f_oficial_b" placeholder="Nombre completo" autocomplete="off" oninput="ac(this,'f_oficial_b')"/>
+            <div class="autocomplete-list" id="ac_f_oficial_b"></div>
+          </div>
+        </div>
+        <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;">Servicio de Guardia</div>
+        <div class="guardias-list">
+          <div class="guardia-row">
+            <span class="guardia-num">1</span>
+            <div class="autocomplete-wrap">
+              <input type="text" id="f_guardia_b1" placeholder="Nombre" autocomplete="off" oninput="ac(this,'f_guardia_b1')"/>
+              <div class="autocomplete-list" id="ac_f_guardia_b1"></div>
+            </div>
+          </div>
+          <div class="guardia-row">
+            <span class="guardia-num">2</span>
+            <div class="autocomplete-wrap">
+              <input type="text" id="f_guardia_b2" placeholder="Nombre" autocomplete="off" oninput="ac(this,'f_guardia_b2')"/>
+              <div class="autocomplete-list" id="ac_f_guardia_b2"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TRIPULACIONES -->
+  <div class="form-card">
+    <div class="form-card-title">🚒 Tripulaciones por Máquina</div>
+    <div id="maquinasContainer">
+      <!-- Generado dinámicamente -->
+    </div>
+    <button class="btn-secondary" style="margin-top:12px;font-size:12px;" onclick="agregarMaquina()">
+      + Agregar máquina
+    </button>
+  </div>
+
+  <!-- SERVICIOS, REFUERZOS, CAMBIOS -->
+  <div class="form-card">
+    <div class="form-card-title">📊 Servicios y Asignaciones</div>
+    <div class="cols-ab" style="margin-bottom:16px;">
+      <div class="field">
+        <label>Servicios MAQ # — Compañía A</label>
+        <input type="text" id="f_svc_a" placeholder="Ej: 067"/>
+      </div>
+      <div class="field">
+        <label>Servicios MAQ # — Compañía B</label>
+        <input type="text" id="f_svc_b" placeholder="Ej: 067"/>
+      </div>
+    </div>
+    <div class="field full" style="margin-bottom:16px;">
+      <label>Refuerzos</label>
+      <div class="autocomplete-wrap">
+        <input type="text" id="f_refuerzos" placeholder="J. RIOS - M. CRUZ - ..." autocomplete="off" oninput="acMulti(this,'f_refuerzos')"/>
+        <div class="autocomplete-list" id="ac_f_refuerzos"></div>
+      </div>
+    </div>
+
+    <hr class="divider" style="margin-bottom:14px;"/>
+    <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;font-weight:600;">CAMBIOS DE TURNO</div>
+    <div class="cols-ab">
+      <div id="cambiosA">
+        <div class="cambio-row" style="font-size:10px;color:var(--text3);font-weight:700;letter-spacing:.06em;">
+          <span>SALE</span><span></span><span>ENTRA</span>
+        </div>
+      </div>
+      <div id="cambiosB">
+        <div class="cambio-row" style="font-size:10px;color:var(--text3);font-weight:700;letter-spacing:.06em;">
+          <span>SALE</span><span></span><span>ENTRA</span>
+        </div>
+      </div>
+    </div>
+    <button class="btn-secondary" style="margin-top:10px;font-size:12px;" onclick="agregarCambio()">
+      + Agregar cambio de turno
+    </button>
+  </div>
+
+  <!-- NOVEDADES Y FIRMA -->
+  <div class="form-card">
+    <div class="form-card-title">📝 Novedades y Firma</div>
+    <div class="grid-2">
+      <div class="field full">
+        <label>Novedades DAI</label>
+        <div class="autocomplete-wrap">
+          <input type="text" id="f_novedades" placeholder="E. LADINO - F. TORRES - ..." autocomplete="off" oninput="acMulti(this,'f_novedades')"/>
+          <div class="autocomplete-list" id="ac_f_novedades"></div>
+        </div>
+      </div>
+      <div class="field">
+        <label>Elaboró — Oficial de Servicio</label>
+        <div class="autocomplete-wrap">
+          <input type="text" id="f_elaboro" placeholder="Nombre completo" autocomplete="off" oninput="ac(this,'f_elaboro')"/>
+          <div class="autocomplete-list" id="ac_f_elaboro"></div>
+        </div>
+      </div>
+      <div class="field">
+        <label>VoBo — Jefe de Estación</label>
+        <div class="autocomplete-wrap">
+          <input type="text" id="f_vobo" placeholder="Nombre del jefe" autocomplete="off" oninput="ac(this,'f_vobo')"/>
+          <div class="autocomplete-list" id="ac_f_vobo"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- GUARDAR -->
+  <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px;">
+    <button class="btn-secondary" onclick="limpiarForm()">Limpiar</button>
+    <button class="btn-success" onclick="guardarOrden()">
+      💾 Guardar Orden
+    </button>
+    <button class="btn-primary" onclick="generarPDF()">
+      📄 Generar PDF Oficial
+    </button>
+  </div>
+
+</main>
+
+<footer>DISEÑO: WILLINGTON PEÑA MONTENEGRO — Bombero Aeronáutico BAE 373 &nbsp;·&nbsp; Sistema SEI · UAEAC Colombia</footer>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- MODAL AGREGAR PERSONAL -->
+<div class="modal-overlay" id="modalPersona">
+<div class="modal">
+  <div class="modal-header">
+    <h3>👤 Agregar Personal</h3>
+    <button class="btn-close" onclick="cerrarModalPersona()">✕</button>
+  </div>
+  <div class="modal-body">
+    <div style="display:flex;flex-direction:column;gap:14px;">
+      <div class="field">
+        <label>Nombre Completo *</label>
+        <input type="text" id="mp_nombre" placeholder="JOSE LUIS RIOS"/>
+      </div>
+      <div class="field">
+        <label>Cargo / Grado</label>
+        <input type="text" id="mp_cargo" placeholder="Bombero Aeronáutico BAE"/>
+      </div>
+      <div class="field">
+        <label>Código / Placa</label>
+        <input type="text" id="mp_codigo" placeholder="BAE 373"/>
+      </div>
+    </div>
+  </div>
+  <div class="modal-footer">
+    <button class="btn-cancel" onclick="cerrarModalPersona()">Cancelar</button>
+    <button class="btn-save" onclick="guardarPersona()">Guardar</button>
+  </div>
+</div>
+</div>
+
+<!-- ═══════════════════ SCRIPTS ═══════════════════ -->
+<script src="supabase-config.js"></script>
+<script src="auth-guard.js"></script>
+<script>
+/* ─── ESTADO GLOBAL ──────────────────────────────────────── */
+let currentOaci   = null;
+let currentEstId  = null;
+let currentRol    = null;
+let currentUser   = null;
+let personalDB    = [];        // cache de bomberos
+let ordenActualId = null;      // ID supabase de la orden en edición
+let numMaquinas   = 3;         // número de máquinas activas
+let numCambios    = 3;         // filas de cambios de turno
+
+/* ─── INIT ───────────────────────────────────────────────── */
+window.onSEIReady = async function(session) {
+  currentRol    = session.rol;
+  currentEstId  = session.estacion_id;
+  currentOaci   = session.oaci || window.seiUuidToOaci?.(session.estacion_id) || '';
+  currentUser   = session;
+
+  document.getElementById('badgeRol').textContent = currentRol?.toUpperCase() || 'USUARIO';
+
+  // Fecha de hoy por defecto
+  document.getElementById('f_fecha').value = new Date().toISOString().split('T')[0];
+
+  // Aeropuerto según estación
+  if (session.nombre_aeropuerto) {
+    document.getElementById('f_aeropuerto').value = session.nombre_aeropuerto;
+  }
+
+  await cargarPersonal();
+  await cargarHistorial();
+  buildMaquinas();
+  buildCambios();
+  await autocompletarJefe();
+  await precargarNumeroOrden();
+};
+
+/* ─── PRELLENAR JEFE (último VoBo guardado) ─────────────── */
+async function autocompletarJefe() {
+  const { data } = await supabaseClient
+    .from('ordenes_del_dia')
+    .select('vobo_jefe')
+    .eq('estacion_oaci', currentOaci)
+    .not('vobo_jefe', 'is', null)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (data?.vobo_jefe) {
+    document.getElementById('f_vobo').value = data.vobo_jefe;
+  }
+}
+
+/* ─── PRECALCULAR NÚMERO ORDEN ───────────────────────────── */
+async function precargarNumeroOrden() {
+  const { data } = await supabaseClient
+    .from('ordenes_del_dia')
+    .select('numero_orden')
+    .eq('estacion_oaci', currentOaci)
+    .order('numero_orden', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  const next = data ? (parseInt(data.numero_orden) + 1) : 1;
+  if (!document.getElementById('f_numero').value) {
+    document.getElementById('f_numero').value = next;
+  }
+}
+
+/* ─── CARGAR PERSONAL ────────────────────────────────────── */
+async function cargarPersonal() {
+  const { data } = await supabaseClient
+    .from('personal_sei')
+    .select('id, nombre_completo, cargo, codigo')
+    .eq('estacion_oaci', currentOaci)
+    .order('nombre_completo', { ascending: true });
+  personalDB = data || [];
+}
+
+/* ─── AUTOCOMPLETADO SIMPLE ──────────────────────────────── */
+function ac(input, fieldId) {
+  const q = input.value.trim().toUpperCase();
+  const list = document.getElementById(`ac_${fieldId}`);
+  if (q.length < 2) { list.classList.remove('open'); return; }
+
+  const matches = personalDB.filter(p =>
+    p.nombre_completo.toUpperCase().includes(q)
+  ).slice(0, 8);
+
+  if (!matches.length) { list.classList.remove('open'); return; }
+
+  list.innerHTML = matches.map(p => `
+    <div class="ac-item" onclick="selAc('${fieldId}','${p.nombre_completo.replace(/'/g,'\\'')}')">
+      ${p.nombre_completo}
+      ${p.cargo ? `<span class="ac-sub">${p.cargo}</span>` : ''}
+    </div>`).join('');
+  list.classList.add('open');
+}
+
+/* ─── AUTOCOMPLETADO MULTI (para refuerzos / novedades DAI) */
+function acMulti(input, fieldId) {
+  const fullVal = input.value;
+  // Tomar el último segmento después del " - "
+  const parts = fullVal.split(/\s*-\s*/);
+  const last = parts[parts.length - 1].trim().toUpperCase();
+  const list = document.getElementById(`ac_${fieldId}`);
+
+  if (last.length < 2) { list.classList.remove('open'); return; }
+
+  const matches = personalDB.filter(p =>
+    p.nombre_completo.toUpperCase().includes(last)
+  ).slice(0, 8);
+
+  if (!matches.length) { list.classList.remove('open'); return; }
+
+  list.innerHTML = matches.map(p => `
+    <div class="ac-item" onclick="selAcMulti('${fieldId}','${p.nombre_completo.replace(/'/g,'\\'')}')">
+      ${p.nombre_completo}
+    </div>`).join('');
+  list.classList.add('open');
+}
+
+function selAc(fieldId, nombre) {
+  document.getElementById(fieldId).value = nombre;
+  document.getElementById(`ac_${fieldId}`).classList.remove('open');
+}
+
+function selAcMulti(fieldId, nombre) {
+  const inp = document.getElementById(fieldId);
+  const parts = inp.value.split(/\s*-\s*/);
+  parts[parts.length - 1] = nombre;
+  inp.value = parts.join(' - ');
+  document.getElementById(`ac_${fieldId}`).classList.remove('open');
+}
+
+// Cerrar autocomplete al click fuera
+document.addEventListener('click', e => {
+  if (!e.target.closest('.autocomplete-wrap')) {
+    document.querySelectorAll('.autocomplete-list').forEach(l => l.classList.remove('open'));
+  }
+});
+
+/* ─── BUILD MÁQUINAS ─────────────────────────────────────── */
+function buildMaquinas() {
+  const cont = document.getElementById('maquinasContainer');
+  let html = '';
+  for (let i = 0; i < numMaquinas; i++) {
+    html += buildMaquinaBlock(i);
+  }
+  cont.innerHTML = html;
+}
+
+function buildMaquinaBlock(i) {
+  return `
+  <div class="maquinas-grid" id="maq_block_${i}" style="margin-bottom:16px;">
+    <!-- Cabecera MAQ -->
+    <div style="grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+      <div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;">
+        Máquina ${i+1}
+      </div>
+      ${i >= 1 ? `<button onclick="quitarMaquina(${i})" style="font-size:10px;padding:3px 10px;background:none;border:1px solid var(--border);border-radius:4px;color:var(--text3);cursor:pointer;">✕ Quitar</button>` : ''}
+    </div>
+    <!-- Compañía A -->
+    <div class="maq-block">
+      <div class="col-a-header" style="margin-bottom:10px;">COMPAÑÍA A</div>
+      <div class="maq-inner">
+        <div class="field">
+          <label>N° Máquina</label>
+          <input type="text" id="maq_a_num_${i}" placeholder="Ej: 067"/>
+        </div>
+        <div class="field">
+          <label>Maquinista</label>
+          <div class="autocomplete-wrap">
+            <input type="text" id="maq_a_maq_${i}" placeholder="Nombre" autocomplete="off" oninput="ac(this,'maq_a_maq_${i}')"/>
+            <div class="autocomplete-list" id="ac_maq_a_maq_${i}"></div>
+          </div>
+        </div>
+        ${[1,2,3].map(t=>`
+        <div class="field">
+          <label>Trip-${t}</label>
+          <div class="autocomplete-wrap">
+            <input type="text" id="maq_a_t${t}_${i}" placeholder="Nombre" autocomplete="off" oninput="ac(this,'maq_a_t${t}_${i}')"/>
+            <div class="autocomplete-list" id="ac_maq_a_t${t}_${i}"></div>
+          </div>
+        </div>`).join('')}
+      </div>
+    </div>
+    <!-- Compañía B -->
+    <div class="maq-block">
+      <div class="col-b-header" style="margin-bottom:10px;">COMPAÑÍA B</div>
+      <div class="maq-inner">
+        <div class="field">
+          <label>N° Máquina</label>
+          <input type="text" id="maq_b_num_${i}" placeholder="Ej: 067"/>
+        </div>
+        <div class="field">
+          <label>Maquinista</label>
+          <div class="autocomplete-wrap">
+            <input type="text" id="maq_b_maq_${i}" placeholder="Nombre" autocomplete="off" oninput="ac(this,'maq_b_maq_${i}')"/>
+            <div class="autocomplete-list" id="ac_maq_b_maq_${i}"></div>
+          </div>
+        </div>
+        ${[1,2,3].map(t=>`
+        <div class="field">
+          <label>Trip-${t}</label>
+          <div class="autocomplete-wrap">
+            <input type="text" id="maq_b_t${t}_${i}" placeholder="Nombre" autocomplete="off" oninput="ac(this,'maq_b_t${t}_${i}')"/>
+            <div class="autocomplete-list" id="ac_maq_b_t${t}_${i}"></div>
+          </div>
+        </div>`).join('')}
+      </div>
+    </div>
+  </div>`;
+}
+
+function agregarMaquina() {
+  numMaquinas++;
+  buildMaquinas();
+}
+
+function quitarMaquina(i) {
+  if (numMaquinas <= 1) return;
+  // Guardar valores actuales antes de re-render
+  const vals = recogerMaquinas();
+  vals.splice(i, 1);
+  numMaquinas--;
+  buildMaquinas();
+  // Restaurar valores
+  vals.forEach((v, idx) => {
+    document.getElementById(`maq_a_num_${idx}`).value   = v.a?.numero   || '';
+    document.getElementById(`maq_a_maq_${idx}`).value   = v.a?.maquinista || '';
+    (v.a?.tripulantes||[]).forEach((t,ti) => {
+      const el = document.getElementById(`maq_a_t${ti+1}_${idx}`);
+      if(el) el.value = t;
+    });
+    document.getElementById(`maq_b_num_${idx}`).value   = v.b?.numero   || '';
+    document.getElementById(`maq_b_maq_${idx}`).value   = v.b?.maquinista || '';
+    (v.b?.tripulantes||[]).forEach((t,ti) => {
+      const el = document.getElementById(`maq_b_t${ti+1}_${idx}`);
+      if(el) el.value = t;
+    });
+  });
+}
+
+/* ─── BUILD CAMBIOS ──────────────────────────────────────── */
+function buildCambios() {
+  const contA = document.getElementById('cambiosA');
+  const contB = document.getElementById('cambiosB');
+  // Preservar el header
+  const headerA = contA.children[0].outerHTML;
+  const headerB = contB.children[0].outerHTML;
+  contA.innerHTML = headerA;
+  contB.innerHTML = headerB;
+
+  for (let i = 0; i < numCambios; i++) {
+    contA.innerHTML += `
+      <div class="cambio-row">
+        <div class="autocomplete-wrap">
+          <input type="text" id="ch_a_de_${i}" placeholder="Sale" autocomplete="off" oninput="ac(this,'ch_a_de_${i}')"/>
+          <div class="autocomplete-list" id="ac_ch_a_de_${i}"></div>
+        </div>
+        <span class="cambio-con">CON</span>
+        <div class="autocomplete-wrap">
+          <input type="text" id="ch_a_con_${i}" placeholder="Entra" autocomplete="off" oninput="ac(this,'ch_a_con_${i}')"/>
+          <div class="autocomplete-list" id="ac_ch_a_con_${i}"></div>
+        </div>
+      </div>`;
+    contB.innerHTML += `
+      <div class="cambio-row">
+        <div class="autocomplete-wrap">
+          <input type="text" id="ch_b_de_${i}" placeholder="Sale" autocomplete="off" oninput="ac(this,'ch_b_de_${i}')"/>
+          <div class="autocomplete-list" id="ac_ch_b_de_${i}"></div>
+        </div>
+        <span class="cambio-con">CON</span>
+        <div class="autocomplete-wrap">
+          <input type="text" id="ch_b_con_${i}" placeholder="Entra" autocomplete="off" oninput="ac(this,'ch_b_con_${i}')"/>
+          <div class="autocomplete-list" id="ac_ch_b_con_${i}"></div>
+        </div>
+      </div>`;
+  }
+}
+
+function agregarCambio() {
+  numCambios++;
+  buildCambios();
+}
+
+/* ─── RECOGER DATOS DEL FORM ─────────────────────────────── */
+function recogerMaquinas() {
+  const maquinas = [];
+  for (let i = 0; i < numMaquinas; i++) {
+    const el = (id) => document.getElementById(id);
+    maquinas.push({
+      a: {
+        numero:      el(`maq_a_num_${i}`)?.value?.trim() || '',
+        maquinista:  el(`maq_a_maq_${i}`)?.value?.trim() || '',
+        tripulantes: [
+          el(`maq_a_t1_${i}`)?.value?.trim() || '',
+          el(`maq_a_t2_${i}`)?.value?.trim() || '',
+          el(`maq_a_t3_${i}`)?.value?.trim() || '',
+        ],
+      },
+      b: {
+        numero:      el(`maq_b_num_${i}`)?.value?.trim() || '',
+        maquinista:  el(`maq_b_maq_${i}`)?.value?.trim() || '',
+        tripulantes: [
+          el(`maq_b_t1_${i}`)?.value?.trim() || '',
+          el(`maq_b_t2_${i}`)?.value?.trim() || '',
+          el(`maq_b_t3_${i}`)?.value?.trim() || '',
+        ],
+      },
+    });
+  }
+  return maquinas;
+}
+
+function recogerCambios() {
+  const cambios = [];
+  for (let i = 0; i < numCambios; i++) {
+    cambios.push({
+      de:   document.getElementById(`ch_a_de_${i}`)?.value?.trim() || '',
+      con:  document.getElementById(`ch_a_con_${i}`)?.value?.trim() || '',
+      de2:  document.getElementById(`ch_b_de_${i}`)?.value?.trim() || '',
+      con2: document.getElementById(`ch_b_con_${i}`)?.value?.trim() || '',
+    });
+  }
+  return cambios;
+}
+
+function recogerDatos() {
+  const fval = id => document.getElementById(id)?.value?.trim() || '';
+  return {
+    estacion_oaci:    currentOaci,
+    numero_orden:     parseInt(fval('f_numero')) || null,
+    fecha_orden:      fval('f_fecha'),
+    aeropuerto:       fval('f_aeropuerto'),
+    compania_a:       fval('f_comp_a'),
+    compania_b:       fval('f_comp_b'),
+    hora_inicio_a:    fval('f_h_ini_a'),
+    hora_fin_a:       fval('f_h_fin_a'),
+    hora_inicio_b:    fval('f_h_ini_b'),
+    hora_fin_b:       fval('f_h_fin_b'),
+    oficial_a:        fval('f_oficial_a'),
+    oficial_b:        fval('f_oficial_b'),
+    guardia_a1:       fval('f_guardia_a1'),
+    guardia_a2:       fval('f_guardia_a2'),
+    guardia_b1:       fval('f_guardia_b1'),
+    guardia_b2:       fval('f_guardia_b2'),
+    maquinas_json:    JSON.stringify(recogerMaquinas()),
+    servicios_maq_a:  fval('f_svc_a'),
+    servicios_maq_b:  fval('f_svc_b'),
+    refuerzos:        fval('f_refuerzos'),
+    cambios_json:     JSON.stringify(recogerCambios()),
+    novedades_dai:    fval('f_novedades'),
+    elaboro:          fval('f_elaboro'),
+    vobo_jefe:        fval('f_vobo'),
+  };
+}
+
+/* ─── GUARDAR ORDEN ──────────────────────────────────────── */
+async function guardarOrden() {
+  const datos = recogerDatos();
+  if (!datos.fecha_orden) { toast('Selecciona la fecha', 'err'); return; }
+
+  let error;
+  if (ordenActualId) {
+    ({ error } = await supabaseClient
+      .from('ordenes_del_dia').update(datos).eq('id', ordenActualId));
+  } else {
+    const { data, error: e } = await supabaseClient
+      .from('ordenes_del_dia').insert(datos).select().single();
+    error = e;
+    if (!e && data) ordenActualId = data.id;
+  }
+
+  if (error) { toast('Error: ' + error.message, 'err'); return; }
+  toast('Orden guardada ✅', 'ok');
+  await cargarHistorial();
+}
+
+/* ─── HISTORIAL ──────────────────────────────────────────── */
+async function cargarHistorial() {
+  const { data } = await supabaseClient
+    .from('ordenes_del_dia')
+    .select('id,numero_orden,fecha_orden,oficial_a,compania_a,compania_b')
+    .eq('estacion_oaci', currentOaci)
+    .order('fecha_orden', { ascending: false })
+    .limit(20);
+
+  const list = document.getElementById('histList');
+  document.getElementById('totalOrdenes').textContent = `${(data||[]).length} registros`;
+
+  if (!data?.length) {
+    list.innerHTML = '<div style="text-align:center;padding:24px;font-size:12px;color:var(--text3);">Sin órdenes registradas aún</div>';
+    return;
+  }
+
+  list.innerHTML = data.map(o => {
+    const fecha = o.fecha_orden ? new Date(o.fecha_orden + 'T12:00:00').toLocaleDateString('es-CO',{day:'2-digit',month:'short',year:'numeric'}) : '—';
+    return `
+    <div class="hist-item" onclick="cargarOrden('${o.id}')">
+      <span class="hi-num">N°${o.numero_orden || '—'}</span>
+      <span class="hi-fecha">${fecha}</span>
+      <span class="hi-info">${o.oficial_a || '—'}</span>
+      <span class="hi-comp">Cía ${o.compania_a||'A'} / ${o.compania_b||'B'}</span>
+    </div>`;
+  }).join('');
+}
+
+/* ─── CARGAR ORDEN EXISTENTE ─────────────────────────────── */
+async function cargarOrden(id) {
+  const { data, error } = await supabaseClient
+    .from('ordenes_del_dia').select('*').eq('id', id).single();
+  if (error || !data) { toast('No se pudo cargar la orden', 'err'); return; }
+
+  ordenActualId = id;
+  const set = (elId, val) => { const el = document.getElementById(elId); if(el) el.value = val || ''; };
+
+  set('f_numero',     data.numero_orden);
+  set('f_fecha',      data.fecha_orden);
+  set('f_aeropuerto', data.aeropuerto);
+  set('f_comp_a',     data.compania_a);
+  set('f_comp_b',     data.compania_b);
+  set('f_h_ini_a',    data.hora_inicio_a);
+  set('f_h_fin_a',    data.hora_fin_a);
+  set('f_h_ini_b',    data.hora_inicio_b);
+  set('f_h_fin_b',    data.hora_fin_b);
+  set('f_oficial_a',  data.oficial_a);
+  set('f_oficial_b',  data.oficial_b);
+  set('f_guardia_a1', data.guardia_a1);
+  set('f_guardia_a2', data.guardia_a2);
+  set('f_guardia_b1', data.guardia_b1);
+  set('f_guardia_b2', data.guardia_b2);
+  set('f_svc_a',      data.servicios_maq_a);
+  set('f_svc_b',      data.servicios_maq_b);
+  set('f_refuerzos',  data.refuerzos);
+  set('f_novedades',  data.novedades_dai);
+  set('f_elaboro',    data.elaboro);
+  set('f_vobo',       data.vobo_jefe);
+
+  // Máquinas
+  const maquinas = data.maquinas_json ? JSON.parse(data.maquinas_json) : [];
+  numMaquinas = Math.max(maquinas.length, 1);
+  buildMaquinas();
+  maquinas.forEach((m, i) => {
+    const s = (id, v) => { const el = document.getElementById(id); if(el) el.value = v||''; };
+    s(`maq_a_num_${i}`, m.a?.numero);
+    s(`maq_a_maq_${i}`, m.a?.maquinista);
+    (m.a?.tripulantes||[]).forEach((t,ti) => s(`maq_a_t${ti+1}_${i}`, t));
+    s(`maq_b_num_${i}`, m.b?.numero);
+    s(`maq_b_maq_${i}`, m.b?.maquinista);
+    (m.b?.tripulantes||[]).forEach((t,ti) => s(`maq_b_t${ti+1}_${i}`, t));
+  });
+
+  // Cambios
+  const cambios = data.cambios_json ? JSON.parse(data.cambios_json) : [];
+  numCambios = Math.max(cambios.length, 3);
+  buildCambios();
+  cambios.forEach((ch, i) => {
+    const s = (id, v) => { const el = document.getElementById(id); if(el) el.value = v||''; };
+    s(`ch_a_de_${i}`,  ch.de);
+    s(`ch_a_con_${i}`, ch.con);
+    s(`ch_b_de_${i}`,  ch.de2);
+    s(`ch_b_con_${i}`, ch.con2);
+  });
+
+  document.getElementById('formTitleLabel').textContent = `Orden N° ${data.numero_orden} — ${data.fecha_orden||''}`;
+  window.scrollTo({ top: document.querySelector('.sec-head:last-of-type')?.offsetTop || 500, behavior: 'smooth' });
+  toast(`Orden N°${data.numero_orden} cargada`, 'info');
+}
+
+/* ─── NUEVA ORDEN ────────────────────────────────────────── */
+function nuevaOrden() {
+  ordenActualId = null;
+  limpiarForm();
+  precargarNumeroOrden();
+  document.getElementById('formTitleLabel').textContent = 'Nueva Orden del Día';
+  toast('Formulario listo para nueva orden', 'info');
+}
+
+function limpiarForm() {
+  const ids = ['f_numero','f_fecha','f_comp_a','f_comp_b','f_h_ini_a','f_h_fin_a',
+    'f_h_ini_b','f_h_fin_b','f_oficial_a','f_oficial_b',
+    'f_guardia_a1','f_guardia_a2','f_guardia_b1','f_guardia_b2',
+    'f_svc_a','f_svc_b','f_refuerzos','f_novedades','f_elaboro','f_vobo'];
+  ids.forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
+  document.getElementById('f_comp_a').value = 'A';
+  document.getElementById('f_comp_b').value = 'B';
+  document.getElementById('f_fecha').value = new Date().toISOString().split('T')[0];
+  numMaquinas = 3; numCambios = 3;
+  buildMaquinas(); buildCambios();
+}
+
+/* ─── MODAL PERSONA ──────────────────────────────────────── */
+function abrirModalPersona() { document.getElementById('modalPersona').classList.add('open'); }
+function cerrarModalPersona() { document.getElementById('modalPersona').classList.remove('open'); }
+
+async function guardarPersona() {
+  const nombre = document.getElementById('mp_nombre').value.trim().toUpperCase();
+  const cargo  = document.getElementById('mp_cargo').value.trim().toUpperCase();
+  const codigo = document.getElementById('mp_codigo').value.trim().toUpperCase();
+  if (!nombre) { toast('Nombre requerido', 'err'); return; }
+
+  const { error } = await supabaseClient.from('personal_sei').insert({
+    estacion_oaci: currentOaci,
+    nombre_completo: nombre,
+    cargo: cargo || null,
+    codigo: codigo || null,
+  });
+  if (error) { toast('Error: ' + error.message, 'err'); return; }
+
+  await cargarPersonal();
+  cerrarModalPersona();
+  ['mp_nombre','mp_cargo','mp_codigo'].forEach(id => document.getElementById(id).value = '');
+  toast(`${nombre} agregado al personal ✅`, 'ok');
+}
+
+/* ─── GENERAR PDF ────────────────────────────────────────── */
+async function generarPDF() {
+  toast('Generando PDF…', 'info');
+  const datos = recogerDatos();
+  const maquinas = JSON.parse(datos.maquinas_json || '[]');
+  const cambios  = JSON.parse(datos.cambios_json  || '[]');
+
+  // Formatear fecha
+  const fechaRaw = datos.fecha_orden;
+  let fechaFmt = '';
+  if (fechaRaw) {
+    const d = new Date(fechaRaw + 'T12:00:00');
+    const meses = ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
+                   'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+    fechaFmt = `${d.getDate()} de ${meses[d.getMonth()]} de ${d.getFullYear()}`;
+  }
+
+  // Formatear horas HH:mm
+  const fmtH = t => {
+    if (!t) return '';
+    const [h,m] = t.split(':');
+    return `${parseInt(h)}:${m}`;
+  };
+
+  // ── jsPDF ────────────────────────────────────────────────
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation:'portrait', unit:'mm', format:'a4' });
+
+  const W = 210, H = 297;
+  const ml = 15, mr = W - 15;
+  const pw = mr - ml; // 180mm
+
+  // ── Fuentes / helpers ────────────────────────────────────
+  const txt  = (x,y,s,opts={}) => { doc.text(String(s||''), x, y, opts); };
+  const bold = (s) => doc.setFont('helvetica','bold');
+  const norm = (s) => doc.setFont('helvetica','normal');
+  const sz   = (n) => doc.setFontSize(n);
+  const lw   = (n) => doc.setLineWidth(n);
+  const line = (x1,y1,x2,y2) => doc.line(x1,y1,x2,y2);
+  const rect = (x,y,w,h,s='S') => doc.rect(x,y,w,h,s);
+  const centerX = (x1,x2) => (x1+x2)/2;
+
+  // ── LOGO AERONAUTICA CIVIL ───────────────────────────────
+  const logoB64 = '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';
+
+  try { doc.addImage('data:image/png;base64,' + logoB64, 'PNG', ml+3, 12, 14, 14); } catch(e){}
+
+  // ── CAJA CABECERA ────────────────────────────────────────
+  lw(0.6);
+  rect(ml, 10, pw, 30);
+  line(ml+42, 10, ml+42, 40);          // sep logo | contenido
+  line(ml+42, 25, mr, 25);             // sep FORMATO / ORDEN DEL DIA
+  line(ml+42, 33, mr, 33);             // sep datos clave
+
+  // Líneas columnas clave/versión/fecha
+  const cw = (mr - ml - 42) / 3;
+  line(ml+42+cw,   33, ml+42+cw,   40);
+  line(ml+42+cw*2, 33, ml+42+cw*2, 40);
+
+  // Texto logo
+  bold(); sz(7);
+  txt(ml+21, 28, 'AERONÁUTICA CIVIL', { align:'center' });
+  norm(); sz(5.5);
+  txt(ml+21, 31, 'UNIDAD ADMINISTRATIVA ESPECIAL', { align:'center' });
+
+  // FORMATO / ORDEN DEL DIA
+  bold(); sz(10);
+  txt(centerX(ml+42,mr), 20, 'FORMATO', { align:'center' });
+  sz(12);
+  txt(centerX(ml+42,mr), 24, 'ORDEN DEL DIA', { align:'center' });
+
+  // Clave / Versión / Fecha
+  norm(); sz(6.5);
+  txt(ml+44, 38, 'Clave: MSER 5.0-12-001');
+  txt(centerX(ml+42+cw, ml+42+cw*2), 38, 'Versión: 04', { align:'center' });
+  txt(mr-2, 38, 'Fecha de aprobación: 29/11/2022', { align:'right' });
+
+  // AEROPUERTO
+  bold(); sz(11);
+  txt(W/2, 46, `AEROPUERTO: ${(datos.aeropuerto||'').toUpperCase()}`, { align:'center' });
+
+  // ── FILA Nº + FECHA ──────────────────────────────────────
+  let y = 55;
+  norm(); sz(8.5);
+  txt(ml, y, 'ORDEN DEL DIA No');
+  bold(); sz(14);
+  txt(ml+42, y, String(datos.numero_orden || ''));
+
+  norm(); sz(8.5);
+  txt(W/2+2, y, 'FECHA:');
+  bold(); sz(13);
+  txt(W/2+16, y, fechaFmt);
+
+  lw(0.3);
+  line(ml+32, y+1, ml+75, y+1);
+  line(W/2+13, y+1, mr, y+1);
+
+  // ── COMPAÑÍAS ────────────────────────────────────────────
+  const cA = ml, cB = W/2 + 4;
+  const colW = W/2 - ml - 4;
+
+  const labelVal = (cx, cy, lbl, val, lw2=30) => {
+    norm(); sz(8);
+    txt(cx, cy, lbl);
+    bold(); sz(9);
+    txt(cx+lw2, cy, String(val||''));
+    lw(0.25); line(cx+lw2-2, cy+1, cx+lw2+45, cy+1);
+  };
+
+  y += 7;
+  labelVal(cA, y, 'COMPAÑÍA', datos.compania_a);
+  labelVal(cB, y, 'COMPAÑÍA', datos.compania_b);
+  y += 5.5;
+  labelVal(cA, y, 'HORA DE INICIO', fmtH(datos.hora_inicio_a));
+  labelVal(cB, y, 'HORA DE INICIO', fmtH(datos.hora_inicio_b));
+  y += 5.5;
+  labelVal(cA, y, 'HORA FINAL', fmtH(datos.hora_fin_a));
+  labelVal(cB, y, 'HORA FINAL', fmtH(datos.hora_fin_b));
+
+  // ── OFICIAL DE SERVICIO ──────────────────────────────────
+  y += 8;
+  bold(); sz(8.5);
+  txt(cA + colW/2, y, 'OFICIAL DE SERVICIO', { align:'center' });
+  txt(cB + colW/2, y, 'OFICIAL DE SERVICIO', { align:'center' });
+  y += 5.5;
+  sz(9);
+  txt(cA + colW/2, y, (datos.oficial_a||'').toUpperCase(), { align:'center' });
+  txt(cB + colW/2, y, (datos.oficial_b||'').toUpperCase(), { align:'center' });
+  lw(0.4); line(cA, y+1, cA+colW-2, y+1); line(cB, y+1, cB+colW-2, y+1);
+
+  y += 6;
+  bold(); sz(8.5);
+  txt(cA + colW/2, y, 'SERVICIO DE GUARDIA', { align:'center' });
+  txt(cB + colW/2, y, 'SERVICIO DE GUARDIA', { align:'center' });
+
+  const guardias_a = [datos.guardia_a1, datos.guardia_a2];
+  const guardias_b = [datos.guardia_b1, datos.guardia_b2];
+  for (let i = 0; i < 2; i++) {
+    y += 5.5;
+    norm(); sz(8);
+    txt(cA, y, String(i+1));
+    txt(cB, y, String(i+1));
+    sz(9);
+    txt(cA+6, y, (guardias_a[i]||'').toUpperCase());
+    txt(cB+6, y, (guardias_b[i]||'').toUpperCase());
+    lw(0.25); line(cA+4, y+1, cA+colW-2, y+1); line(cB+4, y+1, cB+colW-2, y+1);
+  }
+
+  // ── TRIPULACIONES ────────────────────────────────────────
+  y += 7;
+  bold(); sz(8.5);
+  txt(W/2, y, 'TRIPULACIONES', { align:'center' });
+
+  for (const maqData of maquinas) {
+    y += 6;
+    // Número máquina
+    bold(); sz(8);
+    txt(cA, y, 'MAQ.'); txt(cB, y, 'MAQ.');
+    const numA = maqData.a?.numero || '';
+    const numB = maqData.b?.numero || '';
+    if (numA) { lw(0.7); rect(cA+10, y-4, 18, 5.5); bold(); sz(8.5); txt(cA+19, y, `# ${numA}`, {align:'center'}); }
+    if (numB) { lw(0.7); rect(cB+10, y-4, 18, 5.5); bold(); sz(8.5); txt(cB+19, y, `# ${numB}`, {align:'center'}); }
+
+    y += 5.5;
+    bold(); sz(8); txt(cA, y, 'MAQ.'); txt(cB, y, 'MAQ.');
+    norm(); sz(8.5);
+    txt(cA+10, y, (maqData.a?.maquinista||'').toUpperCase());
+    txt(cB+10, y, (maqData.b?.maquinista||'').toUpperCase());
+    lw(0.25); line(cA+8, y+1, cA+colW-2, y+1); line(cB+8, y+1, cB+colW-2, y+1);
+
+    const tripsA = maqData.a?.tripulantes || [];
+    const tripsB = maqData.b?.tripulantes || [];
+    for (let t = 0; t < 3; t++) {
+      y += 5.5;
+      bold(); sz(8); txt(cA, y, `TRIP-${t+1}`); txt(cB, y, `TRIP-${t+1}`);
+      norm(); sz(8.5);
+      txt(cA+12, y, (tripsA[t]||'').toUpperCase());
+      txt(cB+12, y, (tripsB[t]||'').toUpperCase());
+      lw(0.25); line(cA+10, y+1, cA+colW-2, y+1); line(cB+10, y+1, cB+colW-2, y+1);
+    }
+    y += 3; // espacio entre máquinas
+  }
+
+  // ── SERVICIOS MAQ ────────────────────────────────────────
+  y += 4;
+  bold(); sz(9);
+  txt(cA, y, 'SERVICIOS MAQ #.');
+  txt(cB, y, 'SERVICIOS MAQ #.');
+  lw(0.7);
+  rect(cA+40, y-4, 14, 5.5); rect(cB+40, y-4, 14, 5.5);
+  txt(cA+47, y, String(datos.servicios_maq_a||''), {align:'center'});
+  txt(cB+47, y, String(datos.servicios_maq_b||''), {align:'center'});
+
+  // ── REFUERZOS ────────────────────────────────────────────
+  y += 6.5;
+  bold(); sz(9); txt(cA, y, 'REFUERZOS:');
+  norm(); sz(8.5); txt(W/2, y, (datos.refuerzos||'').toUpperCase(), {align:'center'});
+  lw(0.25); line(cA+22, y+1, mr, y+1);
+
+  // ── CAMBIOS DE TURNO ─────────────────────────────────────
+  y += 7;
+  bold(); sz(9); txt(cA, y, 'CAMBIOS DE TURNO :');
+
+  const cambiosFiltrados = cambios.filter(c => c.de || c.con || c.de2 || c.con2);
+  const numFilas = Math.max(cambiosFiltrados.length, 3);
+
+  for (let i = 0; i < numFilas; i++) {
+    const ch = cambiosFiltrados[i] || {};
+    y += 6;
+    norm(); sz(8.5);
+    txt(cA,       y, (ch.de  ||'').toUpperCase());
+    bold(); sz(8.5);
+    txt(cA+26, y, 'CON');
+    norm(); sz(8.5);
+    txt(cA+32, y, (ch.con ||'').toUpperCase());
+    txt(cB,       y, (ch.de2 ||'').toUpperCase());
+    bold(); sz(8.5);
+    txt(cB+26, y, 'CON');
+    norm(); sz(8.5);
+    txt(cB+32, y, (ch.con2||'').toUpperCase());
+    lw(0.25);
+    line(cA,     y+1, cA+23,       y+1);
+    line(cA+32,  y+1, cA+colW-2,   y+1);
+    line(cB,     y+1, cB+23,       y+1);
+    line(cB+32,  y+1, cB+colW-2,   y+1);
+  }
+
+  // ── NOVEDADES ────────────────────────────────────────────
+  y += 8;
+  bold(); sz(9); txt(cA, y, 'NOVEDADES:');
+  y += 5.5;
+  bold(); sz(8); txt(cA, y, 'DAI:');
+  norm(); sz(8.5); txt(cA+9, y, (datos.novedades_dai||'').toUpperCase());
+  lw(0.25); line(cA+7, y+1, mr, y+1);
+
+  // ── FIRMAS ───────────────────────────────────────────────
+  y += 18;
+  lw(0.4);
+  line(cA, y, cA+65, y);
+  line(W/2+8, y, mr, y);
+
+  bold(); sz(9);
+  txt(cA, y+4, (datos.elaboro||'').toUpperCase());
+  norm(); sz(7.5);
+  txt(cA, y+8, 'ELABORO OFICIAL DE SERVICIO');
+  txt(W/2+8, y+4, 'VoBo JEFE DE ESTACIÓN');
+
+  // Página
+  norm(); sz(7);
+  txt(mr, H-8, 'Página 1 de 1', { align:'right' });
+
+  // ── DESCARGAR ────────────────────────────────────────────
+  const fecheFileName = (datos.fecha_orden || 'sin-fecha').replace(/-/g,'');
+  doc.save(`ORDEN_DIA_${datos.numero_orden||'XX'}_${fecheFileName}.pdf`);
+  toast('PDF generado y descargado ✅', 'ok');
+}
+
+/* ─── TOAST ──────────────────────────────────────────────── */
+function toast(msg, tipo = 'ok') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = `toast ${tipo} show`;
+  setTimeout(() => t.classList.remove('show'), 3200);
+}
+
+/* ─── ESC CIERRA MODALES ─────────────────────────────────── */
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') cerrarModalPersona();
+});
+document.getElementById('modalPersona').addEventListener('click', e => {
+  if (e.target === document.getElementById('modalPersona')) cerrarModalPersona();
+});
+</script>
+</body>
+</html>
