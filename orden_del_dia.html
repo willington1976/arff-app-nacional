@@ -458,8 +458,15 @@ function mostrarAC(inp, id, multi) {
 
   const raw = inp.value;
   let q;
+  let separadorUsado = ' - '; // Default joiner
   if (multi) {
-    const partes = raw.split(/\s*-\s*/);
+    // Detect if last separator was a comma or hyphen for joining later
+    const lastComma = raw.lastIndexOf(',');
+    const lastHyphen = raw.lastIndexOf('-');
+    separadorUsado = lastComma > lastHyphen ? ', ' : ' - ';
+    
+    // Split by either comma or hyphen
+    const partes = raw.split(/\s*[,|-]\s*/);
     q = partes[partes.length - 1].trim().toUpperCase();
   } else {
     q = raw.trim().toUpperCase();
@@ -479,9 +486,9 @@ function mostrarAC(inp, id, multi) {
     el.addEventListener('mousedown', e => {
       e.preventDefault(); // evita blur antes de click
       if (multi) {
-        const partes = inp.value.split(/\s*-\s*/);
+        const partes = inp.value.split(/\s*[,|-]\s*/);
         partes[partes.length - 1] = p.nombre_completo;
-        inp.value = partes.join(' - ');
+        inp.value = partes.join(separadorUsado);
       } else {
         inp.value = p.nombre_completo;
         // Si es oficial B → sincronizar elaboró
