@@ -20,6 +20,8 @@
       --ff-t:'Syne',sans-serif; --ff-b:'DM Sans',sans-serif; --ff-m:'DM Mono',monospace;
       --r:10px; --rs:6px;
       --accent:#38bdf8;
+      --accent-a: var(--sky);
+      --accent-b: var(--teal);
     }
     *,::before,::after{box-sizing:border-box;margin:0;padding:0}
     html{scroll-behavior:smooth}
@@ -207,6 +209,373 @@
 
     @media(max-width:860px){.sidebar{display:none;} .main{margin-left:0;} .page-body{padding:16px 14px 50px;}}
     ::-webkit-scrollbar{width:5px;height:5px;}::-webkit-scrollbar-track{background:transparent;}::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px;}
+
+    /* ── FOOTER ── */
+    .sei-footer {
+      text-align: center;
+      padding: 22px 24px 18px;
+      border-top: 1px solid var(--border);
+      position: relative;
+    }
+    .sei-footer-strip {
+      width: 40px; height: 3px;
+      background: linear-gradient(90deg, var(--accent-a), var(--accent-b));
+      border-radius: 2px;
+      margin: 0 auto 12px;
+    }
+    .sei-footer-name {
+      font-family: var(--font-title);
+      font-weight: 800;
+      font-size: 12px;
+      color: var(--text);
+      letter-spacing: .04em;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+    .sei-footer-cargo {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--accent-a);
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+    .sei-footer-norm {
+      font-family: var(--font-mono);
+      font-size: 9px;
+      color: var(--text-muted);
+      letter-spacing: .06em;
+    }
+    .sei-footer-norm span { color: var(--accent-b); }
+
+    /* Footer en @media print */
+    @media print {
+      .sei-footer {
+        border-top: 1pt solid #ccc !important;
+        padding: 6pt 8pt !important;
+        background: #fff !important;
+        page-break-inside: avoid !important;
+        margin-top: 6pt !important;
+      }
+      .sei-footer-strip {
+        background: #000 !important;
+        width: 24px !important; height: 2px !important;
+        margin-bottom: 5pt !important;
+      }
+      .sei-footer-name { font-size: 8pt !important; color: #000 !important; }
+      .sei-footer-cargo { font-size: 7pt !important; color: #555 !important; }
+      .sei-footer-norm { font-size: 6.5pt !important; color: #666 !important; }
+      .sei-footer-norm span { color: #000 !important; }
+    }
+
+
+    /* ── Segmentos de tendido ── */
+    .seg-lista { display:flex; flex-direction:column; gap:8px; margin-top:6px; }
+    .seg-card {
+      background:var(--s3); border:1px solid var(--border2);
+      border-radius:var(--rs); overflow:hidden;
+    }
+    .seg-card-head {
+      display:flex; align-items:center; gap:8px;
+      padding:7px 10px; background:rgba(56,189,248,.05);
+      border-bottom:1px solid var(--border2);
+    }
+    .seg-num-badge {
+      background:var(--sky); color:#000; border-radius:50%;
+      width:16px; height:16px; font-size:8px; font-weight:700;
+      display:inline-flex; align-items:center; justify-content:center; flex-shrink:0;
+    }
+    .seg-title { font-family:var(--ff-m); font-size:10px; color:var(--sky); flex:1; }
+    .seg-fl-badge {
+      font-family:var(--ff-m); font-size:9px; color:var(--amber);
+      background:rgba(245,159,0,.1); border:1px solid rgba(245,159,0,.2);
+      border-radius:3px; padding:1px 6px;
+    }
+    .btn-del-seg {
+      background:rgba(240,62,62,.1); border:1px solid rgba(240,62,62,.2);
+      color:#ff8787; border-radius:3px; font-size:11px; cursor:pointer;
+      padding:1px 6px; transition:.15s; line-height:1.4;
+    }
+    .btn-del-seg:hover { background:rgba(240,62,62,.2); }
+    .seg-card-body { padding:8px 10px; display:grid; grid-template-columns:1fr 1fr 1fr 1fr; gap:6px; }
+    .seg-field label { font-family:var(--ff-m); font-size:8.5px; color:var(--text-muted); display:block; margin-bottom:2px; text-transform:uppercase; letter-spacing:.04em; }
+    .seg-field select,
+    .seg-field input {
+      width:100%; background:var(--s2); border:1px solid var(--border2);
+      border-radius:4px; color:var(--text); font-family:var(--ff-m);
+      font-size:11px; padding:5px 7px; outline:none; transition:.15s;
+    }
+    .seg-field select:focus,
+    .seg-field input:focus { border-color:var(--sky); }
+    .seg-q-auto { font-family:var(--ff-m); font-size:9px; color:var(--text-muted); margin-top:3px; }
+    .btn-add-seg {
+      display:flex; align-items:center; justify-content:center; gap:6px;
+      width:100%; padding:8px; margin-top:6px;
+      background:rgba(56,189,248,.05); border:1px dashed rgba(56,189,248,.25);
+      border-radius:var(--rs); color:var(--sky); font-family:var(--ff-m);
+      font-size:10px; cursor:pointer; transition:.15s; letter-spacing:.04em;
+    }
+    .btn-add-seg:hover { background:rgba(56,189,248,.1); border-style:solid; }
+    .seg-resumen {
+      background:rgba(245,159,0,.07); border:1px solid rgba(245,159,0,.2);
+      border-radius:var(--rs); padding:7px 10px; margin-top:8px;
+      font-family:var(--ff-m); font-size:9.5px; color:var(--text-dim); line-height:1.7;
+    }
+    .seg-resumen strong { color:var(--amber); }
+
+    /* ── Accesorios con contador ── */
+    .acc-item-new {
+      display:flex; align-items:center; gap:6px;
+      background:var(--s3); border:1px solid var(--border2);
+      border-radius:var(--rs); padding:7px 10px; transition:.15s;
+    }
+    .acc-item-new:hover { border-color:var(--sky); }
+    .acc-item-new.activo { border-color:var(--sky); background:rgba(56,189,248,.07); }
+    .acc-nombre { font-size:12px; color:var(--text-dim); flex:1; }
+    .acc-item-new.activo .acc-nombre { color:var(--text); }
+    .acc-psi-lbl { font-family:var(--ff-m); font-size:9px; color:var(--text-muted); }
+    .acc-item-new.activo .acc-psi-lbl { color:var(--sky); }
+    .acc-qty-wrap { display:flex; align-items:center; gap:4px; }
+    .acc-qty-btn {
+      background:var(--s2); border:1px solid var(--border2); border-radius:4px;
+      color:var(--text-dim); font-size:13px; cursor:pointer; width:22px; height:22px;
+      display:flex; align-items:center; justify-content:center; transition:.12s; line-height:1;
+    }
+    .acc-qty-btn:hover { border-color:var(--sky); color:var(--sky); }
+    .acc-qty-val {
+      font-family:var(--ff-m); font-size:12px; font-weight:700; color:var(--sky);
+      min-width:16px; text-align:center;
+    }
+    .acc-total-preview {
+      font-family:var(--ff-m); font-size:9px; color:var(--amber);
+      margin-top:6px; padding:4px 8px; background:rgba(245,159,0,.07);
+      border-radius:4px; border:1px solid rgba(245,159,0,.15);
+      text-align:right;
+    }
+
+  /* ════ @media print — fondo blanco, B&N ════ */
+  @media print {
+    @page { size: A4 landscape; margin: 7mm 8mm; }
+    :root {
+      --bg:#fff; --surface:#fff; --s2:#f8f8f8; --s3:#f4f4f4;
+      --border:#ccc; --border2:#bbb;
+      --sky:#0b3e80; --sky2:#08316a; --sky-glow:transparent;
+      --amber:#a06000; --amber2:#7a4900; --amber-glow:transparent;
+      --red:#c00; --red-glow:transparent;
+      --green:#175c28; --green-glow:transparent;
+      --orange:#c85800; --teal:#0a6e56; --cyan:#0a6e8a;
+      --text:#000; --text-dim:#333; --text-muted:#666;
+      --accent:#0b3e80;
+    }
+    *, *::before, *::after {
+      -webkit-print-color-adjust: exact; print-color-adjust: exact;
+      box-shadow: none !important; text-shadow: none !important;
+      animation: none !important; transition: none !important;
+    }
+    html, body {
+      background: #fff !important; background-image: none !important;
+      color: #000 !important; font-size: 8.5pt !important;
+      line-height: 1.35 !important; margin: 0 !important; padding: 0 !important;
+      display: block !important;
+    }
+    .scanlines { display: none !important; }
+    .sidebar   { display: none !important; }
+    .main      { margin-left: 0 !important; }
+    .topbar    { display: none !important; }
+    .btn-calc, .btn-reset { display: none !important; }
+    .page-body { padding: 0 !important; max-width: 100% !important; }
+    .calc-grid { display: grid !important; grid-template-columns: 1fr 380px !important; gap: 8pt !important; }
+    .panel {
+      background: #fff !important; border: 1pt solid #999 !important;
+      border-radius: 2px !important; margin-bottom: 5pt !important;
+      page-break-inside: avoid !important;
+    }
+    .panel-header {
+      background: #efefef !important; border-bottom: 1pt solid #ccc !important;
+      padding: 3pt 7pt !important;
+    }
+    .panel-title { font-size: 7pt !important; font-weight: 700 !important; color: #000 !important; }
+    .panel-sub   { font-size: 6pt !important; color: #555 !important; }
+    .panel-icon  { display: none !important; }
+    .panel-body  { background: #fff !important; padding: 5pt 7pt !important; color: #000 !important; }
+    .field { margin-bottom: 4pt !important; }
+    .field-label { font-size: 7pt !important; color: #555 !important; margin-bottom: 1pt !important; }
+    .field-input {
+      background: #fafafa !important; border: 1pt solid #ccc !important;
+      color: #000 !important; font-size: 9pt !important; font-weight: 700 !important;
+      padding: 2pt 5pt !important;
+    }
+    .field-input-wrap { background: #fafafa !important; border: 1pt solid #ccc !important; border-radius: 2px !important; }
+    .field-unit { background: #ebebeb !important; color: #444 !important; border-left: 1pt solid #ccc !important; font-size: 7pt !important; }
+    .diam-btn {
+      background: #eee !important; border: 1pt solid #999 !important;
+      color: #000 !important; font-size: 7pt !important; padding: 2pt 5pt !important;
+    }
+    .diam-btn.sel {
+      background: #d0e8ff !important; border-color: #0b3e80 !important; color: #0b3e80 !important;
+    }
+    .caudal-btn {
+      background: #eee !important; border: 1pt solid #999 !important;
+      color: #000 !important; font-size: 7pt !important; padding: 2pt 5pt !important;
+    }
+    .caudal-btn.sel { background: #fff3d0 !important; border-color: #a06000 !important; color: #a06000 !important; }
+    .tramos-table { font-size: 7.5pt !important; }
+    .tramos-table th { background: #eee !important; border: 1pt solid #aaa !important; padding: 2pt 4pt !important; color: #000 !important; }
+    .tramos-table td { border: 1pt solid #ccc !important; padding: 2pt 4pt !important; color: #000 !important; }
+    .tramo-input { background: #fafafa !important; border: 1pt solid #ccc !important; color: #000 !important; width: 50px !important; font-size: 9pt !important; }
+    .tramo-label { color: #000 !important; font-size: 7.5pt !important; }
+    .tramo-ft    { color: #555 !important; font-size: 7pt !important; }
+    .acc-grid { grid-template-columns: 1fr 1fr !important; gap: 3pt !important; }
+    .acc-item { background: #fafafa !important; border: 1pt solid #ccc !important; padding: 3pt 5pt !important; }
+    .acc-item.checked { background: #e8f4ff !important; border-color: #0b3e80 !important; }
+    .acc-name { font-size: 7pt !important; color: #000 !important; }
+    .acc-psi  { font-size: 6.5pt !important; color: #555 !important; }
+    .acc-check { font-size: 8pt !important; }
+    /* Panel resultado */
+    .result-panel { background: #fff !important; border: 1pt solid #999 !important; border-radius: 2px !important; }
+    .result-idle  { display: none !important; }
+    .result-hero  { background: #fff !important; padding: 8pt 12pt !important; border-bottom: 1pt solid #ccc !important; }
+    .result-label { font-size: 7pt !important; color: #666 !important; }
+    .result-pdp   { font-size: 28pt !important; color: #000 !important; line-height: 1 !important; }
+    .result-unit  { font-size: 10pt !important; color: #444 !important; }
+    .result-rows  { padding: 6pt 10pt !important; }
+    .r-row   { border-bottom: 1pt solid #eee !important; padding: 3pt 0 !important; }
+    .r-key   { font-size: 7pt !important; color: #555 !important; }
+    .r-val   { font-size: 8pt !important; color: #000 !important; }
+    .r-val.hi { color: #0b3e80 !important; }
+    /* Detalle friccion */
+    .friccion-detail { background: #f8f8f8 !important; border: 1pt solid #ddd !important; padding: 5pt 7pt !important; margin: 3pt 10pt !important; }
+    .fd-title { font-size: 7pt !important; color: #555 !important; }
+    .fd-bar-wrap { background: #e0e0e0 !important; }
+    .fd-bar  { background: #0b3e80 !important; }
+    .fd-row  { font-size: 7pt !important; color: #000 !important; }
+    /* Alerta */
+    .result-alert { margin: 3pt 10pt !important; font-size: 7.5pt !important; padding: 4pt 8pt !important; }
+    .result-alert.ok     { background: #f0fff4 !important; border-color: #175c28 !important; color: #175c28 !important; }
+    .result-alert.warn   { background: #fffbec !important; border-color: #a06000 !important; color: #a06000 !important; }
+    .result-alert.danger { background: #fff5f5 !important; border-color: #c00 !important; color: #c00 !important; }
+    /* Comparador */
+    .cmp-box   { background: #f8f8f8 !important; border: 1pt solid #ccc !important; padding: 5pt 8pt !important; margin: 3pt 10pt !important; }
+    .cmp-title { font-size: 7pt !important; color: #555 !important; }
+    .cmp-input { background: #fafafa !important; border: 1pt solid #ccc !important; color: #000 !important; font-size: 9pt !important; }
+    /* Historial */
+    .hist-section { margin-top: 5pt !important; }
+    .hist-title   { font-size: 7pt !important; color: #555 !important; }
+    .hist-item    { background: #fafafa !important; border: 1pt solid #ddd !important; padding: 3pt 6pt !important; }
+    .hist-pdp     { font-size: 9pt !important; color: #0b3e80 !important; font-weight: 700 !important; }
+    .hist-info    { font-size: 7pt !important; color: #333 !important; }
+    .hist-ts      { font-size: 6.5pt !important; color: #777 !important; }
+    /* Norma box */
+    .norma-box  { background: #f8f8f8 !important; border: 1pt solid #ddd !important; padding: 5pt 8pt !important; margin-top: 5pt !important; }
+    .norma-title { font-size: 7pt !important; color: #0b3e80 !important; }
+    .norma-item  { font-size: 7pt !important; color: #333 !important; border-bottom-color: #eee !important; }
+    /* Footer */
+    footer { border-top: 1pt solid #ccc !important; padding: 5pt 8pt !important; background: #fff !important; }
+    .footer-strip { background: #0b3e80 !important; }
+    .footer-name  { font-size: 7.5pt !important; color: #000 !important; }
+    .footer-cred  { font-size: 7pt !important; color: #333 !important; }
+    .footer-norm  { font-size: 6.5pt !important; color: #555 !important; }
+    /* Modo doble pitón */
+    .dual-mode-banner { font-size: 7.5pt !important; padding: 3pt 7pt !important; margin-bottom: 4pt !important; }
+    .dual-info-box { background: #f0f8ff !important; border: 1pt solid #ccc !important; font-size: 7pt !important; }
+  }
+
+    /* ── Sistema de pitones dinámicos ── */
+    .pitones-lista { display:flex; flex-direction:column; gap:10px; margin-top:4px; }
+
+    .piton-card {
+      background:var(--s3); border:1px solid var(--border2);
+      border-radius:var(--rs); overflow:hidden;
+      transition: border-color .15s;
+    }
+    .piton-card:first-child { border-color: var(--sky); }
+
+    .piton-card-header {
+      display:flex; align-items:center; justify-content:space-between;
+      padding:8px 12px;
+      background:rgba(56,189,248,.06);
+      border-bottom:1px solid var(--border2);
+      cursor:pointer; user-select:none;
+    }
+    .piton-card-header:hover { background:rgba(56,189,248,.1); }
+    .piton-card-title {
+      font-family:var(--ff-m); font-size:11px; color:var(--sky);
+      letter-spacing:.05em; display:flex; align-items:center; gap:6px;
+    }
+    .piton-card-title .piton-num {
+      background:var(--sky); color:#000; border-radius:50%;
+      width:18px; height:18px; display:inline-flex;
+      align-items:center; justify-content:center;
+      font-size:9px; font-weight:700; flex-shrink:0;
+    }
+    .piton-card-summary {
+      font-family:var(--ff-m); font-size:9px; color:var(--text-muted);
+    }
+    .piton-card-actions { display:flex; gap:6px; align-items:center; }
+    .btn-del-piton {
+      background:rgba(240,62,62,.1); border:1px solid rgba(240,62,62,.2);
+      color:#ff8787; border-radius:4px; font-size:11px; cursor:pointer;
+      padding:2px 7px; transition:.15s; line-height:1.4;
+    }
+    .btn-del-piton:hover { background:rgba(240,62,62,.2); }
+
+    .piton-card-body { padding:10px 12px; }
+    .piton-card-body .field-label { font-size:10px; color:var(--text-muted); margin-bottom:3px; }
+
+    .piton-caudal-btns { display:flex; flex-wrap:wrap; gap:4px; margin-bottom:6px; }
+    .piton-caudal-btn {
+      padding:4px 9px; border-radius:4px; font-family:var(--ff-m); font-size:10px;
+      cursor:pointer; border:1px solid var(--border2); background:var(--s3);
+      color:var(--text-dim); transition:.12s;
+    }
+    .piton-caudal-btn:hover { border-color:var(--amber); color:var(--amber); }
+    .piton-caudal-btn.sel { background:var(--amber-glow); border-color:var(--amber); color:var(--amber); }
+
+    .piton-ramal-toggle {
+      margin-top:8px; padding-top:8px; border-top:1px dashed var(--border2);
+    }
+    .btn-toggle-ramal {
+      background:none; border:1px dashed var(--border2); border-radius:4px;
+      color:var(--text-muted); font-family:var(--ff-m); font-size:9px;
+      cursor:pointer; padding:4px 10px; width:100%; text-align:left;
+      transition:.15s; letter-spacing:.04em;
+    }
+    .btn-toggle-ramal:hover { border-color:var(--sky); color:var(--sky); }
+    .btn-toggle-ramal.open { border-color:var(--sky); color:var(--sky); background:rgba(56,189,248,.04); }
+
+    .piton-ramal-body {
+      margin-top:6px; padding:8px 0 0; display:none;
+    }
+    .piton-ramal-body.open { display:block; }
+    .piton-ramal-label {
+      font-family:var(--ff-m); font-size:9px; color:var(--sky);
+      letter-spacing:.05em; text-transform:uppercase; margin-bottom:6px;
+    }
+
+    .piton-fl-preview {
+      background:rgba(56,189,248,.05); border:1px solid rgba(56,189,248,.15);
+      border-radius:4px; padding:5px 9px; margin-top:6px;
+      font-family:var(--ff-m); font-size:9.5px; color:var(--text-dim);
+      display:flex; justify-content:space-between; align-items:center;
+    }
+    .piton-fl-preview strong { color:var(--sky); }
+
+    .btn-add-piton {
+      display:flex; align-items:center; justify-content:center; gap:6px;
+      width:100%; padding:9px; margin-top:6px;
+      background:rgba(56,189,248,.06); border:1px dashed rgba(56,189,248,.3);
+      border-radius:var(--rs); color:var(--sky); font-family:var(--ff-m);
+      font-size:11px; cursor:pointer; transition:.15s; letter-spacing:.04em;
+    }
+    .btn-add-piton:hover { background:rgba(56,189,248,.12); border-style:solid; }
+
+    .pitones-resumen {
+      background:rgba(56,189,248,.06); border:1px solid rgba(56,189,248,.2);
+      border-radius:var(--rs); padding:8px 12px; margin-top:8px;
+      font-family:var(--ff-m); font-size:10px; color:var(--text-dim); line-height:1.7;
+    }
+    .pitones-resumen strong { color:var(--sky); }
+    .pitones-resumen .warn { color:var(--amber); }
   </style>
 </head>
 <body>
@@ -295,72 +664,53 @@
       <!-- COLUMNA IZQUIERDA — INPUTS -->
       <div>
 
-        <!-- DIAMETRO -->
+        <!-- SEGMENTOS DE TENDIDO -->
         <div class="panel">
           <div class="panel-header">
             <div class="panel-icon" style="background:rgba(56,189,248,.1)">&#x1F4CF;</div>
-            <div><div class="panel-title">Diametro de Manguera</div><div class="panel-sub">Seleccione el diametro o escriba uno custom</div></div>
+            <div>
+              <div class="panel-title">Tendido de Mangueras</div>
+              <div class="panel-sub">Cada segmento tiene su propio diámetro, cantidad y longitud — FL se suma por tramo</div>
+            </div>
           </div>
           <div class="panel-body">
-            <div class="field">
-              <div class="field-label">Diametro rapido</div>
-              <div class="diam-btns">
-                <button class="diam-btn" data-d="1.5" onclick="selDiam(this,1.5,'38')">1.5&Prime; (38mm)</button>
-                <button class="diam-btn sel" data-d="1.75" onclick="selDiam(this,1.75,'45')">1.75&Prime; (45mm)</button>
-                <button class="diam-btn" data-d="2" onclick="selDiam(this,2,'50')">2&Prime; (50mm)</button>
-                <button class="diam-btn" data-d="2.5" onclick="selDiam(this,2.5,'65')">2.5&Prime; (65mm)</button>
-                <button class="diam-btn" data-d="3" onclick="selDiam(this,3,'75')">3&Prime; (75mm)</button>
-                <button class="diam-btn" data-d="4" onclick="selDiam(this,4,'100')">4&Prime; (100mm)</button>
-              </div>
+
+            <div style="font-family:var(--ff-m);font-size:9px;color:var(--text-muted);margin-bottom:8px;line-height:1.6">
+              Agregue un segmento por cada grupo de mangueras del mismo diámetro.
+              El caudal de cada segmento se toma del Q total de la bomba dividido entre los pitones que sirve.
             </div>
-            <div class="field" style="margin-top:10px">
-              <div class="field-label">Coeficiente C <span class="tip">(auto-calculado)</span></div>
-              <div class="field-input-wrap">
-                <input class="field-input" id="inp-coef" type="number" value="15.5" step="0.1" min="1" max="100" placeholder="15.5"/>
-                <span class="field-unit">C</span>
-              </div>
-              <div class="field-note" id="coef-note">1.75&Prime; &rarr; C&asymp;15.5 (estándar NFPA 1963)</div>
-            </div>
+
+            <!-- Lista de segmentos -->
+            <div class="seg-lista" id="seg-lista"></div>
+
+            <!-- Botón agregar segmento -->
+            <button class="btn-add-seg" onclick="agregarSegmento()">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+              Agregar segmento de manguera
+            </button>
+
+            <!-- Resumen FL tendido -->
+            <div class="seg-resumen" id="seg-resumen" style="display:none"></div>
+
           </div>
         </div>
 
-        <!-- LONGITUD DE MANGUERAS -->
-        <div class="panel">
-          <div class="panel-header">
-            <div class="panel-icon" style="background:rgba(56,189,248,.1)">&#x1F4CF;</div>
-            <div><div class="panel-title">Tramos de Manguera</div><div class="panel-sub">Mezcle longitudes — la app suma los tramos automaticamente</div></div>
-          </div>
-          <div class="panel-body">
-            <table class="tramos-table">
-              <thead>
-                <tr><th>Longitud</th><th>Cantidad</th><th>Total</th></tr>
-              </thead>
-              <tbody>
-                <tr><td><span class="tramo-label">25 ft</span> <span class="tramo-ft">(7.6 m)</span></td><td><input class="tramo-input" id="t25" type="number" value="0" min="0" max="99" oninput="updateTramosTotal()"/></td><td class="tramo-ft" id="tot25">0 ft</td></tr>
-                <tr><td><span class="tramo-label">50 ft</span> <span class="tramo-ft">(15.2 m)</span></td><td><input class="tramo-input" id="t50" type="number" value="0" min="0" max="99" oninput="updateTramosTotal()"/></td><td class="tramo-ft" id="tot50">0 ft</td></tr>
-                <tr><td><span class="tramo-label">100 ft</span> <span class="tramo-ft">(30.5 m)</span></td><td><input class="tramo-input" id="t100" type="number" value="2" min="0" max="99" oninput="updateTramosTotal()"/></td><td class="tramo-ft" id="tot100">200 ft</td></tr>
-                <tr><td><span class="tramo-label">150 ft</span> <span class="tramo-ft">(45.7 m)</span></td><td><input class="tramo-input" id="t150" type="number" value="0" min="0" max="99" oninput="updateTramosTotal()"/></td><td class="tramo-ft" id="tot150">0 ft</td></tr>
-                <tr><td><span class="tramo-label">200 ft</span> <span class="tramo-ft">(61.0 m)</span></td><td><input class="tramo-input" id="t200" type="number" value="0" min="0" max="99" oninput="updateTramosTotal()"/></td><td class="tramo-ft" id="tot200">0 ft</td></tr>
-                <tr style="background:rgba(56,189,248,.04)"><td colspan="3" style="padding:8px 10px;">
-                  <div style="display:flex;justify-content:space-between;font-family:var(--ff-m);font-size:10px;">
-                    <span style="color:var(--text-muted)">LONGITUD TOTAL</span>
-                    <span style="color:var(--sky)" id="total-ft-label">200 ft / 61.0 m</span>
-                  </div>
-                </td></tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <!-- CAUDAL Y PITON -->
+        <!-- CAUDAL Y PITONES -->
         <div class="panel">
           <div class="panel-header">
             <div class="panel-icon" style="background:rgba(245,159,0,.1)">&#x1F4A7;</div>
-            <div><div class="panel-title">Caudal y Piton</div><div class="panel-sub">NP se asigna automaticamente segun el tipo de piton</div></div>
+            <div>
+              <div class="panel-title">Caudal Total y Pitones</div>
+              <div class="panel-sub">Agregue cada piton activo — el caudal se distribuye automaticamente</div>
+            </div>
           </div>
           <div class="panel-body">
+
+            <!-- Caudal total de la bomba (campo compartido) -->
             <div class="field">
-              <div class="field-label">Caudal rapido (GPM)</div>
+              <div class="field-label">Caudal total de la bomba (GPM) &mdash; suma de todos los pitones</div>
               <div class="caudal-btns">
                 <button class="caudal-btn" onclick="selCaudal(this,95)">95</button>
                 <button class="caudal-btn" onclick="selCaudal(this,125)">125</button>
@@ -369,33 +719,27 @@
                 <button class="caudal-btn" onclick="selCaudal(this,250)">250</button>
                 <button class="caudal-btn" onclick="selCaudal(this,300)">300</button>
               </div>
-            </div>
-            <div class="g2" style="margin-top:10px">
-              <div class="field">
-                <div class="field-label">Caudal exacto</div>
-                <div class="field-input-wrap">
-                  <input class="field-input" id="inp-q" type="number" value="150" min="10" max="2000" placeholder="150"/>
-                  <span class="field-unit">GPM</span>
-                </div>
-              </div>
-              <div class="field">
-                <div class="field-label">Tipo de piton</div>
-                <select class="field-input" id="sel-piton" onchange="onPitonChange()">
-                  <option value="100">Neblinero (100 psi)</option>
-                  <option value="50">Liso / Monitor (50 psi)</option>
-                  <option value="80">Piton CAFS (80 psi)</option>
-                  <option value="60">Turbo neblinero (60 psi)</option>
-                  <option value="custom">Personalizado...</option>
-                </select>
+              <div class="field-input-wrap" style="margin-top:6px">
+                <input class="field-input" id="inp-q" type="number" value="150" min="10" max="2000"
+                  placeholder="150" oninput="onCaudalInput()"/>
+                <span class="field-unit">GPM</span>
               </div>
             </div>
-            <div class="field" id="np-custom-wrap" style="display:none;margin-top:8px">
-              <div class="field-label">NP personalizado</div>
-              <div class="field-input-wrap">
-                <input class="field-input" id="inp-np-custom" type="number" value="100" min="0" max="300" placeholder="100"/>
-                <span class="field-unit">psi</span>
-              </div>
-            </div>
+
+            <!-- Lista de pitones -->
+            <div class="pitones-lista" id="pitones-lista"></div>
+
+            <!-- Botón agregar pitón -->
+            <button class="btn-add-piton" onclick="agregarPiton()">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+              Agregar piton
+            </button>
+
+            <!-- Resumen distribucion de caudal -->
+            <div class="pitones-resumen" id="pitones-resumen" style="display:none"></div>
+
           </div>
         </div>
 
@@ -449,20 +793,22 @@
             <div><div class="panel-title">Accesorios en Linea</div><div class="panel-sub">Perdidas adicionales por equipos conectados</div></div>
           </div>
           <div class="panel-body">
-            <div class="acc-grid">
-              <div class="acc-item" onclick="toggleAcc(this,10)" data-psi="10"><div class="acc-check"></div><span class="acc-name">Bifurcacion</span><span class="acc-psi">+10 psi</span></div>
-              <div class="acc-item" onclick="toggleAcc(this,10)" data-psi="10"><div class="acc-check"></div><span class="acc-name">Siames</span><span class="acc-psi">+10 psi</span></div>
-              <div class="acc-item" onclick="toggleAcc(this,25)" data-psi="25"><div class="acc-check"></div><span class="acc-name">Monitor portatil</span><span class="acc-psi">+25 psi</span></div>
-              <div class="acc-item" onclick="toggleAcc(this,15)" data-psi="15"><div class="acc-check"></div><span class="acc-name">Valvula en linea</span><span class="acc-psi">+15 psi</span></div>
-              <div class="acc-item" onclick="toggleAcc(this,5)" data-psi="5"><div class="acc-check"></div><span class="acc-name">Codo 90&deg;</span><span class="acc-psi">+5 psi</span></div>
-              <div class="acc-item" onclick="toggleAcc(this,20)" data-psi="20"><div class="acc-check"></div><span class="acc-name">Espumador en linea</span><span class="acc-psi">+20 psi</span></div>
-            </div>
+            <div style="display:flex;flex-direction:column;gap:5px" id="acc-lista"></div>
+            <div class="acc-total-preview" id="acc-total-preview" style="display:none"></div>
           </div>
         </div>
 
         <!-- BTN CALCULAR -->
         <button class="btn-calc" onclick="calcular()">&#x26A1; CALCULAR PDP</button>
         <button class="btn-reset" onclick="resetAll()">&#x21BA; Limpiar todo</button>
+        <button onclick="exportPDF()" style="width:100%;padding:10px;margin-top:6px;
+          background:rgba(56,189,248,.1);border:1px solid rgba(56,189,248,.3);
+          color:var(--sky);border-radius:var(--rs);font-family:var(--ff-m);font-size:11px;
+          cursor:pointer;letter-spacing:.05em;transition:.15s;"
+          onmouseover="this.style.background='rgba(56,189,248,.18)'"
+          onmouseout="this.style.background='rgba(56,189,248,.1)'">
+          &#x1F4CB; EXPORTAR PDF
+        </button>
 
       </div><!-- /col izquierda -->
 
@@ -483,14 +829,17 @@
             <!-- DESGLOSE -->
             <div class="result-rows">
               <div class="r-row"><span class="r-key">NP — Presion en piton</span><span class="r-val hi" id="res-np">— psi</span></div>
-              <div class="r-row"><span class="r-key">FL — Friccion en manguera</span><span class="r-val" id="res-fl">— psi</span></div>
+              <div class="r-row"><span class="r-key">FL — Friccion total</span><span class="r-val" id="res-fl">— psi</span></div>
+              <div class="r-row" id="row-fl-troncal" style="display:none;padding-left:12px"><span class="r-key" style="font-size:10px;color:var(--text-muted)">&#x2514; FL troncal (Q total)</span><span class="r-val" style="font-size:10px" id="res-fl-troncal">—</span></div>
+              <div class="r-row" id="row-fl-ramal"   style="display:none;padding-left:12px"><span class="r-key" style="font-size:10px;color:var(--text-muted)">&#x2514; FL ramal (Q/2 c/u)</span><span class="r-val" style="font-size:10px" id="res-fl-ramal2">—</span></div>
               <div class="r-row"><span class="r-key">EP — Presion por elevacion</span><span class="r-val" id="res-ep">— psi</span></div>
               <div class="r-row"><span class="r-key">AL — Accesorios</span><span class="r-val" id="res-al">— psi</span></div>
               <div class="r-row" style="border-top:1px solid var(--border2);margin-top:4px;padding-top:8px">
                 <span class="r-key">Longitud total linea</span>
                 <span class="r-val" id="res-long">— ft</span>
               </div>
-              <div class="r-row"><span class="r-key">Caudal calculado</span><span class="r-val" id="res-q">— GPM</span></div>
+              <div class="r-row"><span class="r-key" id="lbl-res-q">Caudal bomba</span><span class="r-val" id="res-q">— GPM</span></div>
+              <div class="r-row" id="row-q-piton" style="display:none;padding-left:12px"><span class="r-key" style="font-size:10px;color:var(--text-muted)">&#x2514; Q por piton</span><span class="r-val" style="font-size:10px" id="res-q-piton">—</span></div>
               <div class="r-row"><span class="r-key">Coef. friccion C</span><span class="r-val" id="res-c">—</span></div>
             </div>
 
@@ -533,17 +882,27 @@
           <div class="norma-item"><strong>Error de tabla fija:</strong> a 200 GPM la friccion es 78% mayor que a 150 GPM en la misma manguera. Esta app calcula para el caudal real ingresado.</div>
           <div class="norma-item"><strong>EP = elevacion(m) &times; 1.42 psi/m</strong> &mdash; equivalente hidraulico. En modo aeronautico se usa la altura real del plano del ala.</div>
           <div class="norma-item"><strong>PDP = NP + FL + EP + AL</strong> &mdash; formula completa de presion de descarga de bomba.</div>
+          <div class="norma-item"><strong>Multi-piton:</strong> PDP = NP_max + FL_troncal(Q_total) + FL_ramal_max(Q/N) + EP + AL. La troncal usa Q bomba completo; cada ramal usa el Q de su piton. Cuantos mas pitones, menor Q por piton → menor FL ramal, pero igual FL troncal.</div>
         </div>
       </div>
     </div><!-- /calc-grid -->
 
   </div><!-- /page-body -->
 
-  <footer>
-    <div class="footer-strip"></div>
-    <div class="footer-name">Diseno: WILLINGTON PENA MONTENEGRO &mdash; Bombero Aeronautico BAE 373</div>
-    <div class="footer-cred">UAEAC &middot; Direccion SEI &nbsp;&middot;&nbsp; <span>ARFF Colombia</span></div>
-    <div class="footer-norm">NFPA 1963 &middot; OACI Doc 9137 &middot; Darcy-Weisbach &middot; Modulo 10</div>
+  <!-- FOOTER -->
+  <footer class="sei-footer">
+    <div class="sei-footer-strip"></div>
+    <div class="sei-footer-name">Dise&ntilde;o: WILLINGTON PE&Ntilde;A MONTENEGRO</div>
+    <div class="sei-footer-cargo">Bombero Aeronáutico &middot; BAE 373</div>
+    <div class="sei-footer-norm">
+      ARFF Colombia &nbsp;&middot;&nbsp;
+      <span>NFPA 1963</span> &nbsp;&middot;&nbsp;
+      <span>OACI Doc 9137</span> &nbsp;&middot;&nbsp;
+      Darcy-Weisbach &nbsp;&middot;&nbsp; Módulo 10
+    </div>
+    <div class="sei-footer-norm" style="margin-top:3px">
+      Consultas oficiales: <span>contacto@calculosarff.com</span>
+    </div>
   </footer>
 </div><!-- /main -->
 
@@ -568,8 +927,226 @@ const COEF = {
 
 /* ══════════ ESTADO ══════════ */
 var diamSelec  = 1.75;
-var historial = [];
+var historial  = [];
 var calcActual = null;
+/* ══════════ SISTEMA DE PITONES DINÁMICOS ══════════
+   Cada pitón tiene: tipo (NP), caudal propio O compartido,
+   y opcionalmente un ramal con diámetro y longitud propios.
+
+   Física (NFPA 1963 / IFSTA):
+   - Q_bomba total se distribuye entre N pitones según sus caudales.
+   - FL_troncal usa Q_bomba total.
+   - FL_ramal de cada pitón usa su Q_piton individual.
+   - NP de cada pitón es su presión de boquilla.
+   - PDP = NP_max + FL_troncal + FL_ramal_max + EP + AL
+     (el caso más desfavorable determina la PDP requerida)
+══════════ */
+
+var pitones = []; // [{id, np, q, ramalDiam, ramalFt, abierto}]
+var pitonUID = 0;
+
+var NP_TIPOS = {
+  '100': 'Neblinero (100 psi)',
+  '50':  'Liso / Monitor (50 psi)',
+  '80':  'Piton CAFS (80 psi)',
+  '60':  'Turbo neblinero (60 psi)',
+};
+
+function agregarPiton(npVal, qPropio) {
+  var id = ++pitonUID;
+  pitones.push({
+    id: id,
+    np: npVal || 100,
+    q: qPropio || 0,   // 0 = distribucion equitativa automatica
+    ramalDiam: 1.75,
+    ramalFt: 100,
+    ramalActivo: false,
+    abierto: true,
+  });
+  renderPitones();
+}
+
+function eliminarPiton(id) {
+  if (pitones.length <= 1) return; // siempre al menos 1
+  pitones = pitones.filter(function(p) { return p.id !== id; });
+  renderPitones();
+}
+
+function togglePitonBody(id) {
+  var p = pitones.find(function(p) { return p.id === id; });
+  if (p) { p.abierto = !p.abierto; renderPitones(); }
+}
+
+function toggleRamal(id) {
+  var p = pitones.find(function(p) { return p.id === id; });
+  if (p) { p.ramalActivo = !p.ramalActivo; renderPitones(); }
+}
+
+function onPitonField(id, campo, val) {
+  var p = pitones.find(function(p) { return p.id === id; });
+  if (!p) return;
+  if (campo === 'np')        p.np        = parseFloat(val) || 100;
+  if (campo === 'ramalDiam') p.ramalDiam = parseFloat(val) || 1.75;
+  if (campo === 'ramalFt')   p.ramalFt   = parseFloat(val) || 0;
+  actualizarResumen();
+}
+
+function selCaudalPiton(id, btn, q) {
+  var p = pitones.find(function(p) { return p.id === id; });
+  if (!p) return;
+  p.q = q;
+  // Desmarcar otros botones de este pitón
+  var card = document.querySelector('.piton-card[data-id="' + id + '"]');
+  if (card) card.querySelectorAll('.piton-caudal-btn').forEach(function(b) { b.classList.remove('sel'); });
+  btn.classList.add('sel');
+  actualizarResumen();
+}
+
+function actualizarResumen() {
+  var Q = parseFloat(document.getElementById('inp-q').value) || 0;
+  var N = pitones.length;
+  if (!N || !Q) return;
+
+  // Calcular Q por pitón: si tiene Q propio se usa, sino distribución equitativa
+  var totalQPropio = pitones.reduce(function(s,p) { return s + (p.q > 0 ? p.q : 0); }, 0);
+  var nSinQ = pitones.filter(function(p) { return p.q <= 0; }).length;
+  var QLibre = Math.max(0, Q - totalQPropio);
+  var QPorDefecto = nSinQ > 0 ? QLibre / nSinQ : 0;
+
+  pitones.forEach(function(p) {
+    p._qReal = p.q > 0 ? p.q : QPorDefecto;
+  });
+
+  // Actualizar previews en las tarjetas
+  pitones.forEach(function(p) {
+    var preview = document.querySelector('.piton-card[data-id="' + p.id + '"] .piton-fl-preview');
+    if (!preview) return;
+    var FLr = 0;
+    if (p.ramalActivo && p.ramalFt > 0) {
+      var CR = COEF[p.ramalDiam] || 15.5;
+      FLr = CR * Math.pow(p._qReal/100, 2) * (p.ramalFt/100);
+    }
+    preview.innerHTML = 'Q: <strong>' + p._qReal.toFixed(1) + ' GPM</strong>'
+      + (p.ramalActivo ? ' &nbsp;|&nbsp; FL ramal: <strong>' + FLr.toFixed(1) + ' psi</strong>' : '');
+  });
+
+  // Resumen total
+  var res = document.getElementById('pitones-resumen');
+  if (!res) return;
+  if (N === 1) { res.style.display = 'none'; return; }
+
+  var totalQ = pitones.reduce(function(s,p) { return s + p._qReal; }, 0);
+  var html = '<strong>' + N + ' pitones activos</strong> &nbsp;&middot;&nbsp; Q bomba: <strong>' + Q + ' GPM</strong><br>';
+  pitones.forEach(function(p, i) {
+    html += '&#x1F525; Pit\u00f3n ' + (i+1) + ': <strong>' + p._qReal.toFixed(1) + ' GPM</strong>';
+    if (p.ramalActivo) html += ' (con ramal ' + p.ramalDiam + '"&times;' + p.ramalFt + 'ft)';
+    if (i < pitones.length-1) html += ' &nbsp;&middot;&nbsp; ';
+  });
+  if (Math.abs(totalQ - Q) > 1) {
+    html += '<br><span class="warn">&#x26A0; Suma de caudales por pitón (' + totalQ.toFixed(0) + ' GPM) ≠ Q bomba (' + Q + ' GPM). Revise.</span>';
+  }
+  res.innerHTML = html;
+  res.style.display = '';
+}
+
+function renderPitones() {
+  var lista = document.getElementById('pitones-lista');
+  if (!lista) return;
+  lista.innerHTML = '';
+  pitones.forEach(function(p, idx) {
+    var Q = parseFloat(document.getElementById('inp-q').value) || 150;
+    var N = pitones.length;
+    var Qest = p.q > 0 ? p.q : (Q / N);
+
+    var tiposHTML = Object.keys(NP_TIPOS).map(function(v) {
+      return '<option value="' + v + '"' + (parseFloat(v) === p.np ? ' selected' : '') + '>' + NP_TIPOS[v] + '</option>';
+    }).join('');
+
+    var caudalBtns = [95,125,150,185,250,300].map(function(q) {
+      return '<button class="piton-caudal-btn' + (p.q === q ? ' sel' : '') + '"'
+        + ' onmousedown="event.preventDefault()" onclick="selCaudalPiton(' + p.id + ',this,' + q + ')">' + q + '</button>';
+    }).join('');
+
+    var card = document.createElement('div');
+    card.className = 'piton-card';
+    card.setAttribute('data-id', p.id);
+
+    var FLr = 0;
+    if (p.ramalActivo && p.ramalFt > 0) {
+      var CR = COEF[p.ramalDiam] || 15.5;
+      FLr = CR * Math.pow(Qest/100, 2) * (p.ramalFt/100);
+    }
+
+    card.innerHTML =
+      '<div class="piton-card-header" onclick="togglePitonBody(' + p.id + ')">'
+        + '<div class="piton-card-title">'
+          + '<span class="piton-num">' + (idx+1) + '</span>'
+          + 'Pit\u00f3n ' + (idx+1)
+        + '</div>'
+        + '<div style="display:flex;align-items:center;gap:8px">'
+          + '<span class="piton-card-summary">' + NP_TIPOS[String(p.np)] + ' &middot; ~' + Qest.toFixed(0) + ' GPM</span>'
+          + (pitones.length > 1
+            ? '<button class="btn-del-piton" onclick="event.stopPropagation();eliminarPiton(' + p.id + ')" title="Quitar pit\u00f3n">&times;</button>'
+            : '')
+        + '</div>'
+      + '</div>'
+      + (p.abierto ? '<div class="piton-card-body">'
+
+          + '<div class="field-label">Tipo de pit\u00f3n (NP)</div>'
+          + '<select class="field-input" style="margin-bottom:8px;width:100%" onchange="onPitonField(' + p.id + ',\'np\',this.value)">' + tiposHTML + '</select>'
+
+          + '<div class="field-label">Caudal de este pit\u00f3n (GPM) &mdash; 0 = auto</div>'
+          + '<div class="piton-caudal-btns">' + caudalBtns + '</div>'
+          + '<div class="field-input-wrap" style="margin-bottom:6px">'
+            + '<input class="field-input" type="number" value="' + (p.q||0) + '" min="0" max="2000" placeholder="0 = auto"'
+            + ' oninput="onPitonField(' + p.id + ',\'q\',parseFloat(this.value)||0);actualizarResumen()"/>'
+            + '<span class="field-unit">GPM</span>'
+          + '</div>'
+
+          + '<div class="piton-fl-preview">Q: <strong>' + Qest.toFixed(1) + ' GPM</strong>'
+            + (p.ramalActivo ? ' &nbsp;|&nbsp; FL ramal: <strong>' + FLr.toFixed(1) + ' psi</strong>' : '')
+          + '</div>'
+
+          + '<div class="piton-ramal-toggle">'
+            + '<button class="btn-toggle-ramal' + (p.ramalActivo ? ' open' : '') + '"'
+            + ' onclick="toggleRamal(' + p.id + ')">'
+            + (p.ramalActivo ? '&#x25BC;' : '&#x25BA;') + ' Ramal propio (despu\u00e9s de bifurcaci\u00f3n / siam\u00e9s)'
+            + '</button>'
+            + '<div class="piton-ramal-body' + (p.ramalActivo ? ' open' : '') + '">'
+              + '<div class="piton-ramal-label">&#x2514; Configuraci\u00f3n del ramal</div>'
+              + '<div class="g2">'
+                + '<div class="field">'
+                  + '<div class="field-label">Di\u00e1metro del ramal</div>'
+                  + '<select class="field-input" onchange="onPitonField(' + p.id + ',\'ramalDiam\',this.value)">'
+                    + '<option value="1.5"' + (p.ramalDiam===1.5?' selected':'') + '>1.5&Prime; (38mm) C=24</option>'
+                    + '<option value="1.75"' + (p.ramalDiam===1.75?' selected':'') + '>1.75&Prime; (45mm) C=15.5</option>'
+                    + '<option value="2"' + (p.ramalDiam===2?' selected':'') + '>2&Prime; (50mm) C=8</option>'
+                    + '<option value="2.5"' + (p.ramalDiam===2.5?' selected':'') + '>2.5&Prime; (65mm) C=2</option>'
+                  + '</select>'
+                + '</div>'
+                + '<div class="field">'
+                  + '<div class="field-label">Longitud del ramal</div>'
+                  + '<div class="field-input-wrap">'
+                    + '<input class="field-input" type="number" value="' + p.ramalFt + '" min="0" max="999"'
+                    + ' oninput="onPitonField(' + p.id + ',\'ramalFt\',this.value);actualizarResumen()"/>'
+                    + '<span class="field-unit">ft</span>'
+                  + '</div>'
+                + '</div>'
+              + '</div>'
+            + '</div>'
+          + '</div>'
+
+        + '</div>' : '');
+
+    lista.appendChild(card);
+  });
+  actualizarResumen();
+}
+
+function onCaudalInput() {
+  actualizarResumen();
+  renderPitones();
+}
 
 /* ══════════ AUTH ══════════ */
 window.onSEIReady = function(user, rol, nombre) {
@@ -589,14 +1166,116 @@ tick(); setInterval(tick, 1000);
 
 
 
-/* ══════════ DIAMETRO ══════════ */
-function selDiam(btn, d, mm) {
-  diamSelec = d;
-  document.querySelectorAll('.diam-btn').forEach(function(b){ b.classList.remove('sel'); });
-  btn.classList.add('sel');
-  var c = COEF[d] || 15.5;
-  document.getElementById('inp-coef').value = c;
-  document.getElementById('coef-note').textContent = d + '\u2033 → C≈' + c + ' (NFPA 1963)';
+/* ══════════════════════════════════════════════════
+   SEGMENTOS DE TENDIDO — diámetro + cantidad + longitud
+   Cada segmento: FL_i = C_i × (Q_i/100)² × (L_i/100)
+   Q_i se calcula como Q_bomba / pitones_servidos
+   (por defecto todos los segmentos sirven a todos los pitones)
+══════════════════════════════════════════════════ */
+var segmentos  = [];   // [{id, diam, cant, longFt, pitones}]
+var segUID = 0;
+
+var DIAM_OPTS = [
+  {v:1.5,  lbl:'1.5\u2033 (38mm)',  C:24.0},
+  {v:1.75, lbl:'1.75\u2033 (45mm)', C:15.5},
+  {v:2,    lbl:'2\u2033 (50mm)',    C:8.0},
+  {v:2.5,  lbl:'2.5\u2033 (65mm)', C:2.0},
+  {v:3,    lbl:'3\u2033 (75mm)',    C:0.8},
+  {v:4,    lbl:'4\u2033 (100mm)',   C:0.2},
+];
+var LONG_OPTS = [25, 50, 75, 100, 150, 200];
+
+function agregarSegmento(diam, cant, longFt) {
+  var id = ++segUID;
+  segmentos.push({ id:id, diam:diam||1.75, cant:cant||1, longFt:longFt||100 });
+  renderSegmentos();
+}
+
+function eliminarSegmento(id) {
+  if (segmentos.length <= 1) return;
+  segmentos = segmentos.filter(function(s){ return s.id !== id; });
+  renderSegmentos();
+}
+
+function onSegField(id, campo, val) {
+  var s = segmentos.find(function(s){ return s.id === id; });
+  if (!s) return;
+  if (campo === 'diam')   s.diam   = parseFloat(val) || 1.75;
+  if (campo === 'cant')   s.cant   = parseInt(val)   || 1;
+  if (campo === 'longFt') s.longFt = parseFloat(val) || 0;
+  renderSegmentos();
+}
+
+function calcFL_seg(seg, Qseg) {
+  var C = COEF[seg.diam] || 15.5;
+  var Ltotal = seg.cant * seg.longFt;
+  return C * Math.pow(Qseg/100, 2) * (Ltotal/100);
+}
+
+function renderSegmentos() {
+  var lista = document.getElementById('seg-lista');
+  if (!lista) return;
+  var Q = parseFloat(document.getElementById('inp-q').value) || 0;
+  var N = pitones.length || 1;
+  var Qseg = Q; // troncal usa Q total; ramal usa Q/N
+
+  lista.innerHTML = '';
+  var FLtotal = 0;
+  var Ltotal  = 0;
+
+  segmentos.forEach(function(s, idx) {
+    // Heurística: si es el último segmento y hay >1 pitón, es ramal → Q/N
+    // El usuario puede anular esto en versiones futuras
+    var Quse = (idx === segmentos.length - 1 && N > 1) ? (Q / N) : Q;
+    var FL = calcFL_seg(s, Quse);
+    FLtotal += FL;
+    Ltotal  += s.cant * s.longFt;
+
+    var diamOpts = DIAM_OPTS.map(function(o){
+      return '<option value="' + o.v + '"' + (o.v === s.diam ? ' selected' : '') + '>' + o.lbl + ' C=' + o.C + '</option>';
+    }).join('');
+    var longOpts = LONG_OPTS.map(function(l){
+      return '<option value="' + l + '"' + (l === s.longFt ? ' selected' : '') + '>' + l + ' ft</option>';
+    }).join('');
+
+    var row = document.createElement('div');
+    row.className = 'seg-card';
+    row.innerHTML =
+      '<div class="seg-card-head">'
+        + '<span class="seg-num-badge">' + (idx+1) + '</span>'
+        + '<span class="seg-title">Segmento ' + (idx+1)
+          + (idx === segmentos.length-1 && N > 1 ? ' <span style="color:var(--text-muted);font-size:8px">(ramal \u2014 Q/' + N + ')</span>' : ' <span style="color:var(--text-muted);font-size:8px">(troncal)</span>')
+          + '</span>'
+        + '<span class="seg-fl-badge">FL: ' + FL.toFixed(1) + ' psi</span>'
+        + (segmentos.length > 1 ? '<button class="btn-del-seg" onclick="eliminarSegmento(' + s.id + ')">&times;</button>' : '')
+      + '</div>'
+      + '<div class="seg-card-body">'
+        + '<div class="seg-field"><label>Di\u00e1metro</label>'
+          + '<select onchange="onSegField(' + s.id + ',\'diam\',this.value)">' + diamOpts + '</select>'
+        + '</div>'
+        + '<div class="seg-field"><label>Cantidad</label>'
+          + '<input type="number" value="' + s.cant + '" min="1" max="20"'
+          + ' oninput="onSegField(' + s.id + ',\'cant\',this.value)"/>'
+        + '</div>'
+        + '<div class="seg-field"><label>Long. c/u</label>'
+          + '<select onchange="onSegField(' + s.id + ',\'longFt\',this.value)">' + longOpts + '</select>'
+        + '</div>'
+        + '<div class="seg-field"><label>Caudal usado</label>'
+          + '<div style="font-family:var(--ff-m);font-size:11px;color:var(--sky);padding-top:6px">' + Quse.toFixed(0) + ' GPM</div>'
+          + '<div class="seg-q-auto">' + s.cant + '\u00d7' + s.longFt + 'ft = ' + (s.cant*s.longFt) + 'ft</div>'
+        + '</div>'
+      + '</div>';
+    lista.appendChild(row);
+  });
+
+  // Resumen
+  var res = document.getElementById('seg-resumen');
+  if (res) {
+    res.style.display = '';
+    res.innerHTML = 'FL total tendido: <strong>' + FLtotal.toFixed(1) + ' psi</strong>'
+      + ' &nbsp;&middot;&nbsp; Long. total: <strong>' + Ltotal + ' ft (' + (Ltotal*0.3048).toFixed(0) + ' m)</strong>'
+      + ' &nbsp;&middot;&nbsp; ' + segmentos.length + ' segmento(s)';
+  }
 }
 
 /* ══════════ CAUDAL ══════════ */
@@ -604,48 +1283,83 @@ function selCaudal(btn, q) {
   document.querySelectorAll('.caudal-btn').forEach(function(b){ b.classList.remove('sel'); });
   btn.classList.add('sel');
   document.getElementById('inp-q').value = q;
+  renderSegmentos();
+  actualizarResumen();
 }
 
 /* ══════════ PITON ══════════ */
 function onPitonChange() {
-  var v = document.getElementById('sel-piton').value;
-  document.getElementById('np-custom-wrap').style.display = (v === 'custom') ? '' : 'none';
+  var v = document.getElementById('sel-piton');
+  if (v) document.getElementById('np-custom-wrap').style.display = (v.value === 'custom') ? '' : 'none';
 }
 
-/* ══════════ ACCESORIOS ══════════ */
-function toggleAcc(el, psi) {
-  el.classList.toggle('checked');
-  var chk = el.querySelector('.acc-check');
-  chk.textContent = el.classList.contains('checked') ? '✓' : '';
+/* ══════════════════════════════════════════════════
+   ACCESORIOS CON CONTADOR DE CANTIDAD
+   Cada accesorio tiene psi/unidad × cantidad = AL parcial
+══════════════════════════════════════════════════ */
+var ACC_DEFS = [
+  {id:'bifurcacion',  nombre:'Bifurcaci\u00f3n',        psi:10, max:4},
+  {id:'siames',       nombre:'Siam\u00e9s',              psi:10, max:4},
+  {id:'monitor',      nombre:'Monitor port\u00e1til',   psi:25, max:2},
+  {id:'valvula',      nombre:'V\u00e1lvula en l\u00ednea', psi:15, max:6},
+  {id:'codo90',       nombre:'Codo 90\u00b0',            psi:5,  max:10},
+  {id:'espumador',    nombre:'Espumador en l\u00ednea',  psi:20, max:2},
+];
+var accQty = {};  // {id: cantidad}
+ACC_DEFS.forEach(function(a){ accQty[a.id] = 0; });
+
+function renderAccesorios() {
+  var lista = document.getElementById('acc-lista');
+  if (!lista) return;
+  lista.innerHTML = '';
+  var total = 0;
+  ACC_DEFS.forEach(function(a) {
+    var qty = accQty[a.id] || 0;
+    total += qty * a.psi;
+    var row = document.createElement('div');
+    row.className = 'acc-item-new' + (qty > 0 ? ' activo' : '');
+    row.innerHTML =
+      '<span class="acc-nombre">' + a.nombre + '</span>'
+      + '<span class="acc-psi-lbl">+' + a.psi + ' psi/ud</span>'
+      + '<div class="acc-qty-wrap">'
+        + '<button class="acc-qty-btn" onclick="cambiarAcc(\'' + a.id + '\',-1)">&#x2212;</button>'
+        + '<span class="acc-qty-val">' + qty + '</span>'
+        + '<button class="acc-qty-btn" onclick="cambiarAcc(\'' + a.id + '\',1)">+</button>'
+      + '</div>'
+      + (qty > 0 ? '<span style="font-family:var(--ff-m);font-size:9px;color:var(--sky);min-width:42px;text-align:right">' + (qty*a.psi) + ' psi</span>' : '');
+    lista.appendChild(row);
+  });
+
+  var prev = document.getElementById('acc-total-preview');
+  if (prev) {
+    if (total > 0) {
+      prev.style.display = '';
+      prev.textContent = 'AL total accesorios: ' + total + ' psi';
+    } else {
+      prev.style.display = 'none';
+    }
+  }
+}
+
+function cambiarAcc(id, delta) {
+  var def = ACC_DEFS.find(function(a){ return a.id === id; });
+  if (!def) return;
+  accQty[id] = Math.max(0, Math.min(def.max, (accQty[id]||0) + delta));
+  renderAccesorios();
 }
 
 function getAccTotal() {
-  var t = 0;
-  document.querySelectorAll('.acc-item.checked').forEach(function(el){
-    t += parseFloat(el.getAttribute('data-psi') || 0);
-  });
-  return t;
-}
-
-/* ══════════ TRAMOS ══════════ */
-function updateTramosTotal() {
-  var map = {25: 't25', 50: 't50', 100: 't100', 150: 't150', 200: 't200'};
-  var total = 0;
-  Object.keys(map).forEach(function(ft) {
-    var n = parseInt(document.getElementById(map[ft]).value) || 0;
-    var sub = n * parseInt(ft);
-    document.getElementById('tot' + ft).textContent = sub + ' ft';
-    total += sub;
-  });
-  var m = (total * 0.3048).toFixed(1);
-  document.getElementById('total-ft-label').textContent = total + ' ft / ' + m + ' m';
-  return total;
-}
-
-function getTotalFt() {
-  return [25,50,100,150,200].reduce(function(acc, ft) {
-    return acc + (parseInt(document.getElementById('t'+ft).value)||0) * ft;
+  return ACC_DEFS.reduce(function(sum, a){
+    return sum + (accQty[a.id]||0) * a.psi;
   }, 0);
+}
+
+/* Funciones legacy no usadas — mantener compatibilidad */
+function selDiam() {}
+function updateTramosTotal() { renderSegmentos(); }
+function getTotalFt() {
+  // retorna longitud total de segmentos para compatibilidad
+  return segmentos.reduce(function(s,seg){ return s + seg.cant*seg.longFt; }, 0);
 }
 
 /* ══════════ ELEVACION ══════════ */
@@ -664,75 +1378,126 @@ function getEP() {
   return m * 1.42;  // 1 m H2O = 1.42 psi
 }
 
-/* ══════════ CALCULAR ══════════ */
+/* ══════════════════════════════════════════════════════
+   CALCULAR — segmentos multi-diámetro + N pitones
+   
+   FÍSICA (NFPA 1963 / IFSTA Pumping Apparatus):
+   
+   1. FL por segmento: FL_i = C_i × (Q_i/100)² × (cant_i×L_i/100)
+      - Segmentos troncales: Q_i = Q_bomba
+      - Segmento(s) ramal (último seg con >1 pitón): Q_i = Q_bomba/N_pitones
+   
+   2. FL_total = Σ FL_i  (suma de todos los segmentos)
+   
+   3. NP = NP del pitón más exigente (caso desfavorable)
+   
+   4. PDP = NP_max + FL_total + EP + AL_total
+   
+   Referencia: NFPA 1963 §5 / IFSTA Ch.12
+══════════════════════════════════════════════════════ */
 function calcular() {
   var Q = parseFloat(document.getElementById('inp-q').value) || 0;
-  var C = parseFloat(document.getElementById('inp-coef').value) || 15.5;
-  var L = getTotalFt();
+  var N = pitones.length || 1;
 
   if (Q <= 0) { alertCalc('error', 'Ingrese un caudal valido'); return; }
-  if (L <= 0) { alertCalc('error', 'Ingrese al menos un tramo de manguera'); return; }
+  if (!segmentos.length) { alertCalc('error', 'Agregue al menos un segmento de manguera'); return; }
+  if (!pitones.length) { alertCalc('error', 'Agregue al menos un piton'); return; }
 
-  var NP = (function() {
-    var v = document.getElementById('sel-piton').value;
-    if (v === 'custom') return parseFloat(document.getElementById('inp-np-custom').value) || 100;
-    return parseFloat(v);
-  })();
+  // ── Q real por pitón ──
+  var totalQPropio = pitones.reduce(function(s,p){ return s+(p.q>0?p.q:0); }, 0);
+  var nSinQ = pitones.filter(function(p){ return p.q<=0; }).length;
+  var QPorDefecto = nSinQ > 0 ? Math.max(0, Q - totalQPropio) / nSinQ : 0;
+  pitones.forEach(function(p){ p._qReal = p.q>0 ? p.q : QPorDefecto; });
 
-  // ─── Darcy-Weisbach NFPA: FL = C * (Q/100)^2 * (L/100) ───
-  var FL = C * Math.pow(Q / 100, 2) * (L / 100);
-  var EP = getEP();
-  var AL = getAccTotal();
-  var PDP = NP + FL + EP + AL;
+  // ── FL por segmento ──
+  // Heurística: el último segmento con N>1 pitones es ramal → Q/N
+  // Todos los demás son troncales → Q total
+  var detallesSeg = [];
+  var FL = 0;
+  var Ltotal = 0;
 
-  calcActual = { PDP:PDP, NP:NP, FL:FL, EP:EP, AL:AL, Q:Q, C:C, L:L };
+  segmentos.forEach(function(s, idx) {
+    var esRamal = (idx === segmentos.length - 1 && N > 1);
+    var Quse = esRamal ? Q / N : Q;
+    var FLi = calcFL_seg(s, Quse);
+    FL += FLi;
+    Ltotal += s.cant * s.longFt;
+    detallesSeg.push({ idx:idx+1, diam:s.diam, cant:s.cant, longFt:s.longFt,
+                        Quse:Quse, FL:FLi, esRamal:esRamal });
+  });
 
-  // Render resultado
+  // ── NP máximo ──
+  var NPmax = 0;
+  var detallesPit = [];
+  pitones.forEach(function(p, i) {
+    if (p.np > NPmax) NPmax = p.np;
+    detallesPit.push({ idx:i+1, np:p.np, q:p._qReal });
+  });
+
+  var C = COEF[segmentos[0].diam] || 15.5; // para compatibilidad res-c
+  var L = Ltotal;
+  var EP  = getEP();
+  var AL  = getAccTotal();
+  var PDP = NPmax + FL + EP + AL;
+
+  calcActual = { PDP:PDP, NP:NPmax, FL:FL, EP:EP, AL:AL,
+                 Q:Q, C:C, L:L, N:N,
+                 detallesSeg:detallesSeg, detallesPit:detallesPit };
+
+  // ── Render resultado ──
   var pdpEl = document.getElementById('res-pdp');
   pdpEl.textContent = Math.round(PDP);
   pdpEl.className = 'result-pdp ' + (PDP < 150 ? 'safe' : PDP < 200 ? 'warn' : 'danger');
 
-  document.getElementById('res-np').textContent = NP.toFixed(0) + ' psi';
-  document.getElementById('res-fl').textContent = FL.toFixed(1) + ' psi';
-  document.getElementById('res-ep').textContent = EP.toFixed(1) + ' psi';
-  document.getElementById('res-al').textContent = AL.toFixed(0) + ' psi';
+    document.getElementById('res-np').textContent   = NPmax.toFixed(0) + ' psi' + (N>1?' (máx)':'');
+  document.getElementById('res-fl').textContent   = FL.toFixed(1) + ' psi';
+  document.getElementById('res-ep').textContent   = EP.toFixed(1) + ' psi';
+  document.getElementById('res-al').textContent   = AL.toFixed(0) + ' psi';
   document.getElementById('res-long').textContent = L + ' ft (' + (L*0.3048).toFixed(0) + ' m)';
-  document.getElementById('res-q').textContent = Q + ' GPM';
-  document.getElementById('res-c').textContent = C;
+  document.getElementById('lbl-res-q').textContent = N>1 ? 'Caudal bomba ('+N+' pit.)' : 'Caudal calculado';
+  document.getElementById('res-q').textContent    = Q + ' GPM';
+  document.getElementById('res-c').textContent    = segmentos.length + ' segmento(s)';
 
-  // Barras de distribucion
-  renderBars(NP, FL, EP, AL, PDP);
+  var isMulti = segmentos.length > 1 || N > 1;
+  document.getElementById('row-fl-troncal').style.display = isMulti ? '' : 'none';
+  document.getElementById('row-fl-ramal').style.display   = isMulti ? '' : 'none';
+  document.getElementById('row-q-piton').style.display    = isMulti ? '' : 'none';
+  if (isMulti) {
+    var descSeg = detallesSeg.map(function(d){
+      return 'S'+d.idx+':'+d.diam+'"×'+d.cant+'×'+d.longFt+'ft='+d.FL.toFixed(1)+'psi';
+    }).join(' | ');
+    document.getElementById('res-fl-troncal').textContent = descSeg;
+    document.getElementById('res-fl-ramal2').textContent  = N>1?'Q/pit:'+(Q/N).toFixed(1)+' GPM':'—';
+    document.getElementById('res-q-piton').textContent    = N+' pitón(es) · NP:'+NPmax+'psi';
+  }
 
-  // Alerta de friccion alta
-  var pctFL = (FL / PDP) * 100;
-  var fdWarn = '';
-  if (pctFL > 50) fdWarn = '⚠ Friccion domina (' + pctFL.toFixed(0) + '%)';
-  document.getElementById('fd-warn-txt').textContent = fdWarn;
+  // ── Barras de distribucion ──
+  renderBars(NPmax, FL, EP, AL, PDP);
 
-  // Alerta general
+  // ── Alerta de friccion ──
+  var pctFL = FL / PDP * 100;
+  document.getElementById('fd-warn-txt').textContent = pctFL > 50 ? '⚠ Friccion domina (' + pctFL.toFixed(0) + '%)' : '';
+
+  // ── Alerta general ──
+  var nStr = N > 1 ? ' (' + N + ' pitones)' : '';
   var alertMsg, alertCls;
   if (PDP > 250) {
-    alertMsg = '🚨 PDP muy alta (' + Math.round(PDP) + ' psi). Verifique el tendido de mangueras y la presion maxima del vehiculo SEI.';
+    alertMsg = '🚨 PDP muy alta (' + Math.round(PDP) + ' psi)' + nStr + '. Verifique tendido y presion maxima del vehiculo SEI.';
     alertCls = 'danger';
   } else if (PDP > 175) {
-    alertMsg = '⚠ PDP elevada. Revise que la bomba pueda mantener ' + Math.round(PDP) + ' psi de forma sostenida.';
+    alertMsg = '⚠ PDP elevada (' + Math.round(PDP) + ' psi)' + nStr + '. Confirme que la bomba sostenga esta presion.';
     alertCls = 'warn';
   } else {
-    alertMsg = '✅ PDP dentro de rango operacional normal para vehiculos SEI.';
+    alertMsg = '✅ PDP ' + Math.round(PDP) + ' psi' + nStr + ' — dentro de rango operacional normal.';
     alertCls = 'ok';
   }
-  var alertEl = document.getElementById('result-alert');
-  alertEl.textContent = alertMsg;
-  alertEl.className = 'result-alert ' + alertCls;
+  document.getElementById('result-alert').textContent = alertMsg;
+  document.getElementById('result-alert').className   = 'result-alert ' + alertCls;
 
-  // Mostrar resultado
   document.getElementById('result-idle').style.display = 'none';
   document.getElementById('result-body').style.display = '';
 
-  // Comparador
   comparar();
-
-  // Guardar historial
   addHistorial(PDP, Q, L, C);
 }
 
@@ -825,14 +1590,116 @@ function resetAll() {
   document.querySelector('.caudal-btn:nth-child(3)').classList.add('sel');
   document.getElementById('cmp-actual').value = '';
   aeronaveSelec = null;
+  pitones = []; pitonUID = 0; agregarPiton(100, 0);
+  segmentos = []; segUID = 0; agregarSegmento(1.75,1,100);
+  accQty = {}; ACC_DEFS.forEach(function(a){ accQty[a.id]=0; }); renderAccesorios();
   document.getElementById('result-idle').style.display = '';
   document.getElementById('result-body').style.display = 'none';
   document.getElementById('result-idle').innerHTML = '<div class="idle-icon">&#x1F4CF;</div><div>Complete los parametros<br>y presione CALCULAR PDP</div>';
   calcActual = null;
 }
 
+    /* SVG B&N para impresión */
+    function _svgBN(L,Wf,f,Ac){
+      var W=460,H=290,pad=46;
+      var sc=Math.min((W-pad*2)/L,(H-pad*2)/(Wf+f*2));
+      var rW=L*sc,rH=Wf*sc,fH=f*sc;
+      var cx=W/2,cy=H/2,x0=cx-rW/2,y0=cy-rH/2;
+      var acX=x0,acY=cy-(rH/2+fH),acH=rH+fH*2;
+      // viewBox fijo, sin width/height — el CSS controla el tamaño
+      return '<svg xmlns="http://www.w3.org/2000/svg" id="diag-svg"'
+        +' viewBox="0 0 '+W+' '+H+'"'
+        +' style="display:block;background:#fff;width:100%;height:auto;max-height:260px">'
+        +'<rect width="'+W+'" height="'+H+'" fill="#fff"/>'
+        +'<defs>'
+          +'<pattern id="g" width="20" height="20" patternUnits="userSpaceOnUse">'
+            +'<path d="M20 0L0 0 0 20" fill="none" stroke="#eee" stroke-width=".5"/>'
+          +'</pattern>'
+          +'<marker id="ma" markerWidth="6" markerHeight="4" refX="6" refY="2" orient="auto">'
+            +'<polygon points="0 0,6 2,0 4" fill="#000"/>'
+          +'</marker>'
+          +'<marker id="mb" markerWidth="6" markerHeight="4" refX="0" refY="2" orient="auto">'
+            +'<polygon points="6 0,0 2,6 4" fill="#000"/>'
+          +'</marker>'
+        +'</defs>'
+        +'<rect width="'+W+'" height="'+H+'" fill="url(#g)"/>'
+        // Area critica — solo contorno punteado negro, sin relleno
+        +'<rect x="'+acX+'" y="'+acY+'" width="'+rW+'" height="'+acH
+          +'" fill="none" stroke="#000" stroke-width="1.5" stroke-dasharray="7,3" rx="2"/>'
+        // Fuselaje — solo contorno negro
+        +'<rect x="'+x0+'" y="'+y0+'" width="'+rW+'" height="'+rH
+          +'" fill="none" stroke="#000" stroke-width="2" rx="3"/>'
+        // Morro
+        +'<ellipse cx="'+x0+'" cy="'+cy+'" rx="'+(rH*0.36)+'" ry="'+(rH/2)
+          +'" fill="none" stroke="#000" stroke-width="1.4"/>'
+        // Cola
+        +'<polygon points="'+(x0+rW)+','+(cy-rH*0.28)+' '
+          +(x0+rW+rH*0.3)+','+cy+' '
+          +(x0+rW)+','+(cy+rH*0.28)
+          +'" fill="none" stroke="#000" stroke-width="1.2"/>'
+        // Cota L
+        +'<line x1="'+x0+'" y1="'+(acY-13)+'" x2="'+(x0+rW)+'" y2="'+(acY-13)
+          +'" stroke="#000" stroke-width="1" marker-start="url(#mb)" marker-end="url(#ma)"/>'
+        +'<text x="'+cx+'" y="'+(acY-17)+'" text-anchor="middle"'
+          +' font-family="Courier New,monospace" font-size="11" fill="#000" font-weight="bold">'
+          +'L = '+L+' m</text>'
+        // Cota Wf
+        +'<line x1="'+(acX-16)+'" y1="'+y0+'" x2="'+(acX-16)+'" y2="'+(y0+rH)
+          +'" stroke="#000" stroke-width="1" marker-start="url(#mb)" marker-end="url(#ma)"/>'
+        +'<text x="'+(acX-19)+'" y="'+cy+'" text-anchor="end" dominant-baseline="middle"'
+          +' font-family="Courier New,monospace" font-size="9" fill="#000">Wf='+Wf+'m</text>'
+        // Cota f
+        +'<line x1="'+(acX+rW+10)+'" y1="'+acY+'" x2="'+(acX+rW+10)+'" y2="'+y0
+          +'" stroke="#555" stroke-width=".8" stroke-dasharray="4,2"/>'
+        +'<text x="'+(acX+rW+14)+'" y="'+(acY+fH/2)+'" dominant-baseline="middle"'
+          +' font-family="Courier New,monospace" font-size="9" fill="#444">f='+f+'m</text>'
+        // Etiqueta Ac
+        +'<text x="'+(W-5)+'" y="'+(H-5)+'" text-anchor="end"'
+          +' font-family="Courier New,monospace" font-size="11" fill="#000" font-weight="bold">'
+          +'Ac='+Ac.toFixed(2)+' m²</text>'
+        // Leyenda
+        +'<line x1="7" y1="11" x2="19" y2="11" stroke="#000" stroke-width="1.4" stroke-dasharray="5,2"/>'
+        +'<text x="23" y="14" font-family="Courier New,monospace" font-size="8.5" fill="#000">AREA CRITICA</text>'
+        +'<rect x="7" y="20" width="12" height="7" rx="1" fill="none" stroke="#000" stroke-width="1.1"/>'
+        +'<text x="23" y="27" font-family="Courier New,monospace" font-size="8.5" fill="#000">FUSELAJE</text>'
+        +'</svg>';
+    }
+
+    function exportPDF() {
+      // 1. Sustituir SVG de pantalla por versión B&N
+      var svgEl  = document.getElementById('diag-svg');
+      var svgBak = svgEl ? svgEl.outerHTML : null;
+      if (svgEl && window._pdfDiag) {
+        var d = window._pdfDiag;
+        var tmp = document.createElement('div');
+        tmp.innerHTML = _svgBN(d.L, d.Wf, d.f, d.Ac);
+        var ns = tmp.firstChild; ns.id = 'diag-svg';
+        svgEl.parentNode.replaceChild(ns, svgEl);
+      }
+
+      // 2. Imprimir — el @media print convierte todo a blanco/negro
+      window.print();
+
+      // 3. Restaurar SVG de pantalla
+      setTimeout(function() {
+        var svgNow = document.getElementById('diag-svg');
+        if (svgNow && svgBak) {
+          
+          tmp2.innerHTML = svgBak;
+          var restored = tmp2.firstChild;
+          svgNow.parentNode.replaceChild(restored, svgNow);
+        }
+        var stEl = document.getElementById('sei-print-styles');
+        if (stEl) stEl.remove();
+      }
+    }
+
 /* Init */
 updateTramosTotal();
+agregarPiton(100, 0); // Pitón inicial por defecto
+agregarSegmento(1.75, 1, 100); // Segmento inicial
+renderAccesorios(); // Accesorios con contador
 </script>
 </body>
+
 </html>
