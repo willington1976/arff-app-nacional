@@ -575,7 +575,24 @@
       font-family:var(--ff-m); font-size:10px; color:var(--text-dim); line-height:1.7;
     }
     .pitones-resumen strong { color:var(--sky); }
-    .pitones-resumen .warn { color:var(--amber); }
+    /* RECOMENDACIONES */
+    .recom-box { margin: 0 16px 16px; display: flex; flex-direction: column; gap: 6px; }
+    .recom-item { 
+      background: rgba(56, 189, 248, 0.04); 
+      border: 1px solid rgba(56, 189, 248, 0.12); 
+      border-radius: var(--rs); 
+      padding: 10px 12px; 
+      font-size: 11px; 
+      line-height: 1.4; 
+      display: flex; 
+      gap: 10px; 
+      align-items: flex-start;
+      animation: fadeInRecom 0.3s ease;
+    }
+    @keyframes fadeInRecom { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+    .recom-icon { font-size: 14px; flex-shrink: 0; margin-top: -1px; }
+    .recom-text { color: var(--text-dim); }
+    .recom-text b { color: var(--sky); }
   </style>
 </head>
 <body>
@@ -854,6 +871,9 @@
 
             <!-- ALERTA -->
             <div class="result-alert ok" id="result-alert">Calculo listo</div>
+
+            <!-- RECOMENDACIONES -->
+            <div id="recom-box" class="recom-box" style="display:none"></div>
 
             <!-- COMPARADOR -->
             <div class="cmp-box">
@@ -1536,6 +1556,42 @@ function calcular() {
   }
   document.getElementById('result-alert').textContent = alertMsg;
   document.getElementById('result-alert').className   = 'result-alert ' + alertCls;
+
+  // ── Recomendaciones Operativas ──
+  var recomBox = document.getElementById('recom-box');
+  if (alertCls !== 'ok') {
+    var recoms = [];
+    // 1. Fricción dominante (>60% de PDP)
+    if (FL > (PDP * 0.6)) {
+      recoms.push({ icon: '💡', text: '<b>La fricción es crítica</b>. Use mangueras de mayor diámetro para reducir la resistencia.' });
+    }
+    // 2. Caudal excesivo (>200 GPM y PDP alta)
+    if (Q > 200) {
+      recoms.push({ icon: '💧', text: '<b>Caudal elevado</b>. Reduzca el ajuste de GPM en los pitones o cierre una línea secundaria.' });
+    }
+    // 3. Tendido largo (>250 ft)
+    if (L > 250) {
+      recoms.push({ icon: '📏', text: '<b>Tendido extenso</b>. Acerque el vehículo al objetivo para eliminar tramos de manguera.' });
+    }
+    // 4. Elevación significativa (>10 PSI)
+    if (EP > 10) {
+      recoms.push({ icon: '⛰️', text: '<b>Pérdida por altura detectada</b>. Considere el factor de gravedad en el posicionamiento del ataque.' });
+    }
+
+    if (recoms.length > 0) {
+      recomBox.innerHTML = recoms.map(function(r) {
+        return '<div class="recom-item">' +
+               '<span class="recom-icon">' + r.icon + '</span>' +
+               '<span class="recom-text">' + r.text + '</span>' +
+               '</div>';
+      }).join('');
+      recomBox.style.display = 'flex';
+    } else {
+      recomBox.style.display = 'none';
+    }
+  } else {
+    recomBox.style.display = 'none';
+  }
 
   document.getElementById('result-idle').style.display = 'none';
   document.getElementById('result-body').style.display = '';
