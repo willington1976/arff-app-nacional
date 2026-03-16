@@ -719,28 +719,13 @@
           <div class="panel-header">
             <div class="panel-icon" style="background:rgba(245,159,0,.1)">&#x1F4A7;</div>
             <div>
-              <div class="panel-title">Caudal Total y Pitones</div>
-              <div class="panel-sub">Agregue cada piton activo — el caudal se distribuye automaticamente</div>
+              <div class="panel-title">Pitones y Caudal Operacional</div>
+              <div class="panel-sub">El caudal total se calcula autom&aacute;ticamente seg&uacute;n los pitones activos</div>
             </div>
           </div>
           <div class="panel-body">
-
-            <!-- Caudal total de la bomba (campo compartido) -->
-            <div class="field">
-              <div class="field-label">Caudal total de la bomba (GPM) &mdash; suma de todos los pitones</div>
-              <div class="caudal-btns">
-                <button class="caudal-btn" onclick="selCaudal(this,95)">95</button>
-                <button class="caudal-btn" onclick="selCaudal(this,125)">125</button>
-                <button class="caudal-btn sel" onclick="selCaudal(this,150)">150</button>
-                <button class="caudal-btn" onclick="selCaudal(this,185)">185</button>
-                <button class="caudal-btn" onclick="selCaudal(this,250)">250</button>
-                <button class="caudal-btn" onclick="selCaudal(this,300)">300</button>
-              </div>
-              <div class="field-input-wrap" style="margin-top:6px">
-                <input class="field-input" id="inp-q" type="number" value="150" min="10" max="2000"
-                  placeholder="150" oninput="onCaudalInput()"/>
-                <span class="field-unit">GPM</span>
-              </div>
+            <div style="font-family:var(--ff-m);font-size:9.5px;color:var(--text-muted);margin-bottom:12px;line-height:1.5;background:rgba(245,159,0,0.05);padding:8px;border-radius:4px;border:1px solid rgba(245,159,0,0.1)">
+              <span style="color:var(--amber);font-weight:700">&#x2139; SISTEMA AUTOM&Aacute;TICO:</span> Cada pit&oacute;n define su propio caudal (GPM). La bomba debe suministrar la suma total de todos los pitones.
             </div>
 
             <!-- Lista de pitones -->
@@ -977,7 +962,7 @@ function agregarPiton(npVal, qPropio) {
   pitones.push({
     id: id,
     np: npVal || 100,
-    q: qPropio || 0,   // 0 = distribucion equitativa automatica
+    q: qPropio || 150,   // Ahora el default es 150 GPM por piton
     ramalDiam: 1.75,
     ramalFt: 100,
     ramalActivo: false,
@@ -1026,34 +1011,12 @@ function actualizarResumen() {
   var N = pitones.length;
   if (!N) return;
 
-  var QInput = document.getElementById('inp-q');
-  var QVal = parseFloat(QInput.value) || 0;
+  // 1. Calcular Caudal Total (Q_total = suma de todos los pitones)
+  var QVal = pitones.reduce(function(s, p) { return s + (parseFloat(p.q) || 0); }, 0);
 
-  // 1. Calcular suma de caudales propios y cantidad de 'auto'
-  var totalQPropio = pitones.reduce(function(s, p) { return s + (p.q > 0 ? p.q : 0); }, 0);
-  var nSinQ = pitones.filter(function(p) { return p.q <= 0; }).length;
-
-  // 2. SINCRONIZACIÓN REACTIVA: 
-  // Si todos son manuales, el total ES la suma.
-  // Si hay mezcla pero los manuales superan al total, el total crece.
-  if (nSinQ === 0) {
-    if (Math.abs(QVal - totalQPropio) > 0.1) {
-      QVal = totalQPropio;
-      QInput.value = QVal;
-    }
-  } else {
-    if (totalQPropio > QVal) {
-      QVal = totalQPropio + (nSinQ * 95); // Damos un mínimo razonable a los 'auto'
-      QInput.value = QVal;
-    }
-  }
-
-  // 3. Distribución
-  var QLibre = Math.max(0, QVal - totalQPropio);
-  var QPorDefecto = nSinQ > 0 ? QLibre / nSinQ : 0;
-
+  // 2. Sincronizar _qReal (en este sistema simplificado, qReal es igual a p.q manual)
   pitones.forEach(function(p) {
-    p._qReal = p.q > 0 ? p.q : QPorDefecto;
+    p._qReal = parseFloat(p.q) || 0;
   });
 
   // 4. Render previews
@@ -1082,19 +1045,18 @@ function actualizarResumen() {
   // 5. Resumen total en panel
   var res = document.getElementById('pitones-resumen');
   if (!res) return;
-  if (N === 1) { res.style.display = 'none'; }
-  else {
-    var totalSum = pitones.reduce(function(s,p) { return s + p._qReal; }, 0);
-    var html = '<strong>' + N + ' pitones activos</strong> &nbsp;&middot;&nbsp; Q Total Bomba: <strong>' + totalSum.toFixed(0) + ' GPM</strong><br>';
-    pitones.forEach(function(p, i) {
-      html += '&#x1F525; P' + (i+1) + ': <strong>' + p._qReal.toFixed(0) + '</strong>';
-      if (i < pitones.length-1) html += ' &middot; ';
-    });
-    res.innerHTML = html;
-    res.style.display = '';
-  }
+  
+  var totalSum = pitones.reduce(function(s,p) { return s + (parseFloat(p._qReal) || 0); }, 0);
+  var html = '<strong>' + N + ' pitones activos</strong> &nbsp;&middot;&nbsp; Q Total Bomba: <strong style="color:var(--amber)">' + totalSum.toFixed(0) + ' GPM</strong><br>';
+  pitones.forEach(function(p, i) {
+    html += '&#x1F525; P' + (i+1) + ': <strong>' + p._qReal.toFixed(0) + ' GPM</strong>';
+    if (i < pitones.length-1) html += ' &middot; ';
+  });
+  res.innerHTML = html;
+  res.style.display = '';
 
-  // Reactividad: si ya había un cálculo, actualizarlo automáticamente
+  // Reactividad: actualizar tramos y cálculos
+  renderSegmentos();
   if (window._autoCalcEnabled) {
     calcular();
   }
@@ -1105,9 +1067,7 @@ function renderPitones() {
   if (!lista) return;
   lista.innerHTML = '';
   pitones.forEach(function(p, idx) {
-    var Q = parseFloat(document.getElementById('inp-q').value) || 150;
-    var N = pitones.length;
-    var Qest = p.q > 0 ? p.q : (Q / N);
+    var Qest = parseFloat(p.q) || 150;
 
     var tiposHTML = Object.keys(NP_TIPOS).map(function(v) {
       return '<option value="' + v + '"' + (parseFloat(v) === p.np ? ' selected' : '') + '>' + NP_TIPOS[v] + '</option>';
@@ -1146,11 +1106,11 @@ function renderPitones() {
           + '<div class="field-label">Tipo de pit\u00f3n (NP)</div>'
           + '<select class="field-input" style="margin-bottom:8px;width:100%" onchange="onPitonField(' + p.id + ',\'np\',this.value)">' + tiposHTML + '</select>'
 
-          + '<div class="field-label">Caudal de este pit\u00f3n (GPM) &mdash; 0 = auto</div>'
+          + '<div class="field-label">Caudal del pit\u00f3n (GPM)</div>'
           + '<div class="piton-caudal-btns">' + caudalBtns + '</div>'
           + '<div class="field-input-wrap" style="margin-bottom:6px">'
-            + '<input class="field-input" type="number" value="' + (p.q||0) + '" min="0" max="2000" placeholder="0 = auto"'
-            + ' oninput="onPitonField(' + p.id + ',\'q\',parseFloat(this.value)||0);actualizarResumen()"/>'
+            + '<input class="field-input" type="number" value="' + p.q + '" min="10" max="2000"'
+            + ' oninput="onPitonField(' + p.id + ',\'q\',parseFloat(this.value)||0)"/>'
             + '<span class="field-unit">GPM</span>'
           + '</div>'
 
@@ -1266,9 +1226,9 @@ function calcFL_seg(seg, Qseg) {
 function renderSegmentos() {
   var lista = document.getElementById('seg-lista');
   if (!lista) return;
-  var Q = parseFloat(document.getElementById('inp-q').value) || 0;
+  var Q = pitones.reduce(function(s, p) { return s + (parseFloat(p.q) || 0); }, 0);
   var N = pitones.length || 1;
-  var Qseg = Q; // troncal usa Q total; ramal usa Q/N
+  var Qseg = Q; 
 
   lista.innerHTML = '';
   var FLtotal = 0;
@@ -1330,13 +1290,7 @@ function renderSegmentos() {
 }
 
 /* ══════════ CAUDAL ══════════ */
-function selCaudal(btn, q) {
-  document.querySelectorAll('.caudal-btn').forEach(function(b){ b.classList.remove('sel'); });
-  btn.classList.add('sel');
-  document.getElementById('inp-q').value = q;
-  renderSegmentos();
-  actualizarResumen();
-}
+// selector global eliminado - ahora reactivo a pitones
 
 /* ══════════ PITON ══════════ */
 function onPitonChange() {
@@ -1448,29 +1402,18 @@ function getEP() {
 ══════════════════════════════════════════════════════ */
 function calcular() {
   window._autoCalcEnabled = true; // Activar reactividad tras el primer clic
-  var QInput = document.getElementById('inp-q');
-  var Q = parseFloat(QInput.value) || 0;
+  
+  // Caudal Total = Suma de pitones
+  var Q = pitones.reduce(function(s, p) { return s + (parseFloat(p.q) || 0); }, 0);
   var N = pitones.length || 1;
 
-  // Asegurar que Q refleje la suma real si no hay 'auto'
-  var totalQReal = pitones.reduce(function(s,p){ 
-    // Si el pitón es manual usa su valor, si es auto usa la proporción del total
-    var qP = p.q > 0 ? p.q : (Q - pitones.reduce((a,b)=>a+(b.q>0?b.q:0),0)) / pitones.filter(a=>a.q<=0).length;
-    return s + Math.max(0, qP);
-  }, 0);
+  // Asegurar que Q refleje la suma real
+  var totalQReal = Q;
   
-  if (totalQReal > 0 && Math.abs(totalQReal - Q) > 0.1) {
-    Q = totalQReal;
-    QInput.value = Q;
-  }
-
-  if (Q <= 0) { alertCalc('error', 'Ingrese un caudal válido'); return; }
+  if (Q <= 0) { alertCalc('error', 'Ingrese un caudal válido en los pitones'); return; }
   
   // Sincronizar _qReal final
-  var tPropio = pitones.reduce((s,p)=>s+(p.q>0?p.q:0),0);
-  var nAuto = pitones.filter(p=>p.q<=0).length;
-  var qDef = nAuto > 0 ? Math.max(0, Q - tPropio) / nAuto : 0;
-  pitones.forEach(p => { p._qReal = p.q > 0 ? p.q : qDef; });
+  pitones.forEach(p => { p._qReal = parseFloat(p.q) || 0; });
 
   // ── FL por segmento ──
   // Heurística: el último segmento con N>1 pitones es ramal → Q/N
@@ -1673,15 +1616,11 @@ function cargarHistorial(i) {
 
 /* ══════════ RESET ══════════ */
 function resetAll() {
-  document.getElementById('inp-q').value = 150;
   document.getElementById('inp-elev').value = 0;
   document.getElementById('sel-elev-unit').value = 'm';
   document.getElementById('cmp-actual').value = '';
   
-  // Caudal por defecto
-  document.querySelectorAll('.caudal-btn').forEach(function(b){ b.classList.remove('sel'); });
-  var btns = document.querySelectorAll('.caudal-btn');
-  if(btns[2]) btns[2].classList.add('sel'); // selecciona 150 GPM
+  // Caudal por defecto ahora es la suma de pitones iniciales
 
   pitones = []; 
   pitonUID = 0; 
@@ -1708,7 +1647,7 @@ function resetAll() {
 
 /* Init */
 updateTramosTotal();
-agregarPiton(100, 0); // Pitón inicial por defecto
+agregarPiton(100, 150); // Pitón inicial con 150 GPM
 agregarSegmento(1.75, 1, 100); // Segmento inicial
 renderAccesorios(); // Accesorios con contador
 </script>
