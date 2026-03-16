@@ -1568,130 +1568,43 @@ function cargarHistorial(i) {
   var h = historial[i];
   if (!h) return;
   document.getElementById('inp-q').value = h.Q;
-  document.getElementById('inp-coef').value = h.C;
-  // Re-calcular
+  // En este módulo el coeficiente se basa en los segmentos, no hay un campo global
   calcular();
 }
 
 /* ══════════ RESET ══════════ */
 function resetAll() {
-  ['t25','t50','t100','t150','t200'].forEach(function(id){ document.getElementById(id).value = 0; });
-  document.getElementById('t100').value = 2;
-  updateTramosTotal();
   document.getElementById('inp-q').value = 150;
   document.getElementById('inp-elev').value = 0;
-  document.querySelectorAll('.caudal-btn').forEach(function(b){ b.classList.remove('sel'); });
-  document.querySelectorAll('.diam-btn').forEach(function(b){ b.classList.remove('sel'); });
-  document.querySelector('[data-d="1.75"]').classList.add('sel');
-  document.querySelectorAll('.acc-item').forEach(function(el){
-    el.classList.remove('checked');
-    el.querySelector('.acc-check').textContent = '';
-  });
-  document.querySelector('.caudal-btn:nth-child(3)').classList.add('sel');
+  document.getElementById('sel-elev-unit').value = 'm';
   document.getElementById('cmp-actual').value = '';
-  aeronaveSelec = null;
-  pitones = []; pitonUID = 0; agregarPiton(100, 0);
-  segmentos = []; segUID = 0; agregarSegmento(1.75,1,100);
-  accQty = {}; ACC_DEFS.forEach(function(a){ accQty[a.id]=0; }); renderAccesorios();
+  
+  // Caudal por defecto
+  document.querySelectorAll('.caudal-btn').forEach(function(b){ b.classList.remove('sel'); });
+  var btns = document.querySelectorAll('.caudal-btn');
+  if(btns[2]) btns[2].classList.add('sel'); // selecciona 150 GPM
+
+  pitones = []; 
+  pitonUID = 0; 
+  agregarPiton(100, 0);
+  
+  segmentos = []; 
+  segUID = 0; 
+  agregarSegmento(1.75, 1, 100);
+  
+  accQty = {}; 
+  ACC_DEFS.forEach(function(a){ accQty[a.id] = 0; }); 
+  renderAccesorios();
+  
   document.getElementById('result-idle').style.display = '';
   document.getElementById('result-body').style.display = 'none';
   document.getElementById('result-idle').innerHTML = '<div class="idle-icon">&#x1F4CF;</div><div>Complete los parametros<br>y presione CALCULAR PDP</div>';
+  
   calcActual = null;
 }
 
-    /* SVG B&N para impresión */
-    function _svgBN(L,Wf,f,Ac){
-      var W=460,H=290,pad=46;
-      var sc=Math.min((W-pad*2)/L,(H-pad*2)/(Wf+f*2));
-      var rW=L*sc,rH=Wf*sc,fH=f*sc;
-      var cx=W/2,cy=H/2,x0=cx-rW/2,y0=cy-rH/2;
-      var acX=x0,acY=cy-(rH/2+fH),acH=rH+fH*2;
-      // viewBox fijo, sin width/height — el CSS controla el tamaño
-      return '<svg xmlns="http://www.w3.org/2000/svg" id="diag-svg"'
-        +' viewBox="0 0 '+W+' '+H+'"'
-        +' style="display:block;background:#fff;width:100%;height:auto;max-height:260px">'
-        +'<rect width="'+W+'" height="'+H+'" fill="#fff"/>'
-        +'<defs>'
-          +'<pattern id="g" width="20" height="20" patternUnits="userSpaceOnUse">'
-            +'<path d="M20 0L0 0 0 20" fill="none" stroke="#eee" stroke-width=".5"/>'
-          +'</pattern>'
-          +'<marker id="ma" markerWidth="6" markerHeight="4" refX="6" refY="2" orient="auto">'
-            +'<polygon points="0 0,6 2,0 4" fill="#000"/>'
-          +'</marker>'
-          +'<marker id="mb" markerWidth="6" markerHeight="4" refX="0" refY="2" orient="auto">'
-            +'<polygon points="6 0,0 2,6 4" fill="#000"/>'
-          +'</marker>'
-        +'</defs>'
-        +'<rect width="'+W+'" height="'+H+'" fill="url(#g)"/>'
-        // Area critica — solo contorno punteado negro, sin relleno
-        +'<rect x="'+acX+'" y="'+acY+'" width="'+rW+'" height="'+acH
-          +'" fill="none" stroke="#000" stroke-width="1.5" stroke-dasharray="7,3" rx="2"/>'
-        // Fuselaje — solo contorno negro
-        +'<rect x="'+x0+'" y="'+y0+'" width="'+rW+'" height="'+rH
-          +'" fill="none" stroke="#000" stroke-width="2" rx="3"/>'
-        // Morro
-        +'<ellipse cx="'+x0+'" cy="'+cy+'" rx="'+(rH*0.36)+'" ry="'+(rH/2)
-          +'" fill="none" stroke="#000" stroke-width="1.4"/>'
-        // Cola
-        +'<polygon points="'+(x0+rW)+','+(cy-rH*0.28)+' '
-          +(x0+rW+rH*0.3)+','+cy+' '
-          +(x0+rW)+','+(cy+rH*0.28)
-          +'" fill="none" stroke="#000" stroke-width="1.2"/>'
-        // Cota L
-        +'<line x1="'+x0+'" y1="'+(acY-13)+'" x2="'+(x0+rW)+'" y2="'+(acY-13)
-          +'" stroke="#000" stroke-width="1" marker-start="url(#mb)" marker-end="url(#ma)"/>'
-        +'<text x="'+cx+'" y="'+(acY-17)+'" text-anchor="middle"'
-          +' font-family="Courier New,monospace" font-size="11" fill="#000" font-weight="bold">'
-          +'L = '+L+' m</text>'
-        // Cota Wf
-        +'<line x1="'+(acX-16)+'" y1="'+y0+'" x2="'+(acX-16)+'" y2="'+(y0+rH)
-          +'" stroke="#000" stroke-width="1" marker-start="url(#mb)" marker-end="url(#ma)"/>'
-        +'<text x="'+(acX-19)+'" y="'+cy+'" text-anchor="end" dominant-baseline="middle"'
-          +' font-family="Courier New,monospace" font-size="9" fill="#000">Wf='+Wf+'m</text>'
-        // Cota f
-        +'<line x1="'+(acX+rW+10)+'" y1="'+acY+'" x2="'+(acX+rW+10)+'" y2="'+y0
-          +'" stroke="#555" stroke-width=".8" stroke-dasharray="4,2"/>'
-        +'<text x="'+(acX+rW+14)+'" y="'+(acY+fH/2)+'" dominant-baseline="middle"'
-          +' font-family="Courier New,monospace" font-size="9" fill="#444">f='+f+'m</text>'
-        // Etiqueta Ac
-        +'<text x="'+(W-5)+'" y="'+(H-5)+'" text-anchor="end"'
-          +' font-family="Courier New,monospace" font-size="11" fill="#000" font-weight="bold">'
-          +'Ac='+Ac.toFixed(2)+' m²</text>'
-        // Leyenda
-        +'<line x1="7" y1="11" x2="19" y2="11" stroke="#000" stroke-width="1.4" stroke-dasharray="5,2"/>'
-        +'<text x="23" y="14" font-family="Courier New,monospace" font-size="8.5" fill="#000">AREA CRITICA</text>'
-        +'<rect x="7" y="20" width="12" height="7" rx="1" fill="none" stroke="#000" stroke-width="1.1"/>'
-        +'<text x="23" y="27" font-family="Courier New,monospace" font-size="8.5" fill="#000">FUSELAJE</text>'
-        +'</svg>';
-    }
-
     function exportPDF() {
-      // 1. Sustituir SVG de pantalla por versión B&N
-      var svgEl  = document.getElementById('diag-svg');
-      var svgBak = svgEl ? svgEl.outerHTML : null;
-      if (svgEl && window._pdfDiag) {
-        var d = window._pdfDiag;
-        var tmp = document.createElement('div');
-        tmp.innerHTML = _svgBN(d.L, d.Wf, d.f, d.Ac);
-        var ns = tmp.firstChild; ns.id = 'diag-svg';
-        svgEl.parentNode.replaceChild(ns, svgEl);
-      }
-
-      // 2. Imprimir — el @media print convierte todo a blanco/negro
       window.print();
-
-      // 3. Restaurar SVG de pantalla
-      setTimeout(function() {
-        var svgNow = document.getElementById('diag-svg');
-        if (svgNow && svgBak) {
-          
-          tmp2.innerHTML = svgBak;
-          var restored = tmp2.firstChild;
-          svgNow.parentNode.replaceChild(restored, svgNow);
-        }
-        var stEl = document.getElementById('sei-print-styles');
-        if (stEl) stEl.remove();
-      }
     }
 
 /* Init */
