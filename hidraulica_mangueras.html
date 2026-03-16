@@ -1003,50 +1003,81 @@ function selCaudalPiton(id, btn, q) {
 }
 
 function actualizarResumen() {
-  var Q = parseFloat(document.getElementById('inp-q').value) || 0;
   var N = pitones.length;
-  if (!N || !Q) return;
+  if (!N) return;
 
-  // Calcular Q por pitón: si tiene Q propio se usa, sino distribución equitativa
-  var totalQPropio = pitones.reduce(function(s,p) { return s + (p.q > 0 ? p.q : 0); }, 0);
+  var QInput = document.getElementById('inp-q');
+  var QVal = parseFloat(QInput.value) || 0;
+
+  // 1. Calcular suma de caudales propios y cantidad de 'auto'
+  var totalQPropio = pitones.reduce(function(s, p) { return s + (p.q > 0 ? p.q : 0); }, 0);
   var nSinQ = pitones.filter(function(p) { return p.q <= 0; }).length;
-  var QLibre = Math.max(0, Q - totalQPropio);
+
+  // 2. SINCRONIZACIÓN REACTIVA: 
+  // Si todos son manuales, el total ES la suma.
+  // Si hay mezcla pero los manuales superan al total, el total crece.
+  if (nSinQ === 0) {
+    if (Math.abs(QVal - totalQPropio) > 0.1) {
+      QVal = totalQPropio;
+      QInput.value = QVal;
+    }
+  } else {
+    if (totalQPropio > QVal) {
+      QVal = totalQPropio + (nSinQ * 95); // Damos un mínimo razonable a los 'auto'
+      QInput.value = QVal;
+    }
+  }
+
+  // 3. Distribución
+  var QLibre = Math.max(0, QVal - totalQPropio);
   var QPorDefecto = nSinQ > 0 ? QLibre / nSinQ : 0;
 
   pitones.forEach(function(p) {
     p._qReal = p.q > 0 ? p.q : QPorDefecto;
   });
 
-  // Actualizar previews en las tarjetas
+  // 4. Render previews
   pitones.forEach(function(p) {
-    var preview = document.querySelector('.piton-card[data-id="' + p.id + '"] .piton-fl-preview');
-    if (!preview) return;
+    var card = document.querySelector('.piton-card[data-id="' + p.id + '"]');
+    if (!card) return;
+    
+    var preview = card.querySelector('.piton-fl-preview');
+    var summary = card.querySelector('.piton-card-summary');
+    
     var FLr = 0;
     if (p.ramalActivo && p.ramalFt > 0) {
       var CR = COEF[p.ramalDiam] || 15.5;
       FLr = CR * Math.pow(p._qReal/100, 2) * (p.ramalFt/100);
     }
-    preview.innerHTML = 'Q: <strong>' + p._qReal.toFixed(1) + ' GPM</strong>'
-      + (p.ramalActivo ? ' &nbsp;|&nbsp; FL ramal: <strong>' + FLr.toFixed(1) + ' psi</strong>' : '');
+    
+    if (preview) {
+      preview.innerHTML = 'Q: <strong>' + p._qReal.toFixed(1) + ' GPM</strong>'
+        + (p.ramalActivo ? ' &nbsp;|&nbsp; FL ramal: <strong>' + FLr.toFixed(1) + ' psi</strong>' : '');
+    }
+    if (summary) {
+      summary.textContent = NP_TIPOS[String(p.np)] + ' \u00b7 ' + p._qReal.toFixed(0) + ' GPM';
+    }
   });
 
-  // Resumen total
+  // 5. Resumen total en panel
   var res = document.getElementById('pitones-resumen');
   if (!res) return;
-  if (N === 1) { res.style.display = 'none'; return; }
-
-  var totalQ = pitones.reduce(function(s,p) { return s + p._qReal; }, 0);
-  var html = '<strong>' + N + ' pitones activos</strong> &nbsp;&middot;&nbsp; Q bomba: <strong>' + Q + ' GPM</strong><br>';
-  pitones.forEach(function(p, i) {
-    html += '&#x1F525; Pit\u00f3n ' + (i+1) + ': <strong>' + p._qReal.toFixed(1) + ' GPM</strong>';
-    if (p.ramalActivo) html += ' (con ramal ' + p.ramalDiam + '"&times;' + p.ramalFt + 'ft)';
-    if (i < pitones.length-1) html += ' &nbsp;&middot;&nbsp; ';
-  });
-  if (Math.abs(totalQ - Q) > 1) {
-    html += '<br><span class="warn">&#x26A0; Suma de caudales por pitón (' + totalQ.toFixed(0) + ' GPM) ≠ Q bomba (' + Q + ' GPM). Revise.</span>';
+  if (N === 1) { res.style.display = 'none'; }
+  else {
+    var totalSum = pitones.reduce(function(s,p) { return s + p._qReal; }, 0);
+    var html = '<strong>' + N + ' pitones activos</strong> &nbsp;&middot;&nbsp; Q Total Bomba: <strong>' + totalSum.toFixed(0) + ' GPM</strong><br>';
+    pitones.forEach(function(p, i) {
+      html += '&#x1F525; P' + (i+1) + ': <strong>' + p._qReal.toFixed(0) + '</strong>';
+      if (i < pitones.length-1) html += ' &middot; ';
+    });
+    res.innerHTML = html;
+    res.style.display = '';
   }
-  res.innerHTML = html;
-  res.style.display = '';
+
+  // Reactividad: si ya había un cálculo, actualizarlo automáticamente
+  if (window._autoCalcEnabled) {
+    calcular();
+  }
 }
 
 function renderPitones() {
@@ -1396,18 +1427,30 @@ function getEP() {
    Referencia: NFPA 1963 §5 / IFSTA Ch.12
 ══════════════════════════════════════════════════════ */
 function calcular() {
-  var Q = parseFloat(document.getElementById('inp-q').value) || 0;
+  window._autoCalcEnabled = true; // Activar reactividad tras el primer clic
+  var QInput = document.getElementById('inp-q');
+  var Q = parseFloat(QInput.value) || 0;
   var N = pitones.length || 1;
 
-  if (Q <= 0) { alertCalc('error', 'Ingrese un caudal valido'); return; }
-  if (!segmentos.length) { alertCalc('error', 'Agregue al menos un segmento de manguera'); return; }
-  if (!pitones.length) { alertCalc('error', 'Agregue al menos un piton'); return; }
+  // Asegurar que Q refleje la suma real si no hay 'auto'
+  var totalQReal = pitones.reduce(function(s,p){ 
+    // Si el pitón es manual usa su valor, si es auto usa la proporción del total
+    var qP = p.q > 0 ? p.q : (Q - pitones.reduce((a,b)=>a+(b.q>0?b.q:0),0)) / pitones.filter(a=>a.q<=0).length;
+    return s + Math.max(0, qP);
+  }, 0);
+  
+  if (totalQReal > 0 && Math.abs(totalQReal - Q) > 0.1) {
+    Q = totalQReal;
+    QInput.value = Q;
+  }
 
-  // ── Q real por pitón ──
-  var totalQPropio = pitones.reduce(function(s,p){ return s+(p.q>0?p.q:0); }, 0);
-  var nSinQ = pitones.filter(function(p){ return p.q<=0; }).length;
-  var QPorDefecto = nSinQ > 0 ? Math.max(0, Q - totalQPropio) / nSinQ : 0;
-  pitones.forEach(function(p){ p._qReal = p.q>0 ? p.q : QPorDefecto; });
+  if (Q <= 0) { alertCalc('error', 'Ingrese un caudal válido'); return; }
+  
+  // Sincronizar _qReal final
+  var tPropio = pitones.reduce((s,p)=>s+(p.q>0?p.q:0),0);
+  var nAuto = pitones.filter(p=>p.q<=0).length;
+  var qDef = nAuto > 0 ? Math.max(0, Q - tPropio) / nAuto : 0;
+  pitones.forEach(p => { p._qReal = p.q > 0 ? p.q : qDef; });
 
   // ── FL por segmento ──
   // Heurística: el último segmento con N>1 pitones es ramal → Q/N
