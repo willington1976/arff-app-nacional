@@ -3,1654 +3,1309 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#060c14">
-  <title>Hidraulica de Mangueras — SEI ARFF Colombia</title>
+  <title>Calculadora Hidráulica ARFF | SEI Nacional</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
   <style>
-    :root {
-      --bg:#060c14; --surface:#0d1520; --s2:#111d2e; --s3:#162035;
-      --border:#1c2e47; --border2:#243a58;
-      --sky:#38bdf8; --sky2:#0ea5e9; --sky-glow:rgba(56,189,248,.14);
-      --amber:#f59f00; --amber2:#b45309; --amber-glow:rgba(245,159,0,.13);
-      --red:#f03e3e; --red-glow:rgba(240,62,62,.14);
-      --green:#40c057; --green-glow:rgba(64,192,87,.12);
-      --orange:#f76707; --teal:#0bc5a0; --cyan:#00e5ff;
-      --text:#dde4ee; --text-dim:#7a90aa; --text-muted:#3a4f68;
-      --ff-t:'Syne',sans-serif; --ff-b:'DM Sans',sans-serif; --ff-m:'DM Mono',monospace;
-      --r:10px; --rs:6px;
-      --accent:#38bdf8;
-      --accent-a: var(--sky);
-      --accent-b: var(--teal);
+    :root{
+      --bg:#030712;--surface:#0f172a;--s2:#1e293b;--s3:#334155;
+      --sky:#38bdf8;--sky-glow:rgba(56,189,248,.4);
+      --amber:#f59f00;--green:#10b981;--red:#f43f5e;--purple:#a78bfa;
+      --text:#f1f5f9;--text-dim:#94a3b8;--text-muted:#64748b;
+      --border:rgba(255,255,255,.08);--border2:rgba(255,255,255,.15);
+      --ff-t:'Outfit',sans-serif;--ff-m:'JetBrains Mono',monospace;
+      --rs:8px;--r:16px;
     }
-    *,::before,::after{box-sizing:border-box;margin:0;padding:0}
-    html{scroll-behavior:smooth}
-    body{background:var(--bg);color:var(--text);font-family:var(--ff-b);font-size:14px;min-height:100vh;display:flex;overflow-x:hidden;}
-    body::before{content:\'\';position:fixed;inset:0;z-index:0;opacity:.018;background-image:radial-gradient(circle,#7a90aa 1px,transparent 1px);background-size:28px 28px;pointer-events:none;}
-    .scanlines{position:fixed;inset:0;z-index:1;pointer-events:none;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.04) 2px,rgba(0,0,0,.04) 4px);opacity:.3}
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{background:var(--bg);color:var(--text);font-family:var(--ff-t);min-height:100vh;display:flex;overflow-x:hidden;}
+    .scanlines{position:fixed;top:0;left:0;width:100%;height:100%;background:linear-gradient(rgba(18,16,16,0)50%,rgba(0,0,0,.2)50%),linear-gradient(90deg,rgba(255,0,0,.03),rgba(0,255,0,.01),rgba(0,0,255,.03));background-size:100% 2px,3px 100%;pointer-events:none;z-index:9999;opacity:.1;}
 
-    /* SIDEBAR */
-    .sidebar{width:240px;min-height:100vh;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;left:0;top:0;z-index:100;}
-    .sb-logo{padding:20px 18px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;text-decoration:none;}
-    .sb-logo-icon{width:32px;height:32px;background:linear-gradient(135deg,var(--sky2),#0369a1);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
-    .sb-logo-text{font-family:var(--ff-t);font-size:13px;font-weight:800;line-height:1.2;}
-    .sb-logo-sub{font-family:var(--ff-m);font-size:9px;color:var(--text-muted);letter-spacing:.08em;margin-top:2px;}
-    .sb-section{padding:12px 10px 4px;font-family:var(--ff-m);font-size:8.5px;color:var(--text-muted);letter-spacing:.1em;text-transform:uppercase;}
-    .sb-nav{flex:1;padding:8px 0;overflow-y:auto;}
-    .sb-link{display:flex;align-items:center;gap:10px;padding:8px 16px;color:var(--text-dim);text-decoration:none;font-size:13px;transition:.15s;border-left:2px solid transparent;cursor:pointer;}
-    .sb-link:hover{background:rgba(255,255,255,.03);color:var(--text);}
-    .sb-link.active{background:rgba(56,189,248,.08);border-left-color:var(--sky);color:var(--sky);}
-    .sb-link svg{opacity:.6;flex-shrink:0;}
-    .sb-link.active svg{opacity:1;}
-    .sb-user{padding:14px 16px;border-top:1px solid var(--border);}
-    .sb-user-name{font-size:12px;font-weight:600;color:var(--text);}
-    .sb-user-role{font-family:var(--ff-m);font-size:9px;color:var(--sky);letter-spacing:.06em;margin-top:2px;}
-    .sb-logout{margin-top:10px;width:100%;padding:7px 12px;background:rgba(240,62,62,.1);border:1px solid rgba(240,62,62,.2);color:#ff8787;border-radius:var(--rs);font-family:var(--ff-m);font-size:10px;cursor:pointer;letter-spacing:.05em;transition:.15s;}
-    .sb-logout:hover{background:rgba(240,62,62,.2);}
+    .sidebar{width:240px;background:#000;border-right:1px solid var(--border);height:100vh;position:sticky;top:0;display:flex;flex-direction:column;z-index:100;flex-shrink:0;}
+    .sb-logo{padding:24px;display:flex;align-items:center;gap:12px;}
+    .sb-logo-icon{width:32px;height:32px;background:var(--sky);border-radius:8px;box-shadow:0 0 15px var(--sky-glow);display:flex;align-items:center;justify-content:center;color:#000;font-weight:800;font-size:18px;}
+    .sb-logo-text{font-size:14px;font-weight:800;letter-spacing:1px;}
+    .sb-section{padding:12px 24px 6px;font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;}
+    .sb-link{display:flex;align-items:center;gap:12px;padding:12px 24px;color:var(--text-dim);text-decoration:none;font-size:13px;transition:.2s;border-left:3px solid transparent;}
+    .sb-link:hover{color:var(--text);background:rgba(255,255,255,.03);}
+    .sb-link.active{color:var(--sky);background:rgba(56,189,248,.05);border-left-color:var(--sky);font-weight:600;}
+    .sb-user{margin-top:auto;padding:20px;border-top:1px solid var(--border);}
+    .sb-user-name{font-size:12px;font-weight:700;}
+    .sb-user-role{font-size:10px;color:var(--text-muted);text-transform:uppercase;}
 
-    /* MAIN */
-    .main{margin-left:240px;flex:1;display:flex;flex-direction:column;position:relative;z-index:1;}
-    .topbar{height:52px;background:rgba(13,21,32,.95);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 24px;position:sticky;top:0;z-index:50;backdrop-filter:blur(8px);}
-    .tb-left{display:flex;align-items:center;gap:12px;}
-    .tb-badge{font-family:var(--ff-m);font-size:9px;padding:3px 8px;border-radius:4px;letter-spacing:.07em;text-transform:uppercase;}
-    .tb-badge.modulo{background:rgba(56,189,248,.12);color:var(--sky);border:1px solid rgba(56,189,248,.25);}
-    .tb-title{font-family:var(--ff-t);font-weight:700;font-size:14px;letter-spacing:.04em;text-transform:uppercase;}
-    .tb-right{display:flex;align-items:center;gap:12px;}
-    .tb-clock{font-family:var(--ff-m);font-size:12px;color:var(--text-dim);}
-    .online-dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green);animation:pulse 2s infinite;}
-    @keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
-    .page-body{padding:28px 28px 60px;max-width:1240px;}
-
-    /* MOD HEADER */
-    .mod-header{margin-bottom:28px;}
-    .mod-badge{display:inline-flex;align-items:center;gap:6px;font-family:var(--ff-m);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--sky);margin-bottom:10px;}
-    .mod-badge::before{content:\'\';width:18px;height:1px;background:var(--sky);}
-    .mod-title{font-family:var(--ff-t);font-size:26px;font-weight:800;line-height:1.1;}
+    .main{flex:1;display:flex;flex-direction:column;overflow-y:auto;min-width:0;}
+    .topbar{height:64px;border-bottom:1px solid var(--border);padding:0 32px;display:flex;align-items:center;justify-content:space-between;background:rgba(3,7,18,.5);backdrop-filter:blur(10px);position:sticky;top:0;z-index:90;}
+    .tb-title{font-size:14px;font-weight:600;color:var(--text-dim);}
+    .tb-clock{font-family:var(--ff-m);font-size:12px;color:var(--sky);}
+    .content-inner{padding:28px 32px;max-width:1400px;margin:0 auto;width:100%;}
+    .mod-header{margin-bottom:24px;}
+    .mod-badge{font-family:var(--ff-m);font-size:11px;color:var(--sky);margin-bottom:6px;letter-spacing:2px;font-weight:700;}
+    .mod-title{font-size:34px;font-weight:800;letter-spacing:-1px;}
     .mod-title span{color:var(--sky);}
-    .mod-sub{color:var(--text-dim);font-size:13px;margin-top:6px;max-width:680px;}
+    .mod-sub{color:var(--text-dim);font-size:13px;margin-top:6px;max-width:720px;line-height:1.5;}
+    .calc-grid{display:grid;grid-template-columns:1fr 390px;gap:28px;align-items:start;}
 
+    /* VEHICLE PANEL */
+    .vehicle-panel{background:var(--surface);border:1px solid rgba(56,189,248,.2);border-radius:var(--r);margin-bottom:22px;overflow:hidden;}
+    .vehicle-header{padding:13px 18px;background:rgba(56,189,248,.04);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;}
+    .curve-pt{background:rgba(56,189,248,.05);border:1px solid rgba(56,189,248,.15);border-radius:6px;padding:6px 10px;text-align:center;font-family:var(--ff-m);font-size:10px;}
+    .curve-pt span{color:var(--sky);font-weight:700;font-size:12px;display:block;}
 
+    /* PUMP MONITOR — slider de presión actual */
+    .pump-monitor{background:rgba(56,189,248,.04);border:1px solid rgba(56,189,248,.2);border-radius:var(--rs);padding:14px 16px;margin-top:12px;}
+    .pm-label{font-size:10px;font-weight:800;color:var(--sky);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px;}
+    .pm-slider-row{display:flex;align-items:center;gap:12px;}
+    .pm-slider{flex:1;-webkit-appearance:none;height:6px;border-radius:3px;background:var(--s3);outline:none;cursor:pointer;}
+    .pm-slider::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:var(--sky);cursor:pointer;box-shadow:0 0 8px var(--sky-glow);}
+    .pm-val{font-family:var(--ff-m);font-size:18px;font-weight:700;color:var(--sky);min-width:60px;text-align:right;}
+    .pm-note{font-size:10px;color:var(--text-muted);margin-top:6px;font-family:var(--ff-m);}
 
-    /* GRID CALC */
-    .calc-grid{display:grid;grid-template-columns:1fr 380px;gap:20px;align-items:start;}
-    @media(max-width:1000px){.calc-grid{grid-template-columns:1fr;}}
+    /* PANELS */
+    .panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);margin-bottom:18px;overflow:hidden;}
+    .panel-header{padding:13px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;}
+    .panel-icon{width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:14px;}
+    .panel-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;}
+    .panel-body{padding:16px 18px;}
 
-    /* PANEL */
-    .panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:16px;}
-    .panel-header{padding:14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;}
-    .panel-icon{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;}
-    .panel-title{font-family:var(--ff-t);font-size:13px;font-weight:700;}
-    .panel-sub{font-family:var(--ff-m);font-size:9px;color:var(--text-muted);letter-spacing:.06em;margin-top:1px;}
-    .panel-body{padding:18px 20px;}
+    /* SEGMENTS */
+    .seg-lista{display:flex;flex-direction:column;gap:14px;}
+    .seg-card{background:var(--s2);border:1px solid var(--border2);border-radius:var(--rs);overflow:hidden;}
+    .seg-card-head{padding:10px 13px;background:rgba(255,255,255,.03);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+    .seg-num{width:22px;height:22px;background:var(--sky);color:#000;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0;}
+    .seg-label{font-size:12px;font-weight:700;color:var(--sky);}
+    .badge{font-family:var(--ff-m);font-size:10px;padding:2px 7px;border-radius:4px;}
+    .badge-fl{color:var(--amber);background:rgba(245,159,0,.1);border:1px solid rgba(245,159,0,.2);}
+    .badge-pdp-ok{color:var(--green);background:rgba(16,185,129,.1);}
+    .badge-pdp-warn{color:var(--amber);background:rgba(245,159,0,.1);}
+    .badge-pdp-bad{color:var(--red);background:rgba(244,63,94,.15);border:1px solid rgba(244,63,94,.3);animation:pulse-red 1.5s infinite;}
+    .badge-vel-ok{color:var(--green);background:rgba(16,185,129,.1);}
+    .badge-vel-bad{color:var(--red);background:rgba(244,63,94,.15);border:1px solid rgba(244,63,94,.3);animation:pulse-red 1.5s infinite;}
+    .seg-card-body{padding:13px;}
 
-    /* CAMPOS */
-    .field{margin-bottom:13px;}
-    .field:last-child{margin-bottom:0;}
-    .field-label{font-family:var(--ff-m);font-size:9.5px;color:var(--text-muted);letter-spacing:.08em;text-transform:uppercase;margin-bottom:5px;display:flex;justify-content:space-between;align-items:center;}
-    .field-label .tip{font-size:8.5px;color:var(--text-muted);opacity:.7;font-style:normal;}
-    .field-input{width:100%;background:var(--s3);border:1px solid var(--border2);color:var(--text);padding:9px 12px;border-radius:var(--rs);font-family:var(--ff-m);font-size:13px;outline:none;transition:.2s;}
+    /* EXCESS PRESSURE INDICATOR per segment */
+    .excess-box{border-radius:6px;padding:9px 12px;margin-top:10px;font-size:11px;line-height:1.6;}
+    .excess-ok{background:rgba(16,185,129,.06);border:1px solid rgba(16,185,129,.2);}
+    .excess-warn{background:rgba(245,159,0,.07);border:1px solid rgba(245,159,0,.25);}
+    .excess-bad{background:rgba(244,63,94,.07);border:1px solid rgba(244,63,94,.3);}
+    .excess-title{font-weight:800;margin-bottom:4px;}
+
+    /* HOSE / PITON rows */
+    .hose-row{background:rgba(255,255,255,.02);border:1px solid var(--border);padding:6px;border-radius:6px;margin-bottom:5px;display:grid;grid-template-columns:1.6fr 0.5fr 0.9fr 0.9fr 26px;gap:5px;align-items:center;}
+    .piton-row{background:var(--surface);border:1px solid var(--border2);padding:9px 11px;border-radius:7px;margin-bottom:7px;}
+    .piton-row-head{display:flex;align-items:center;gap:8px;margin-bottom:7px;}
+    .piton-badge{background:rgba(167,139,250,.1);border:1px solid rgba(167,139,250,.25);border-radius:4px;padding:2px 7px;font-family:var(--ff-m);font-size:10px;color:var(--purple);font-weight:700;}
+    .piton-fields{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;}
+    .piton-field-label{font-size:9px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:3px;}
+
+    /* piton real-time feedback */
+    .piton-feedback{margin-top:8px;padding:7px 10px;border-radius:5px;font-family:var(--ff-m);font-size:10px;line-height:1.5;}
+    .pf-ok{background:rgba(16,185,129,.07);border:1px solid rgba(16,185,129,.2);color:var(--green);}
+    .pf-warn{background:rgba(245,159,0,.07);border:1px solid rgba(245,159,0,.25);color:var(--amber);}
+    .pf-bad{background:rgba(244,63,94,.07);border:1px solid rgba(244,63,94,.3);color:var(--red);}
+    .pf-idle{background:rgba(255,255,255,.03);border:1px solid var(--border);color:var(--text-muted);}
+
+    .field-input{width:100%;background:var(--s3);border:1px solid var(--border2);color:var(--text);padding:7px 9px;border-radius:var(--rs);font-family:var(--ff-m);font-size:12px;outline:none;transition:.2s;}
     .field-input:focus{border-color:var(--sky);background:var(--s2);}
-    .field-input-wrap{position:relative;}
-    .field-unit{position:absolute;right:10px;top:50%;transform:translateY(-50%);font-family:var(--ff-m);font-size:9px;color:var(--text-muted);pointer-events:none;}
-    .field-note{font-family:var(--ff-m);font-size:8.5px;color:var(--text-muted);margin-top:4px;line-height:1.5;}
-    .field-note.warn{color:#f59f00;}
-    .field-note.ok{color:var(--green);}
-    .g2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
-    .g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;}
 
-    /* SELECTOR DIÁMETRO — botones rápidos */
-    .diam-btns{display:flex;flex-wrap:wrap;gap:6px;}
-    .diam-btn{padding:7px 14px;border-radius:var(--rs);font-family:var(--ff-m);font-size:11px;letter-spacing:.04em;cursor:pointer;border:1px solid var(--border2);background:var(--s3);color:var(--text-dim);transition:.15s;white-space:nowrap;}
-    .diam-btn:hover{border-color:var(--sky);color:var(--sky);}
-    .diam-btn.sel{background:rgba(56,189,248,.12);border-color:var(--sky);color:var(--sky);}
+    .btn-del{color:var(--red);background:rgba(244,63,94,.1);border:none;width:26px;height:26px;border-radius:4px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:14px;}
+    .btn-del:hover{background:rgba(244,63,94,.2);}
+    .btn-add{width:100%;padding:8px;background:rgba(56,189,248,.05);border:1px dashed var(--sky);border-radius:6px;color:var(--sky);font-family:var(--ff-m);font-size:10px;font-weight:700;cursor:pointer;margin-top:4px;transition:.15s;}
+    .btn-add:hover{background:rgba(56,189,248,.1);border-style:solid;}
+    .btn-add-seg{padding:11px;background:rgba(56,189,248,.05);border:1px dashed var(--sky);border-radius:8px;color:var(--sky);font-family:var(--ff-m);font-size:11px;font-weight:700;cursor:pointer;width:100%;margin-top:4px;transition:.15s;}
+    .btn-add-seg:hover{background:rgba(56,189,248,.1);border-style:solid;}
+    .btn-calc{width:100%;padding:15px;background:var(--sky);color:#000;font-family:var(--ff-t);font-size:14px;font-weight:800;border:none;border-radius:var(--rs);cursor:pointer;margin-top:14px;transition:.2s;}
+    .btn-calc:hover{transform:translateY(-2px);box-shadow:0 4px 14px var(--sky-glow);}
+    .btn-reset{width:100%;padding:9px;background:transparent;border:1px solid var(--border);color:var(--text-muted);font-size:11px;border-radius:var(--rs);cursor:pointer;margin-top:8px;}
 
-    /* SELECTOR CAUDAL */
-    .caudal-btns{display:flex;flex-wrap:wrap;gap:6px;}
-    .caudal-btn{padding:7px 12px;border-radius:var(--rs);font-family:var(--ff-m);font-size:11px;cursor:pointer;border:1px solid var(--border2);background:var(--s3);color:var(--text-dim);transition:.15s;}
-    .caudal-btn:hover{border-color:var(--amber);color:var(--amber);}
-    .caudal-btn.sel{background:var(--amber-glow);border-color:var(--amber);color:var(--amber);}
+    .acc-title{font-size:10px;font-weight:800;color:var(--text-muted);text-transform:uppercase;margin:11px 0 5px;padding-bottom:3px;border-bottom:1px solid var(--border);letter-spacing:.05em;}
+    .acc-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px;}
+    .acc-btn{padding:6px 8px;background:var(--s3);border:1px solid transparent;border-radius:5px;font-size:10px;color:var(--text-dim);cursor:pointer;display:flex;justify-content:space-between;align-items:center;transition:.15s;}
+    .acc-btn.active{background:rgba(56,189,248,.1);border-color:var(--sky);color:var(--sky);font-weight:700;}
 
-    /* MANGUERAS — tabla de tramos */
-    .tramos-table{width:100%;border-collapse:collapse;}
-    .tramos-table th{font-family:var(--ff-m);font-size:9px;color:var(--text-muted);letter-spacing:.08em;padding:6px 10px;text-align:left;text-transform:uppercase;border-bottom:1px solid var(--border);}
-    .tramos-table td{padding:6px 10px;border-bottom:1px solid rgba(28,46,71,.5);}
-    .tramos-table tr:last-child td{border-bottom:none;}
-    .tramo-input{width:70px;background:var(--s3);border:1px solid var(--border2);color:var(--text);padding:5px 8px;border-radius:var(--rs);font-family:var(--ff-m);font-size:12px;text-align:center;outline:none;transition:.15s;}
-    .tramo-input:focus{border-color:var(--sky);}
-    .tramo-label{font-family:var(--ff-m);font-size:11px;color:var(--text);}
-    .tramo-ft{font-family:var(--ff-m);font-size:9px;color:var(--text-muted);}
+    /* ALERTS */
+    .vel-alert{display:none;background:rgba(244,63,94,.06);border:1.5px solid var(--red);border-radius:var(--r);padding:14px 18px;margin-bottom:16px;}
+    .vel-alert.show{display:block;}
+    .vel-alert-title{font-size:13px;font-weight:800;color:var(--red);margin-bottom:6px;}
 
-    /* ACCESORIOS */
-    .acc-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
-    .acc-item{display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--border2);border-radius:var(--rs);cursor:pointer;transition:.15s;background:var(--s3);}
-    .acc-item:hover{border-color:var(--sky);background:rgba(56,189,248,.05);}
-    .acc-item.checked{border-color:var(--sky);background:rgba(56,189,248,.1);}
-    .acc-check{width:14px;height:14px;border-radius:3px;border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:9px;transition:.15s;}
-    .acc-item.checked .acc-check{background:var(--sky);border-color:var(--sky);color:#000;}
-    .acc-name{font-size:12px;color:var(--text-dim);}
-    .acc-item.checked .acc-name{color:var(--text);}
-    .acc-psi{font-family:var(--ff-m);font-size:9px;color:var(--text-muted);margin-left:auto;}
-    .acc-item.checked .acc-psi{color:var(--sky);}
+    /* RESULT PANEL */
+    .result-panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);position:sticky;top:84px;}
 
+    /* THE BIG NUMBER — presión de consigna */
+    .consigna-head{padding:22px 20px;text-align:center;border-bottom:1px solid var(--border);background:rgba(56,189,248,.03);}
+    .consigna-label{font-size:10px;font-weight:800;color:var(--text-muted);text-transform:uppercase;letter-spacing:2px;margin-bottom:4px;}
+    .consigna-num{font-size:72px;font-weight:800;line-height:1;display:flex;align-items:baseline;justify-content:center;gap:5px;}
+    .consigna-unit{font-size:18px;font-weight:400;color:var(--text-muted);}
+    .consigna-status{font-size:11px;font-weight:700;font-family:var(--ff-m);margin-top:8px;text-transform:uppercase;}
 
+    .result-body-inner{padding:16px 18px;}
+    .res-item{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--border);}
+    .res-label{font-size:12px;color:var(--text-dim);}
+    .res-val{font-family:var(--ff-m);font-size:13px;font-weight:700;}
+    .section-title{font-size:10px;font-weight:800;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin:14px 0 8px;padding-top:12px;border-top:1px solid var(--border);}
 
-    /* BTN CALCULAR */
-    .btn-calc{width:100%;padding:14px;background:var(--sky);color:#000;font-family:var(--ff-t);font-size:15px;font-weight:800;border:none;border-radius:var(--rs);cursor:pointer;letter-spacing:.03em;transition:.18s;margin-top:4px;}
-    .btn-calc:hover{background:#7dd3fc;transform:translateY(-1px);}
-    .btn-reset{width:100%;padding:10px;background:transparent;border:1px solid var(--border2);color:var(--text-dim);font-family:var(--ff-m);font-size:11px;border-radius:var(--rs);cursor:pointer;transition:.15s;margin-top:6px;}
-    .btn-reset:hover{border-color:var(--red);color:var(--red);}
+    /* pump capacity validation */
+    .pump-cap{border-radius:var(--rs);overflow:hidden;margin-bottom:2px;}
+    .pump-cap-row{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;font-size:11px;}
+    .pc-ok{background:rgba(16,185,129,.07);border:1px solid rgba(16,185,129,.2);}
+    .pc-warn{background:rgba(245,159,0,.07);border:1px solid rgba(245,159,0,.25);}
+    .pc-bad{background:rgba(244,63,94,.07);border:1px solid rgba(244,63,94,.3);}
 
-    /* RESULTADO */
-    .result-panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;position:sticky;top:68px;}
-    .result-idle{padding:40px 24px;text-align:center;color:var(--text-muted);font-family:var(--ff-m);font-size:11px;letter-spacing:.06em;}
-    .result-idle .idle-icon{font-size:36px;margin-bottom:12px;opacity:.4;}
-    .result-hero{padding:24px;border-bottom:1px solid var(--border);text-align:center;background:linear-gradient(180deg,rgba(56,189,248,.06) 0%,transparent 100%);}
-    .result-label{font-family:var(--ff-m);font-size:9px;color:var(--text-muted);letter-spacing:.12em;text-transform:uppercase;margin-bottom:8px;}
-    .result-pdp{font-family:var(--ff-t);font-size:56px;font-weight:800;line-height:1;letter-spacing:-.02em;}
-    .result-pdp.safe{color:var(--green);}
-    .result-pdp.warn{color:var(--amber);}
-    .result-pdp.danger{color:var(--red);}
-    .result-unit{font-family:var(--ff-m);font-size:14px;color:var(--text-dim);margin-top:4px;}
-    .result-rows{padding:16px 20px;}
-    .r-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(28,46,71,.5);}
-    .r-row:last-child{border-bottom:none;}
-    .r-key{font-family:var(--ff-m);font-size:10px;color:var(--text-muted);letter-spacing:.05em;}
-    .r-val{font-family:var(--ff-m);font-size:12px;color:var(--text);}
-    .r-val.hi{color:var(--sky);}
-    .r-val.warn{color:var(--amber);}
-    .r-val.danger{color:var(--red);}
-    .result-alert{margin:0 16px 16px;padding:12px 14px;border-radius:var(--rs);font-family:var(--ff-m);font-size:11px;line-height:1.6;}
-    .result-alert.ok{background:rgba(64,192,87,.1);border:1px solid rgba(64,192,87,.3);color:var(--green);}
-    .result-alert.warn{background:var(--amber-glow);border:1px solid rgba(245,159,0,.3);color:var(--amber);}
-    .result-alert.danger{background:var(--red-glow);border:1px solid rgba(240,62,62,.3);color:var(--red);}
+    /* per-segment summary in results */
+    .seg-result-card{background:var(--s2);border-radius:6px;padding:10px 13px;margin-bottom:7px;border:1px solid var(--border);}
+    .seg-result-card.critical{border-color:rgba(56,189,248,.3);background:rgba(56,189,248,.04);}
+    .seg-result-title{font-size:11px;font-weight:800;color:var(--text);margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;}
+    .seg-result-row{display:flex;justify-content:space-between;font-size:10px;padding:3px 0;border-bottom:1px solid rgba(255,255,255,.04);}
+    .seg-result-row:last-child{border-bottom:none;}
 
-    /* COMPARADOR PRESION ACTUAL */
-    .cmp-box{background:var(--s2);border:1px solid var(--border2);border-radius:var(--rs);padding:14px;margin:0 16px 16px;}
-    .cmp-title{font-family:var(--ff-m);font-size:9px;color:var(--text-muted);letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px;}
-    .cmp-row{display:flex;align-items:center;gap:10px;}
-    .cmp-input{flex:1;background:var(--s3);border:1px solid var(--border2);color:var(--text);padding:8px 10px;border-radius:var(--rs);font-family:var(--ff-m);font-size:14px;outline:none;transition:.15s;text-align:center;}
-    .cmp-input:focus{border-color:var(--amber);}
-    .cmp-result{flex:1;font-family:var(--ff-m);font-size:12px;text-align:center;padding:8px;}
-    .cmp-result.ok{color:var(--green);}
-    .cmp-result.warn{color:var(--amber);}
-    .cmp-result.danger{color:var(--red);}
+    /* TANK */
+    .tank-panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);margin-bottom:18px;overflow:hidden;}
+    .tank-header{padding:13px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;}
+    .tank-header-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;}
+    .tank-body{padding:14px 18px;}
+    .tank-input-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:11px;}
+    .tank-field label{font-size:10px;color:var(--text-muted);text-transform:uppercase;display:block;margin-bottom:3px;letter-spacing:.04em;}
+    .tank-field input,.tank-field select{width:100%;background:var(--s3);border:1px solid var(--border2);color:var(--text);padding:7px 9px;border-radius:var(--rs);font-family:var(--ff-m);font-size:12px;outline:none;}
+    .tank-result-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;}
+    .tank-stat{background:var(--s2);border:1px solid var(--border);border-radius:var(--rs);padding:9px;text-align:center;}
+    .tank-stat-val{font-family:var(--ff-m);font-size:18px;font-weight:700;}
+    .tank-stat-lbl{font-size:9px;color:var(--text-muted);text-transform:uppercase;margin-top:3px;}
+    .tank-bar-track{background:var(--s3);border-radius:4px;height:7px;overflow:hidden;margin-bottom:4px;}
+    .tank-bar-fill{height:100%;border-radius:4px;transition:width .4s,background .4s;}
+    .tank-bar-labels{display:flex;justify-content:space-between;font-size:9px;color:var(--text-muted);font-family:var(--ff-m);}
 
-    /* DETALLE FRICCION */
-    .friccion-detail{background:var(--s2);border:1px solid var(--border);border-radius:var(--rs);padding:12px 14px;margin:0 16px 16px;}
-    .fd-title{font-family:var(--ff-m);font-size:9px;color:var(--text-muted);letter-spacing:.1em;text-transform:uppercase;margin-bottom:8px;display:flex;justify-content:space-between;}
-    .fd-warn{font-size:8.5px;color:var(--amber);}
-    .fd-bar-wrap{background:var(--s3);border-radius:3px;height:6px;margin-bottom:6px;overflow:hidden;}
-    .fd-bar{height:100%;border-radius:3px;transition:width .6s ease;background:linear-gradient(90deg,var(--sky),var(--teal));}
-    .fd-row{display:flex;justify-content:space-between;font-family:var(--ff-m);font-size:10px;color:var(--text-dim);}
+    /* RECS */
+    .recs-panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);margin-bottom:18px;display:none;overflow:hidden;}
+    .recs-header{padding:13px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;}
+    .recs-body{padding:13px 18px;display:flex;flex-direction:column;gap:10px;}
+    .rec-item{background:var(--s2);border:1px solid var(--border2);border-radius:var(--rs);padding:12px 14px;display:flex;gap:11px;}
+    .rec-icon{font-size:18px;flex-shrink:0;margin-top:1px;}
+    .rec-title{font-size:12px;font-weight:800;margin-bottom:2px;line-height:1.3;}
+    .rec-sub{font-family:var(--ff-m);font-size:9px;color:var(--text-muted);letter-spacing:.04em;text-transform:uppercase;margin-bottom:4px;}
+    .rec-desc{font-size:11px;color:var(--text-dim);line-height:1.65;}
 
-    /* HISTORIAL */
-    .hist-section{margin-top:20px;}
-    .hist-title{font-family:var(--ff-m);font-size:9.5px;color:var(--text-muted);letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px;}
-    .hist-list{display:flex;flex-direction:column;gap:6px;max-height:200px;overflow-y:auto;}
-    .hist-item{display:flex;align-items:center;gap:10px;background:var(--s2);border:1px solid var(--border);border-radius:var(--rs);padding:8px 14px;font-family:var(--ff-m);font-size:10px;cursor:pointer;transition:.12s;}
-    .hist-item:hover{background:var(--s3);}
-    .hist-pdp{font-size:13px;font-weight:700;color:var(--sky);min-width:55px;}
-    .hist-info{color:var(--text-dim);flex:1;}
-    .hist-ts{color:var(--text-muted);font-size:9px;margin-left:auto;}
+    .norma-box{background:rgba(255,255,255,.02);border:1px solid var(--border);border-radius:var(--rs);padding:14px 16px;margin-top:14px;font-size:11px;line-height:1.6;color:var(--text-dim);}
+    .norma-title{color:var(--sky);font-weight:800;text-transform:uppercase;margin-bottom:7px;font-size:10px;letter-spacing:.08em;}
 
-    /* NORMA BOX */
-    .norma-box{background:var(--s2);border:1px solid var(--border);border-radius:var(--r);padding:16px;margin-top:18px;}
-    .norma-title{font-family:var(--ff-m);font-size:9.5px;color:var(--sky);letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px;}
-    .norma-item{font-size:12px;color:var(--text-dim);padding:5px 0;border-bottom:1px solid rgba(28,46,71,.4);line-height:1.6;}
-    .norma-item:last-child{border-bottom:none;}
-    .norma-item strong{color:var(--text);}
+    @keyframes pulse-red{0%,100%{box-shadow:0 0 0 0 rgba(244,63,94,0)}50%{box-shadow:0 0 0 3px rgba(244,63,94,.2)}}
+    @keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+    .fadeIn{animation:fadeIn .3s ease}
 
-    footer{text-align:center;padding:22px 20px 18px;border-top:1px solid var(--border);position:relative;z-index:2;}
-    .footer-strip{width:36px;height:3px;background:linear-gradient(90deg,var(--sky2),var(--sky));border-radius:2px;margin:0 auto 10px;}
-    .footer-name{font-family:var(--ff-t);font-weight:800;font-size:11px;color:var(--text);letter-spacing:.04em;margin-bottom:3px;}
-    .footer-cred{font-family:var(--ff-m);font-size:9.5px;color:var(--text-dim);}
-    .footer-cred span{color:var(--sky);}
-    .footer-norm{font-family:var(--ff-m);font-size:9px;color:var(--text-muted);margin-top:3px;}
+    .sei-footer{text-align:center;padding:18px 24px 14px;border-top:1px solid var(--border);}
+    .sei-footer-strip{width:34px;height:3px;background:linear-gradient(90deg,var(--sky),#0ea5e9);border-radius:2px;margin:0 auto 9px;}
+    .sei-footer-name{font-weight:800;font-size:12px;text-transform:uppercase;margin-bottom:3px;}
+    .sei-footer-cargo{font-family:var(--ff-m);font-size:10px;color:var(--sky);text-transform:uppercase;margin-bottom:4px;}
+    .sei-footer-norm{font-family:var(--ff-m);font-size:9px;color:var(--text-muted);}
+    .sei-footer-norm span{color:var(--sky);}
 
-    @media(max-width:860px){.sidebar{display:none;} .main{margin-left:0;} .page-body{padding:16px 14px 50px;}}
-    ::-webkit-scrollbar{width:5px;height:5px;}::-webkit-scrollbar-track{background:transparent;}::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px;}
+    .fab{position:fixed;bottom:26px;right:26px;z-index:200;}
+    .fab-btn{width:54px;height:54px;border-radius:50%;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 24px rgba(0,0,0,.5);transition:transform .18s;background:linear-gradient(135deg,var(--sky),#0ea5e9);position:relative;}
+    .fab-btn:hover{transform:scale(1.07);}
+    .fab-tooltip{position:absolute;right:62px;background:var(--s2);border:1px solid var(--border2);border-radius:6px;padding:4px 10px;font-family:var(--ff-m);font-size:10px;white-space:nowrap;opacity:0;pointer-events:none;transition:opacity .18s;}
+    .fab-btn:hover .fab-tooltip{opacity:1;}
 
-    /* ── FOOTER ── */
-    .sei-footer {
-      text-align: center;
-      padding: 22px 24px 18px;
-      border-top: 1px solid var(--border);
-      position: relative;
-    }
-    .sei-footer-strip {
-      width: 40px; height: 3px;
-      background: linear-gradient(90deg, var(--accent-a), var(--accent-b));
-      border-radius: 2px;
-      margin: 0 auto 12px;
-    }
-    .sei-footer-name {
-      font-family: var(--font-title);
-      font-weight: 800;
-      font-size: 12px;
-      color: var(--text);
-      letter-spacing: .04em;
-      text-transform: uppercase;
-      margin-bottom: 4px;
-    }
-    .sei-footer-cargo {
-      font-family: var(--font-mono);
-      font-size: 10px;
-      color: var(--accent-a);
-      letter-spacing: .08em;
-      text-transform: uppercase;
-      margin-bottom: 6px;
-    }
-    .sei-footer-norm {
-      font-family: var(--font-mono);
-      font-size: 9px;
-      color: var(--text-muted);
-      letter-spacing: .06em;
-    }
-    .sei-footer-norm span { color: var(--accent-b); }
-
-    /* Footer en @media print */
-    @media print {
-      .sei-footer {
-        border-top: 1pt solid #ccc !important;
-        padding: 6pt 8pt !important;
-        background: #fff !important;
-        page-break-inside: avoid !important;
-        margin-top: 6pt !important;
-      }
-      .sei-footer-strip {
-        background: #000 !important;
-        width: 24px !important; height: 2px !important;
-        margin-bottom: 5pt !important;
-      }
-      .sei-footer-name { font-size: 8pt !important; color: #000 !important; }
-      .sei-footer-cargo { font-size: 7pt !important; color: #555 !important; }
-      .sei-footer-norm { font-size: 6.5pt !important; color: #666 !important; }
-      .sei-footer-norm span { color: #000 !important; }
+    @media print{
+      .sidebar,.topbar,.btn-add,.btn-add-seg,.btn-calc,.btn-reset,.btn-del,.fab,.scanlines,.norma-box,.vel-alert,.pump-monitor{display:none!important;}
+      body{background:#fff!important;color:#000!important;display:block!important;}
+      .main{overflow:visible!important;}
+      .content-inner{padding:0!important;max-width:100%!important;}
+      .calc-grid{display:block!important;}
+      .col-right{margin-top:8pt!important;}
+      .result-panel{position:static!important;}
+      .panel,.seg-card,.result-panel,.tank-panel,.recs-panel,.vehicle-panel{border:1pt solid #ccc!important;background:#fff!important;color:#000!important;border-radius:4px!important;margin-bottom:8pt!important;}
+      .recs-panel{display:block!important;}
+      .combat-card{display:block!important;page-break-before:always;}
+      .sei-footer{border-top:1pt solid #ccc!important;background:#fff!important;}
     }
 
-
-    /* ── Segmentos de tendido ── */
-    .seg-lista { display:flex; flex-direction:column; gap:8px; margin-top:6px; }
-    .seg-card {
-      background:var(--s3); border:1px solid var(--border2);
-      border-radius:var(--rs); overflow:hidden;
-    }
-    .seg-card-head {
-      display:flex; align-items:center; gap:8px;
-      padding:7px 10px; background:rgba(56,189,248,.05);
-      border-bottom:1px solid var(--border2);
-    }
-    .seg-num-badge {
-      background:var(--sky); color:#000; border-radius:50%;
-      width:16px; height:16px; font-size:8px; font-weight:700;
-      display:inline-flex; align-items:center; justify-content:center; flex-shrink:0;
-    }
-    .seg-title { font-family:var(--ff-m); font-size:10px; color:var(--sky); flex:1; }
-    .seg-fl-badge {
-      font-family:var(--ff-m); font-size:9px; color:var(--amber);
-      background:rgba(245,159,0,.1); border:1px solid rgba(245,159,0,.2);
-      border-radius:3px; padding:1px 6px;
-    }
-    .btn-del-seg {
-      background:rgba(240,62,62,.1); border:1px solid rgba(240,62,62,.2);
-      color:#ff8787; border-radius:3px; font-size:11px; cursor:pointer;
-      padding:1px 6px; transition:.15s; line-height:1.4;
-    }
-    .btn-del-seg:hover { background:rgba(240,62,62,.2); }
-    .seg-card-body { padding:8px 10px; display:grid; grid-template-columns:1fr 1fr 1fr 1fr; gap:6px; }
-    .seg-field label { font-family:var(--ff-m); font-size:8.5px; color:var(--text-muted); display:block; margin-bottom:2px; text-transform:uppercase; letter-spacing:.04em; }
-    .seg-field select,
-    .seg-field input {
-      width:100%; background:var(--s2); border:1px solid var(--border2);
-      border-radius:4px; color:var(--text); font-family:var(--ff-m);
-      font-size:11px; padding:5px 7px; outline:none; transition:.15s;
-    }
-    .seg-field select:focus,
-    .seg-field input:focus { border-color:var(--sky); }
-    .seg-q-auto { font-family:var(--ff-m); font-size:9px; color:var(--text-muted); margin-top:3px; }
-    .btn-add-seg {
-      display:flex; align-items:center; justify-content:center; gap:6px;
-      width:100%; padding:8px; margin-top:6px;
-      background:rgba(56,189,248,.05); border:1px dashed rgba(56,189,248,.25);
-      border-radius:var(--rs); color:var(--sky); font-family:var(--ff-m);
-      font-size:10px; cursor:pointer; transition:.15s; letter-spacing:.04em;
-    }
-    .btn-add-seg:hover { background:rgba(56,189,248,.1); border-style:solid; }
-    .seg-resumen {
-      background:rgba(245,159,0,.07); border:1px solid rgba(245,159,0,.2);
-      border-radius:var(--rs); padding:7px 10px; margin-top:8px;
-      font-family:var(--ff-m); font-size:9.5px; color:var(--text-dim); line-height:1.7;
-    }
-    .seg-resumen strong { color:var(--amber); }
-
-    /* ── Accesorios con contador ── */
-    .acc-item-new {
-      display:flex; align-items:center; gap:6px;
-      background:var(--s3); border:1px solid var(--border2);
-      border-radius:var(--rs); padding:7px 10px; transition:.15s;
-    }
-    .acc-item-new:hover { border-color:var(--sky); }
-    .acc-item-new.activo { border-color:var(--sky); background:rgba(56,189,248,.07); }
-    .acc-nombre { font-size:12px; color:var(--text-dim); flex:1; }
-    .acc-item-new.activo .acc-nombre { color:var(--text); }
-    .acc-psi-lbl { font-family:var(--ff-m); font-size:9px; color:var(--text-muted); }
-    .acc-item-new.activo .acc-psi-lbl { color:var(--sky); }
-    .acc-qty-wrap { display:flex; align-items:center; gap:4px; }
-    .acc-qty-btn {
-      background:var(--s2); border:1px solid var(--border2); border-radius:4px;
-      color:var(--text-dim); font-size:13px; cursor:pointer; width:22px; height:22px;
-      display:flex; align-items:center; justify-content:center; transition:.12s; line-height:1;
-    }
-    .acc-qty-btn:hover { border-color:var(--sky); color:var(--sky); }
-    .acc-qty-val {
-      font-family:var(--ff-m); font-size:12px; font-weight:700; color:var(--sky);
-      min-width:16px; text-align:center;
-    }
-    .acc-total-preview {
-      font-family:var(--ff-m); font-size:9px; color:var(--amber);
-      margin-top:6px; padding:4px 8px; background:rgba(245,159,0,.07);
-      border-radius:4px; border:1px solid rgba(245,159,0,.15);
-      text-align:right;
-    }
-
-  /* ════ @media print — fondo blanco, B&N ════ */
-  @media print {
-    @page { size: A4 landscape; margin: 7mm 8mm; }
-    :root {
-      --bg:#fff; --surface:#fff; --s2:#f8f8f8; --s3:#f4f4f4;
-      --border:#ccc; --border2:#bbb;
-      --sky:#0b3e80; --sky2:#08316a; --sky-glow:transparent;
-      --amber:#a06000; --amber2:#7a4900; --amber-glow:transparent;
-      --red:#c00; --red-glow:transparent;
-      --green:#175c28; --green-glow:transparent;
-      --orange:#c85800; --teal:#0a6e56; --cyan:#0a6e8a;
-      --text:#000; --text-dim:#333; --text-muted:#666;
-      --accent:#0b3e80;
-    }
-    *, *::before, *::after {
-      -webkit-print-color-adjust: exact; print-color-adjust: exact;
-      box-shadow: none !important; text-shadow: none !important;
-      animation: none !important; transition: none !important;
-    }
-    html, body {
-      background: #fff !important; background-image: none !important;
-      color: #000 !important; font-size: 8.5pt !important;
-      line-height: 1.35 !important; margin: 0 !important; padding: 0 !important;
-      display: block !important;
-    }
-    .scanlines { display: none !important; }
-    .sidebar   { display: none !important; }
-    .main      { margin-left: 0 !important; }
-    .topbar    { display: none !important; }
-    .btn-calc, .btn-reset { display: none !important; }
-    .page-body { padding: 0 !important; max-width: 100% !important; }
-    .calc-grid { display: grid !important; grid-template-columns: 1fr 380px !important; gap: 8pt !important; }
-    .panel {
-      background: #fff !important; border: 1pt solid #999 !important;
-      border-radius: 2px !important; margin-bottom: 5pt !important;
-      page-break-inside: avoid !important;
-    }
-    .panel-header {
-      background: #efefef !important; border-bottom: 1pt solid #ccc !important;
-      padding: 3pt 7pt !important;
-    }
-    .panel-title { font-size: 7pt !important; font-weight: 700 !important; color: #000 !important; }
-    .panel-sub   { font-size: 6pt !important; color: #555 !important; }
-    .panel-icon  { display: none !important; }
-    .panel-body  { background: #fff !important; padding: 5pt 7pt !important; color: #000 !important; }
-    .field { margin-bottom: 4pt !important; }
-    .field-label { font-size: 7pt !important; color: #555 !important; margin-bottom: 1pt !important; }
-    .field-input {
-      background: #fafafa !important; border: 1pt solid #ccc !important;
-      color: #000 !important; font-size: 9pt !important; font-weight: 700 !important;
-      padding: 2pt 5pt !important;
-    }
-    .field-input-wrap { background: #fafafa !important; border: 1pt solid #ccc !important; border-radius: 2px !important; }
-    .field-unit { background: #ebebeb !important; color: #444 !important; border-left: 1pt solid #ccc !important; font-size: 7pt !important; }
-    .diam-btn {
-      background: #eee !important; border: 1pt solid #999 !important;
-      color: #000 !important; font-size: 7pt !important; padding: 2pt 5pt !important;
-    }
-    .diam-btn.sel {
-      background: #d0e8ff !important; border-color: #0b3e80 !important; color: #0b3e80 !important;
-    }
-    .caudal-btn {
-      background: #eee !important; border: 1pt solid #999 !important;
-      color: #000 !important; font-size: 7pt !important; padding: 2pt 5pt !important;
-    }
-    .caudal-btn.sel { background: #fff3d0 !important; border-color: #a06000 !important; color: #a06000 !important; }
-    .tramos-table { font-size: 7.5pt !important; }
-    .tramos-table th { background: #eee !important; border: 1pt solid #aaa !important; padding: 2pt 4pt !important; color: #000 !important; }
-    .tramos-table td { border: 1pt solid #ccc !important; padding: 2pt 4pt !important; color: #000 !important; }
-    .tramo-input { background: #fafafa !important; border: 1pt solid #ccc !important; color: #000 !important; width: 50px !important; font-size: 9pt !important; }
-    .tramo-label { color: #000 !important; font-size: 7.5pt !important; }
-    .tramo-ft    { color: #555 !important; font-size: 7pt !important; }
-    .acc-grid { grid-template-columns: 1fr 1fr !important; gap: 3pt !important; }
-    .acc-item { background: #fafafa !important; border: 1pt solid #ccc !important; padding: 3pt 5pt !important; }
-    .acc-item.checked { background: #e8f4ff !important; border-color: #0b3e80 !important; }
-    .acc-name { font-size: 7pt !important; color: #000 !important; }
-    .acc-psi  { font-size: 6.5pt !important; color: #555 !important; }
-    .acc-check { font-size: 8pt !important; }
-    /* Panel resultado */
-    .result-panel { background: #fff !important; border: 1pt solid #999 !important; border-radius: 2px !important; }
-    .result-idle  { display: none !important; }
-    .result-hero  { background: #fff !important; padding: 8pt 12pt !important; border-bottom: 1pt solid #ccc !important; }
-    .result-label { font-size: 7pt !important; color: #666 !important; }
-    .result-pdp   { font-size: 28pt !important; color: #000 !important; line-height: 1 !important; }
-    .result-unit  { font-size: 10pt !important; color: #444 !important; }
-    .result-rows  { padding: 6pt 10pt !important; }
-    .r-row   { border-bottom: 1pt solid #eee !important; padding: 3pt 0 !important; }
-    .r-key   { font-size: 7pt !important; color: #555 !important; }
-    .r-val   { font-size: 8pt !important; color: #000 !important; }
-    .r-val.hi { color: #0b3e80 !important; }
-    /* Detalle friccion */
-    .friccion-detail { background: #f8f8f8 !important; border: 1pt solid #ddd !important; padding: 5pt 7pt !important; margin: 3pt 10pt !important; }
-    .fd-title { font-size: 7pt !important; color: #555 !important; }
-    .fd-bar-wrap { background: #e0e0e0 !important; }
-    .fd-bar  { background: #0b3e80 !important; }
-    .fd-row  { font-size: 7pt !important; color: #000 !important; }
-    /* Alerta */
-    .result-alert { margin: 3pt 10pt !important; font-size: 7.5pt !important; padding: 4pt 8pt !important; }
-    .result-alert.ok     { background: #f0fff4 !important; border-color: #175c28 !important; color: #175c28 !important; }
-    .result-alert.warn   { background: #fffbec !important; border-color: #a06000 !important; color: #a06000 !important; }
-    .result-alert.danger { background: #fff5f5 !important; border-color: #c00 !important; color: #c00 !important; }
-    /* Comparador */
-    .cmp-box   { background: #f8f8f8 !important; border: 1pt solid #ccc !important; padding: 5pt 8pt !important; margin: 3pt 10pt !important; }
-    .cmp-title { font-size: 7pt !important; color: #555 !important; }
-    .cmp-input { background: #fafafa !important; border: 1pt solid #ccc !important; color: #000 !important; font-size: 9pt !important; }
-    /* Historial */
-    .hist-section { margin-top: 5pt !important; }
-    .hist-title   { font-size: 7pt !important; color: #555 !important; }
-    .hist-item    { background: #fafafa !important; border: 1pt solid #ddd !important; padding: 3pt 6pt !important; }
-    .hist-pdp     { font-size: 9pt !important; color: #0b3e80 !important; font-weight: 700 !important; }
-    .hist-info    { font-size: 7pt !important; color: #333 !important; }
-    .hist-ts      { font-size: 6.5pt !important; color: #777 !important; }
-    /* Norma box */
-    .norma-box  { background: #f8f8f8 !important; border: 1pt solid #ddd !important; padding: 5pt 8pt !important; margin-top: 5pt !important; }
-    .norma-title { font-size: 7pt !important; color: #0b3e80 !important; }
-    .norma-item  { font-size: 7pt !important; color: #333 !important; border-bottom-color: #eee !important; }
-    /* Footer */
-    footer { border-top: 1pt solid #ccc !important; padding: 5pt 8pt !important; background: #fff !important; }
-    .footer-strip { background: #0b3e80 !important; }
-    .footer-name  { font-size: 7.5pt !important; color: #000 !important; }
-    .footer-cred  { font-size: 7pt !important; color: #333 !important; }
-    .footer-norm  { font-size: 6.5pt !important; color: #555 !important; }
-    /* Modo doble pitón */
-    .dual-mode-banner { font-size: 7.5pt !important; padding: 3pt 7pt !important; margin-bottom: 4pt !important; }
-    .dual-info-box { background: #f0f8ff !important; border: 1pt solid #ccc !important; font-size: 7pt !important; }
-  }
-
-    /* ── Sistema de pitones dinámicos ── */
-    .pitones-lista { display:flex; flex-direction:column; gap:10px; margin-top:4px; }
-
-    .piton-card {
-      background:var(--s3); border:1px solid var(--border2);
-      border-radius:var(--rs); overflow:hidden;
-      transition: border-color .15s;
-    }
-    .piton-card:first-child { border-color: var(--sky); }
-
-    .piton-card-header {
-      display:flex; align-items:center; justify-content:space-between;
-      padding:8px 12px;
-      background:rgba(56,189,248,.06);
-      border-bottom:1px solid var(--border2);
-      cursor:pointer; user-select:none;
-    }
-    .piton-card-header:hover { background:rgba(56,189,248,.1); }
-    .piton-card-title {
-      font-family:var(--ff-m); font-size:11px; color:var(--sky);
-      letter-spacing:.05em; display:flex; align-items:center; gap:6px;
-    }
-    .piton-card-title .piton-num {
-      background:var(--sky); color:#000; border-radius:50%;
-      width:18px; height:18px; display:inline-flex;
-      align-items:center; justify-content:center;
-      font-size:9px; font-weight:700; flex-shrink:0;
-    }
-    .piton-card-summary {
-      font-family:var(--ff-m); font-size:9px; color:var(--text-muted);
-    }
-    .piton-card-actions { display:flex; gap:6px; align-items:center; }
-    .btn-del-piton {
-      background:rgba(240,62,62,.1); border:1px solid rgba(240,62,62,.2);
-      color:#ff8787; border-radius:4px; font-size:11px; cursor:pointer;
-      padding:2px 7px; transition:.15s; line-height:1.4;
-    }
-    .btn-del-piton:hover { background:rgba(240,62,62,.2); }
-
-    .piton-card-body { padding:10px 12px; }
-    .piton-card-body .field-label { font-size:10px; color:var(--text-muted); margin-bottom:3px; }
-
-    .piton-caudal-btns { display:flex; flex-wrap:wrap; gap:4px; margin-bottom:6px; }
-    .piton-caudal-btn {
-      padding:4px 9px; border-radius:4px; font-family:var(--ff-m); font-size:10px;
-      cursor:pointer; border:1px solid var(--border2); background:var(--s3);
-      color:var(--text-dim); transition:.12s;
-    }
-    .piton-caudal-btn:hover { border-color:var(--amber); color:var(--amber); }
-    .piton-caudal-btn.sel { background:var(--amber-glow); border-color:var(--amber); color:var(--amber); }
-
-    .piton-ramal-toggle {
-      margin-top:8px; padding-top:8px; border-top:1px dashed var(--border2);
-    }
-    .btn-toggle-ramal {
-      background:none; border:1px dashed var(--border2); border-radius:4px;
-      color:var(--text-muted); font-family:var(--ff-m); font-size:9px;
-      cursor:pointer; padding:4px 10px; width:100%; text-align:left;
-      transition:.15s; letter-spacing:.04em;
-    }
-    .btn-toggle-ramal:hover { border-color:var(--sky); color:var(--sky); }
-    .btn-toggle-ramal.open { border-color:var(--sky); color:var(--sky); background:rgba(56,189,248,.04); }
-
-    .piton-ramal-body {
-      margin-top:6px; padding:8px 0 0; display:none;
-    }
-    .piton-ramal-body.open { display:block; }
-    .piton-ramal-label {
-      font-family:var(--ff-m); font-size:9px; color:var(--sky);
-      letter-spacing:.05em; text-transform:uppercase; margin-bottom:6px;
-    }
-
-    .piton-fl-preview {
-      background:rgba(56,189,248,.05); border:1px solid rgba(56,189,248,.15);
-      border-radius:4px; padding:5px 9px; margin-top:6px;
-      font-family:var(--ff-m); font-size:9.5px; color:var(--text-dim);
-      display:flex; justify-content:space-between; align-items:center;
-    }
-    .piton-fl-preview strong { color:var(--sky); }
-
-    .btn-add-piton {
-      display:flex; align-items:center; justify-content:center; gap:6px;
-      width:100%; padding:9px; margin-top:6px;
-      background:rgba(56,189,248,.06); border:1px dashed rgba(56,189,248,.3);
-      border-radius:var(--rs); color:var(--sky); font-family:var(--ff-m);
-      font-size:11px; cursor:pointer; transition:.15s; letter-spacing:.04em;
-    }
-    .btn-add-piton:hover { background:rgba(56,189,248,.12); border-style:solid; }
-
-    .pitones-resumen {
-      background:rgba(56,189,248,.06); border:1px solid rgba(56,189,248,.2);
-      border-radius:var(--rs); padding:8px 12px; margin-top:8px;
-      font-family:var(--ff-m); font-size:10px; color:var(--text-dim); line-height:1.7;
-    }
-    .pitones-resumen strong { color:var(--sky); }
-    /* RECOMENDACIONES */
-    .recom-box { margin: 0 16px 16px; display: flex; flex-direction: column; gap: 6px; }
-    .recom-item { 
-      background: rgba(56, 189, 248, 0.04); 
-      border: 1px solid rgba(56, 189, 248, 0.12); 
-      border-radius: var(--rs); 
-      padding: 10px 12px; 
-      font-size: 11px; 
-      line-height: 1.4; 
-      display: flex; 
-      gap: 10px; 
-      align-items: flex-start;
-      animation: fadeInRecom 0.3s ease;
-    }
-    @keyframes fadeInRecom { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
-    .recom-icon { font-size: 14px; flex-shrink: 0; margin-top: -1px; }
-    .recom-text { color: var(--text-dim); }
-    .recom-text b { color: var(--sky); }
+    .combat-card{display:none;font-family:var(--ff-t);}
+    .cc-page{padding:10pt;}
+    .cc-header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2pt solid #000;padding-bottom:7pt;margin-bottom:8pt;}
+    .cc-brand-name{font-size:16pt;font-weight:800;text-transform:uppercase;}
+    .cc-brand-sub{font-size:7pt;color:#555;text-transform:uppercase;letter-spacing:2px;}
+    .cc-badges{display:flex;gap:8pt;}
+    .cc-badge{border:2pt solid #000;border-radius:4px;padding:4pt 9pt;text-align:center;min-width:65pt;}
+    .cc-badge-label{font-size:6.5pt;text-transform:uppercase;color:#666;}
+    .cc-badge-val{font-size:20pt;font-weight:800;line-height:1.1;font-family:'JetBrains Mono',monospace;}
+    .cc-badge-unit{font-size:8pt;font-weight:400;color:#555;}
+    .cc-body{display:grid;grid-template-columns:1fr 1fr;gap:10pt;}
+    .cc-section-title{font-size:7pt;font-weight:800;text-transform:uppercase;letter-spacing:2px;color:#666;border-bottom:1pt solid #ccc;padding-bottom:2pt;margin-bottom:5pt;}
+    .cc-row{display:flex;justify-content:space-between;padding:2.5pt 0;border-bottom:1pt solid #eee;}
+    .cc-row-label{font-size:8.5pt;color:#333;}
+    .cc-row-val{font-family:'JetBrains Mono',monospace;font-size:8.5pt;font-weight:700;}
+    .cc-seg-item{background:#f5f5f5;border:1pt solid #ddd;border-radius:3px;padding:4pt 6pt;margin-bottom:3pt;}
+    .cc-seg-title{font-size:8pt;font-weight:800;color:#333;}
+    .cc-seg-detail{font-size:7pt;color:#555;font-family:'JetBrains Mono',monospace;margin-top:1.5pt;}
+    .cc-svgwrap{border:1pt solid #ddd;border-radius:3px;padding:4pt;background:#fafafa;margin-top:5pt;}
+    .cc-status-box{border:1.5pt solid;border-radius:3px;padding:4pt 8pt;text-align:center;margin-top:6pt;}
+    .cc-status-val{font-size:11pt;font-weight:800;}
+    .cc-status-sub{font-size:7pt;color:#555;margin-top:2pt;}
+    .cc-footer-line{margin-top:6pt;padding-top:5pt;border-top:1pt solid #ccc;display:flex;justify-content:space-between;font-size:7pt;color:#666;}
+    .cc-sign-box{border:1pt solid #ccc;border-radius:3px;padding:3pt 8pt;text-align:center;}
+    .cc-sign-label{font-size:6pt;color:#888;text-transform:uppercase;margin-bottom:9pt;}
+    .cc-sign-line{border-top:1pt solid #000;font-size:6.5pt;color:#888;padding-top:2pt;}
   </style>
 </head>
 <body>
 <div class="scanlines"></div>
 
-<!-- SIDEBAR -->
 <aside class="sidebar">
-  <a class="sb-logo" href="dashboard_principal.html">
-    <div class="sb-logo-icon">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>
-    </div>
-    <div><div class="sb-logo-text">Sistema SEI</div><div class="sb-logo-sub">UAEAC &middot; ARFF Colombia</div></div>
-  </a>
-  <nav class="sb-nav">
-    <div class="sb-section">Principal</div>
-    <a class="sb-link" href="dashboard_principal.html">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>Dashboard Principal
-    </a>
-    <div class="sb-section">Calculos ARFF</div>
-    <a class="sb-link" href="arff_area_critica.html">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#f03e3e" stroke-width="2"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>Area Critica
-    </a>
-    <a class="sb-link" href="arff_rata_descarga_espuma.html">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#f59f00" stroke-width="2"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>Rata de Descarga
-    </a>
-    <a class="sb-link" href="arff_volumen_espuma.html">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>Volumen de Espuma
-    </a>
-    <a class="sb-link active" href="hidraulica_mangueras.html">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Hidraulica de Mangueras
-    </a>
-    <div class="sb-section">Gestion Operativa</div>
-    <a class="sb-link" href="gestion_flota_sei.html">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#0bc5a0" stroke-width="2"><path d="M10 17h4V5H2v12h3m5 0h4m5 0h3v-4h-3m-4 4h4a2 2 0 0 0 2-2v-4a2 2 0 0 0-2-2h-4"/><circle cx="7" cy="17" r="2"/><circle cx="17" cy="17" r="2"/></svg>Gestion de Flota SEI
-    </a>
-    <a class="sb-link" href="orden_del_dia.html">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#00e5ff" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Orden del Dia
-    </a>
-    <a class="sb-link" href="arff_equipos_salvamento.html">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#f76707" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>Equipos de Salvamento
-    </a>
-    <a class="sb-link" href="arff_personal_estacion.html">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Personal por Categoria
-    </a>
-    <a class="sb-link" href="etr_ejercicios.html">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#0bc5ea" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>Ejercicios ETR
-    </a>
-    <div style="height:1px;background:var(--border);margin:8px 12px;"></div>
-    <div id="sb-admin-section" style="display:none">
-      <div class="sb-section">Supervision</div>
-      <a class="sb-link" href="sei_dashboard_nacional.html">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" stroke-width="2"><path d="M3 3h18v18H3z"/><path d="M3 9h18M9 21V9"/></svg>Dashboard Nacional
-      </a>
-    </div>
+  <div class="sb-logo"><div class="sb-logo-icon">D</div><div class="sb-logo-text">ARFF COLOMBIA</div></div>
+  <nav>
+    <div class="sb-section">Menu Principal</div>
+    <a class="sb-link" href="dashboard_principal.html">Principal Dashboard</a>
+    <div class="sb-section">Calculadoras SEI</div>
+    <a class="sb-link active" href="#">Hidráulica de Mangueras</a>
   </nav>
   <div class="sb-user">
     <div class="sb-user-name" id="sb-nombre">Cargando...</div>
     <div class="sb-user-role" id="sb-rol">OPERADOR</div>
-    <button class="sb-logout" onclick="if(window.seiLogout)window.seiLogout()">Cerrar Sesion</button>
   </div>
 </aside>
 
-<!-- MAIN -->
 <div class="main">
   <header class="topbar">
-    <div class="tb-left">
-      <div class="tb-badge modulo">MODULO 10</div>
-      <div class="tb-title">Hidraulica de Mangueras &middot; PDP</div>
-    </div>
-    <div class="tb-right">
-      <div class="online-dot"></div>
-      <div class="tb-clock"><span id="tb-clock">--:--:--</span></div>
-    </div>
+    <div class="tb-title">Hidráulica de Mangueras · Compensación de Presión ARFF</div>
+    <div class="tb-clock" id="tb-clock">00:00:00</div>
   </header>
 
-  <div class="page-body">
+  <div class="content-inner">
     <div class="mod-header">
-      <div class="mod-badge">Modulo 10 &mdash; Calculo Hidraulico Profesional</div>
-      <h1 class="mod-title">Presion de <span>Descarga de Bomba</span></h1>
-      <p class="mod-sub">Calculadora hidraulica con formula exacta Darcy-Weisbach. Elimina el error de tablas fijas: la friccion se calcula para el caudal real ingresado. Modo aeronatico con 97 aeronaves colombianas.</p>
+      <div class="mod-badge">NFPA 1901 TABLE C.5.1.1 · MODO BOMBEO ESTACIONARIO</div>
+      <h1 class="mod-title">Presión de <span>Consigna para el Maquinista</span></h1>
+      <p class="mod-sub">El sistema calcula automáticamente la presión que debe marcar el manómetro de la bomba para que lleguen <strong>100 psi</strong> a cada pitón, compensando todas las pérdidas del tendido.</p>
     </div>
 
-
-
-    <div class="calc-grid">
-      <!-- COLUMNA IZQUIERDA — INPUTS -->
-      <div>
-
-        <!-- SEGMENTOS DE TENDIDO -->
-        <div class="panel">
-          <div class="panel-header">
-            <div class="panel-icon" style="background:rgba(56,189,248,.1)">&#x1F4CF;</div>
-            <div>
-              <div class="panel-title">Tendido de Mangueras</div>
-              <div class="panel-sub">Cada segmento tiene su propio diámetro, cantidad y longitud — FL se suma por tramo</div>
-            </div>
+    <!-- VEHICLE SELECTOR -->
+    <div class="vehicle-panel">
+      <div class="vehicle-header">
+        <span style="font-size:17px">🚒</span>
+        <span style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--sky)">Vehículo / Bomba</span>
+        <span style="margin-left:auto;font-family:var(--ff-m);font-size:9px;color:var(--text-muted)">Misma presión para todas las salidas — sin regulación individual</span>
+      </div>
+      <div style="padding:14px 18px;">
+        <div style="display:grid;grid-template-columns:1fr auto;gap:12px;align-items:end;margin-bottom:12px;">
+          <div>
+            <label style="font-size:10px;color:var(--text-muted);text-transform:uppercase;display:block;margin-bottom:4px;">Vehículo ARFF</label>
+            <select class="field-input" id="vehicle-select" onchange="onVehicleChange()">
+              <option value="panther_r600">Rosenbauer Panther (R600) — 1850 GPM</option>
+              <option value="panther_n80">Rosenbauer Panther (N80) — 2250 GPM</option>
+              <option value="panther_n110">Rosenbauer Panther (N110) — 3000 GPM</option>
+              <option value="striker">Oshkosh Striker (Waterous CRQB) — 2000 GPM</option>
+              <option value="iturri_s">Iturri 4x4 pequeño — 1000 GPM</option>
+              <option value="iturri_m">Iturri 4x4 mediano — 1500 GPM</option>
+              <option value="iturri_toro">Iturri Toro / 6x6 — 2500 GPM</option>
+              <option value="naffco_4x4">NAFFCO 4x4 — 1250 GPM</option>
+              <option value="naffco_6x6">NAFFCO 6x6 — 2500 GPM</option>
+              <option value="custom">⚙ Personalizado</option>
+            </select>
           </div>
-          <div class="panel-body">
-
-            <div style="font-family:var(--ff-m);font-size:9px;color:var(--text-muted);margin-bottom:8px;line-height:1.6">
-              Agregue un segmento por cada grupo de mangueras del mismo diámetro.
-              El caudal de cada segmento se toma del Q total de la bomba dividido entre los pitones que sirve.
-            </div>
-
-            <!-- Lista de segmentos -->
-            <div class="seg-lista" id="seg-lista"></div>
-
-            <!-- Botón agregar segmento -->
-            <button class="btn-add-seg" onclick="agregarSegmento()">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-              </svg>
-              Agregar segmento de manguera
-            </button>
-
-            <!-- Resumen FL tendido -->
-            <div class="seg-resumen" id="seg-resumen" style="display:none"></div>
-
+          <div id="custom-fields" style="display:none;display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;">
+            <div><label style="font-size:9px;color:var(--text-muted);display:block;margin-bottom:3px">GPM @150psi</label><input class="field-input" type="number" id="c-q150" value="1500" oninput="onVehicleChange()"></div>
+            <div><label style="font-size:9px;color:var(--text-muted);display:block;margin-bottom:3px">GPM @200psi</label><input class="field-input" type="number" id="c-q200" value="1100" oninput="onVehicleChange()"></div>
+            <div><label style="font-size:9px;color:var(--text-muted);display:block;margin-bottom:3px">GPM @250psi</label><input class="field-input" type="number" id="c-q250" value="750" oninput="onVehicleChange()"></div>
           </div>
         </div>
-
-        <!-- CAUDAL Y PITONES -->
-        <div class="panel">
-          <div class="panel-header">
-            <div class="panel-icon" style="background:rgba(245,159,0,.1)">&#x1F4A7;</div>
-            <div>
-              <div class="panel-title">Pitones y Caudal Operacional</div>
-              <div class="panel-sub">El caudal total se calcula autom&aacute;ticamente seg&uacute;n los pitones activos</div>
-            </div>
-          </div>
-          <div class="panel-body">
-            <div style="font-family:var(--ff-m);font-size:9.5px;color:var(--text-muted);margin-bottom:12px;line-height:1.5;background:rgba(245,159,0,0.05);padding:8px;border-radius:4px;border:1px solid rgba(245,159,0,0.1)">
-              <span style="color:var(--amber);font-weight:700">&#x2139; SISTEMA AUTOM&Aacute;TICO:</span> Cada pit&oacute;n define su propio caudal (GPM). La bomba debe suministrar la suma total de todos los pitones.
-            </div>
-
-            <!-- Lista de pitones -->
-            <div class="pitones-lista" id="pitones-lista"></div>
-
-            <!-- Botón agregar pitón -->
-            <button class="btn-add-piton" onclick="agregarPiton()">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-              </svg>
-              Agregar piton
-            </button>
-
-            <!-- Resumen distribucion de caudal -->
-            <div class="pitones-resumen" id="pitones-resumen" style="display:none"></div>
-
-          </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px;">
+          <div class="curve-pt">@ 150 psi<span id="vc-150">—</span></div>
+          <div class="curve-pt">@ 200 psi<span id="vc-200">—</span></div>
+          <div class="curve-pt">@ 250 psi<span id="vc-250">—</span></div>
         </div>
 
-        <!-- ELEVACION -->
-        <div class="panel">
-          <div class="panel-header">
-            <div class="panel-icon" style="background:rgba(64,192,87,.1)">&#x1F53C;</div>
-            <div><div class="panel-title">Elevacion</div><div class="panel-sub">0 = terreno plano, no aplica perdida por altura</div></div>
+        <!-- PUMP MONITOR — presión actual que el maquinista ha seteado -->
+        <div class="pump-monitor">
+          <div class="pm-label">📟 Presión actual en manómetro de bomba (feedback en tiempo real)</div>
+          <div class="pm-slider-row">
+            <span style="font-family:var(--ff-m);font-size:10px;color:var(--text-muted)">0</span>
+            <input type="range" class="pm-slider" id="pm-slider" min="0" max="300" step="5" value="0" oninput="onPumpMonitor()">
+            <span style="font-family:var(--ff-m);font-size:10px;color:var(--text-muted)">300</span>
+            <div class="pm-val"><span id="pm-val-num">0</span> psi</div>
           </div>
-          <div class="panel-body">
-            <!-- ELEVACION MANUAL -->
-            <div id="elev-manual">
-              <div class="g2">
-                <div class="field">
-                  <div class="field-label">Elevacion</div>
-                  <div class="field-input-wrap">
-                    <input class="field-input" id="inp-elev" type="number" value="0" min="-99" max="999" placeholder="0"/>
-                    <span class="field-unit" id="elev-unit">m</span>
-                  </div>
-                  <div class="field-note">Positivo = subida &uarr; &nbsp;&nbsp; Negativo = bajada &darr;</div>
-                </div>
-                <div class="field">
-                  <div class="field-label">Unidad</div>
-                  <select class="field-input" id="sel-elev-unit" onchange="onElevUnit()">
-                    <option value="m">Metros</option>
-                    <option value="pisos">Pisos</option>
-                    <option value="ft">Pies</option>
-                  </select>
-                </div>
-              </div>
-              
-              <!-- REFERENCIA DE ALTURA -->
-              <div class="field-note" style="margin-top:12px; background:rgba(56,189,248,.05); border:1px solid rgba(56,189,248,.2); border-radius:var(--rs); padding:10px;">
-                <div style="color:var(--sky); margin-bottom:6px; font-weight:600;"><span style="font-size:12px">&#x2139;</span> Altura promedio del plano del ala por tipo de aeronave:</div>
-                <div style="display:grid; grid-template-columns:1fr 1fr; gap:4px; line-height:1.4;">
-                  <div>• Aviación ligera: <strong style="color:var(--text)">1.2 m</strong></div>
-                  <div>• Jets comerciales: <strong style="color:var(--text)">1.5 m</strong></div>
-                  <div>• Turboprop (turbohélice): <strong style="color:var(--text)">2.2 m</strong></div>
-                  <div>• Transporte militar: <strong style="color:var(--text)">3.0 m</strong></div>
-                </div>
-              </div>
-              
-            </div>
-          </div>
-        </div>
-
-        <!-- ACCESORIOS -->
-        <div class="panel">
-          <div class="panel-header">
-            <div class="panel-icon" style="background:rgba(124,58,237,.1)">&#x1F527;</div>
-            <div><div class="panel-title">Accesorios en Linea</div><div class="panel-sub">Perdidas adicionales por equipos conectados</div></div>
-          </div>
-          <div class="panel-body">
-            <div style="display:flex;flex-direction:column;gap:5px" id="acc-lista"></div>
-            <div class="acc-total-preview" id="acc-total-preview" style="display:none"></div>
-          </div>
-        </div>
-
-        <!-- BTN CALCULAR -->
-        <button class="btn-calc" onclick="calcular()">&#x26A1; CALCULAR PDP</button>
-        <button class="btn-reset" onclick="resetAll()">&#x21BA; Limpiar todo</button>
-        <button onclick="exportPDF()" style="width:100%;padding:10px;margin-top:6px;
-          background:rgba(56,189,248,.1);border:1px solid rgba(56,189,248,.3);
-          color:var(--sky);border-radius:var(--rs);font-family:var(--ff-m);font-size:11px;
-          cursor:pointer;letter-spacing:.05em;transition:.15s;"
-          onmouseover="this.style.background='rgba(56,189,248,.18)'"
-          onmouseout="this.style.background='rgba(56,189,248,.1)'">
-          &#x1F4CB; EXPORTAR PDF
-        </button>
-
-      </div><!-- /col izquierda -->
-
-      <!-- COLUMNA DERECHA — RESULTADO -->
-      <div>
-        <div class="result-panel" id="result-panel">
-          <div class="result-idle" id="result-idle">
-            <div class="idle-icon">&#x1F4CF;</div>
-            <div>Complete los parametros<br>y presione CALCULAR PDP</div>
-          </div>
-          <div id="result-body" style="display:none">
-            <!-- HERO PDP -->
-            <div class="result-hero">
-              <div class="result-label">PRESION DE DESCARGA DE BOMBA REQUERIDA</div>
-              <div class="result-pdp" id="res-pdp">0</div>
-              <div class="result-unit">PSI</div>
-            </div>
-            <!-- DESGLOSE -->
-            <div class="result-rows">
-              <div class="r-row"><span class="r-key">NP — Presion en piton</span><span class="r-val hi" id="res-np">— psi</span></div>
-              <div class="r-row"><span class="r-key">FL — Friccion total</span><span class="r-val" id="res-fl">— psi</span></div>
-              <div class="r-row" id="row-fl-troncal" style="display:none;padding-left:12px"><span class="r-key" style="font-size:10px;color:var(--text-muted)">&#x2514; FL troncal (Q total)</span><span class="r-val" style="font-size:10px" id="res-fl-troncal">—</span></div>
-              <div class="r-row" id="row-fl-ramal"   style="display:none;padding-left:12px"><span class="r-key" style="font-size:10px;color:var(--text-muted)">&#x2514; FL ramal (Q/2 c/u)</span><span class="r-val" style="font-size:10px" id="res-fl-ramal2">—</span></div>
-              <div class="r-row"><span class="r-key">EP — Presion por elevacion</span><span class="r-val" id="res-ep">— psi</span></div>
-              <div class="r-row"><span class="r-key">AL — Accesorios</span><span class="r-val" id="res-al">— psi</span></div>
-              <div class="r-row" style="border-top:1px solid var(--border2);margin-top:4px;padding-top:8px">
-                <span class="r-key">Longitud total linea</span>
-                <span class="r-val" id="res-long">— ft</span>
-              </div>
-              <div class="r-row"><span class="r-key" id="lbl-res-q">Caudal bomba</span><span class="r-val" id="res-q">— GPM</span></div>
-              <div class="r-row" id="row-q-piton" style="display:none;padding-left:12px"><span class="r-key" style="font-size:10px;color:var(--text-muted)">&#x2514; Q por piton</span><span class="r-val" style="font-size:10px" id="res-q-piton">—</span></div>
-              <div class="r-row"><span class="r-key">Coef. friccion C</span><span class="r-val" id="res-c">—</span></div>
-            </div>
-
-            <!-- DETALLE FRICCION -->
-            <div class="friccion-detail" id="friccion-detail">
-              <div class="fd-title">
-                <span>Distribucion de perdidas</span>
-                <span class="fd-warn" id="fd-warn-txt"></span>
-              </div>
-              <div id="fd-bars"></div>
-            </div>
-
-            <!-- ALERTA -->
-            <div class="result-alert ok" id="result-alert">Calculo listo</div>
-
-            <!-- RECOMENDACIONES -->
-            <div id="recom-box" class="recom-box" style="display:none"></div>
-
-            <!-- COMPARADOR -->
-            <div class="cmp-box">
-              <div class="cmp-title">&#x1F50D; Comparar con manometro de bomba</div>
-              <div class="cmp-row">
-                <div>
-                  <div style="font-family:var(--ff-m);font-size:9px;color:var(--text-muted);margin-bottom:4px">PRESION ACTUAL (psi)</div>
-                  <input class="cmp-input" id="cmp-actual" type="number" placeholder="140" oninput="comparar()"/>
-                </div>
-                <div class="cmp-result" id="cmp-result">—</div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- HISTORIAL LOCAL -->
-        <div class="hist-section" id="hist-section" style="display:none">
-          <div class="hist-title">Calculos recientes (sesion)</div>
-          <div class="hist-list" id="hist-list"></div>
-        </div>
-
-        <!-- NOTA DARCY -->
-        <div class="norma-box">
-          <div class="norma-title">Fundamento Tecnico</div>
-          <div class="norma-item"><strong>FL = C &times; (Q/100)&sup2; &times; (L/100)</strong> &mdash; Darcy-Weisbach adaptado NFPA</div>
-          <div class="norma-item"><strong>Error de tabla fija:</strong> a 200 GPM la friccion es 78% mayor que a 150 GPM en la misma manguera. Esta app calcula para el caudal real ingresado.</div>
-          <div class="norma-item"><strong>EP = elevacion(m) &times; 1.42 psi/m</strong> &mdash; equivalente hidraulico. En modo aeronautico se usa la altura real del plano del ala.</div>
-          <div class="norma-item"><strong>PDP = NP + FL + EP + AL</strong> &mdash; formula completa de presion de descarga de bomba.</div>
-          <div class="norma-item"><strong>Multi-piton:</strong> PDP = NP_max + FL_troncal(Q_total) + FL_ramal_max(Q/N) + EP + AL. La troncal usa Q bomba completo; cada ramal usa el Q de su piton. Cuantos mas pitones, menor Q por piton → menor FL ramal, pero igual FL troncal.</div>
+          <div class="pm-note" id="pm-note">↑ Mueva el slider para ver qué presión llega actualmente a cada pitón</div>
         </div>
       </div>
-    </div><!-- /calc-grid -->
+    </div>
 
-  </div><!-- /page-body -->
+    <!-- DIAGRAM -->
+    <div class="panel" style="margin-bottom:22px;">
+      <div class="panel-header">
+        <div class="panel-icon" style="background:rgba(56,189,248,.1)">🗺️</div>
+        <div class="panel-title" style="color:var(--sky)">Diagrama del Sistema</div>
+        <span style="margin-left:auto;font-family:var(--ff-m);font-size:9px;color:var(--text-muted)">Bomba → Segmentos independientes → Pitones</span>
+      </div>
+      <div id="schematic-svg-wrap"><div class="placeholder-msg" style="padding:20px;color:var(--text-muted);font-size:12px;text-align:center;font-family:var(--ff-m)">⚙ Configure y calcule para ver el diagrama</div></div>
+    </div>
 
-  <!-- FOOTER -->
+    <div class="calc-grid">
+      <div class="col-left">
+
+        <!-- TANK -->
+        <div class="tank-panel">
+          <div class="tank-header">
+            <span style="font-size:17px">🛢️</span>
+            <div class="tank-header-title" style="color:var(--sky)">Autonomía de Tanque</div>
+            <span style="margin-left:auto;font-family:var(--ff-m);font-size:9px;color:var(--text-muted)">Basada en caudal real (incluye excesos)</span>
+          </div>
+          <div class="tank-body">
+            <div class="tank-input-row">
+              <div class="tank-field"><label>Capacidad</label><input type="number" id="tank-cap" placeholder="ej. 1500" min="100" max="9999" oninput="updateTank()"></div>
+              <div class="tank-field"><label>Unidad</label><select id="tank-unit" onchange="updateTank()"><option value="gal">Galones (GAL)</option><option value="lit">Litros (L)</option></select></div>
+            </div>
+            <div class="tank-result-row">
+              <div class="tank-stat"><div class="tank-stat-val" id="tank-min" style="color:var(--sky)">—</div><div class="tank-stat-lbl">Autonomía</div></div>
+              <div class="tank-stat"><div class="tank-stat-val" id="tank-sec" style="color:var(--text-dim)">—</div><div class="tank-stat-lbl">Segundos</div></div>
+            </div>
+            <div class="tank-bar-track"><div class="tank-bar-fill" id="tank-bar" style="width:0%"></div></div>
+            <div class="tank-bar-labels"><span>0</span><span id="tank-bar-mid">—</span><span id="tank-cap-label">—</span></div>
+            <div id="tank-warning"></div>
+          </div>
+        </div>
+
+        <!-- VELOCITY ALERT -->
+        <div class="vel-alert" id="vel-alert">
+          <div class="vel-alert-title">🚨 VELOCIDAD EXCESIVA — NFPA 1962 §4.2 — RIESGO DE GOLPE DE ARIETE</div>
+          <p style="font-size:11px;color:var(--text-dim);margin-bottom:7px;">Velocidad &gt;15 ft/s genera golpe de ariete, fatiga de manguera y daño de acoples. Corrija el diámetro antes de operar:</p>
+          <div id="vel-alert-items"></div>
+        </div>
+
+        <!-- SEGMENTS -->
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-icon" style="background:rgba(56,189,248,.1)">🔌</div>
+            <div class="panel-title" style="color:var(--sky)">Líneas de Manguera</div>
+            <span style="margin-left:auto;font-family:var(--ff-m);font-size:9px;color:var(--text-muted)">Cada segmento = una salida independiente del vehículo</span>
+          </div>
+          <div class="panel-body">
+            <div class="seg-lista" id="seg-lista"></div>
+            <button class="btn-add-seg" onclick="agregarSegmento()" style="margin-top:12px;">+ Agregar Segmento (nueva salida)</button>
+          </div>
+        </div>
+
+        <button class="btn-calc" onclick="calcular()">⚡ CALCULAR PRESIÓN DE CONSIGNA</button>
+        <button class="btn-reset" onclick="resetAll()">⟳ Reiniciar</button>
+
+        <!-- RECS -->
+        <div class="recs-panel" id="recs-panel">
+          <div class="recs-header">
+            <span style="font-size:15px">⚠️</span>
+            <span style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--amber)">Recomendaciones Técnicas</span>
+          </div>
+          <div class="recs-body" id="recs-body"></div>
+        </div>
+
+        <div class="norma-box">
+          <div class="norma-title">Base de Cálculo</div>
+          <p><strong>Compensación:</strong> PDP = 100 psi (NP fijo) + FL + AL + EP — La bomba compensa todas las pérdidas para que lleguen 100 psi al pitón</p>
+          <p style="margin-top:5px"><strong>FL (NFPA 1901):</strong> C × (Q/100)² × (L/100) psi · Lona +20%</p>
+          <p style="margin-top:5px"><strong>Caudal real boquilla:</strong> Q = 29.7 × d² × √NP_real (Torricelli/NFPA)</p>
+          <p style="margin-top:5px"><strong>Exceso de presión:</strong> NP_real = PDP_bomba − Pérdidas_seg · Líneas no críticas reciben más de 100 psi → caudal aumenta</p>
+          <p style="margin-top:5px"><strong>Límite NFPA 1962:</strong> PDP ≤ 250 psi · V ≤ 15 ft/s</p>
+        </div>
+      </div>
+
+      <div class="col-right">
+        <div class="result-panel">
+          <div id="result-idle" style="padding:30px;text-align:center;color:var(--text-muted);font-size:12px;font-family:var(--ff-m);">Configure los segmentos y calcule</div>
+          <div id="result-body" style="display:none">
+
+            <!-- THE NUMBER -->
+            <div class="consigna-head">
+              <div class="consigna-label">Presión de Consigna — Maquinista</div>
+              <div class="consigna-num fadeIn" id="res-pdp" style="color:var(--sky)">0<span class="consigna-unit">psi</span></div>
+              <div class="consigna-status" id="result-status">—</div>
+            </div>
+
+            <div class="result-body-inner">
+
+              <!-- Pump capacity -->
+              <div class="section-title" style="margin-top:0;padding-top:0;border-top:none;">Capacidad de Bomba</div>
+              <div id="pump-cap-box"></div>
+
+              <!-- Critical segment breakdown -->
+              <div class="section-title">Desglose Segmento Crítico</div>
+              <div class="res-item"><span class="res-label">NP objetivo (fijo)</span><span class="res-val" style="color:var(--purple)" id="res-np">100 psi</span></div>
+              <div class="res-item"><span class="res-label">Fricción FL</span><span class="res-val" style="color:var(--red)" id="res-fl">—</span></div>
+              <div class="res-item"><span class="res-label">Accesorios AL</span><span class="res-val" style="color:var(--amber)" id="res-al">—</span></div>
+              <div class="res-item"><span class="res-label">Elevación EP</span><span class="res-val" style="color:var(--sky)" id="res-ep">—</span></div>
+              <div class="res-item" style="border-bottom:none;padding-top:10px;"><span class="res-label" style="font-weight:800">Caudal Total (automático)</span><span class="res-val" style="color:var(--amber)" id="res-q">—</span></div>
+
+              <!-- Per-segment results -->
+              <div class="section-title" id="segs-section-title">Análisis por Segmento</div>
+              <div id="segs-summary"></div>
+
+              <!-- Velocity summary -->
+              <div id="res-velocidades" style="display:none">
+                <div class="section-title">Velocidad por Segmento</div>
+                <div id="res-vel-items"></div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <footer class="sei-footer">
     <div class="sei-footer-strip"></div>
-    <div class="sei-footer-name">Dise&ntilde;o: WILLINGTON PE&Ntilde;A MONTENEGRO</div>
-    <div class="sei-footer-cargo">Bombero Aeronáutico &middot; BAE 373</div>
-    <div class="sei-footer-norm">
-      ARFF Colombia &nbsp;&middot;&nbsp;
-      <span>NFPA 1963</span> &nbsp;&middot;&nbsp;
-      <span>OACI Doc 9137</span> &nbsp;&middot;&nbsp;
-      Darcy-Weisbach &nbsp;&middot;&nbsp; Módulo 10
-    </div>
-    <div class="sei-footer-norm" style="margin-top:3px">
-      Consultas oficiales: <span>contacto@calculosarff.com</span>
-    </div>
+    <div class="sei-footer-name">Diseño: Willington Peña Montenegro</div>
+    <div class="sei-footer-cargo">Bombero Aeronáutico · BAE 373</div>
+    <div class="sei-footer-norm">ARFF Colombia · <span>NFPA 1901</span> · NFPA 1962 · <span>Table C.5.1.1</span></div>
   </footer>
-</div><!-- /main -->
+</div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="supabase-config.js"></script>
-<script src="auth-guard.js"></script>
+<!-- FAB -->
+<div class="fab">
+  <button class="fab-btn" onclick="exportPDF()">
+    <span class="fab-tooltip">Exportar Tarjeta de Combate</span>
+    <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+      <polyline points="14,2 14,8 20,8"/><line x1="12" y1="18" x2="12" y2="12"/><polyline points="9,15 12,18 15,15"/>
+    </svg>
+  </button>
+</div>
+
+<!-- COMBAT CARD -->
+<div class="combat-card" id="combat-card">
+  <div class="cc-page">
+    <div class="cc-header">
+      <div>
+        <div class="cc-brand-name">ARFF Colombia</div>
+        <div class="cc-brand-sub">Tarjeta de Combate — Presión de Consigna</div>
+        <div style="font-size:6.5pt;color:#888;margin-top:2pt;font-family:'JetBrains Mono',monospace" id="cc-ts">—</div>
+        <div style="font-size:6pt;color:#aaa;font-family:'JetBrains Mono',monospace;margin-top:1.5pt" id="cc-vehicle-label">—</div>
+      </div>
+      <div class="cc-badges">
+        <div class="cc-badge"><div class="cc-badge-label">Consigna Bomba</div><div class="cc-badge-val" id="cc-pdp">—<span class="cc-badge-unit"> psi</span></div></div>
+        <div class="cc-badge"><div class="cc-badge-label">Caudal Total</div><div class="cc-badge-val" id="cc-q-badge">—<span class="cc-badge-unit"> GPM</span></div></div>
+        <div class="cc-badge" id="cc-aut-badge" style="display:none"><div class="cc-badge-label">Autonomía</div><div class="cc-badge-val" id="cc-aut">—</div></div>
+      </div>
+    </div>
+    <div class="cc-body">
+      <div>
+        <div class="cc-section-title">Desglose Segmento Crítico</div>
+        <div class="cc-row"><span class="cc-row-label">NP objetivo</span><span class="cc-row-val">100 psi</span></div>
+        <div class="cc-row"><span class="cc-row-label">Fricción FL</span><span class="cc-row-val" id="cc-fl">—</span></div>
+        <div class="cc-row"><span class="cc-row-label">Accesorios AL</span><span class="cc-row-val" id="cc-al">—</span></div>
+        <div class="cc-row"><span class="cc-row-label">Elevación EP</span><span class="cc-row-val" id="cc-ep">—</span></div>
+        <div id="cc-tank-sec" style="margin-top:6pt;display:none">
+          <div class="cc-section-title">Tanque</div>
+          <div class="cc-row"><span class="cc-row-label">Capacidad</span><span class="cc-row-val" id="cc-tcap">—</span></div>
+          <div class="cc-row"><span class="cc-row-label">Autonomía</span><span class="cc-row-val" id="cc-ttime">—</span></div>
+        </div>
+        <div class="cc-status-box" id="cc-status-box" style="margin-top:6pt">
+          <div class="cc-status-val" id="cc-sv">—</div>
+          <div class="cc-status-sub" id="cc-ss">—</div>
+        </div>
+        <div style="margin-top:6pt">
+          <div class="cc-section-title">Firmas</div>
+          <div style="display:flex;gap:7pt;margin-top:3pt">
+            <div class="cc-sign-box" style="flex:1"><div class="cc-sign-label">Operador</div><div class="cc-sign-line">Firma</div></div>
+            <div class="cc-sign-box" style="flex:1"><div class="cc-sign-label">Supervisor</div><div class="cc-sign-line">Firma</div></div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="cc-section-title">Segmentos — Exceso de Presión en Pitón</div>
+        <div id="cc-segs"></div>
+        <div style="margin-top:5pt">
+          <div class="cc-section-title">Diagrama</div>
+          <div class="cc-svgwrap" id="cc-svgwrap"><div style="color:#aaa;font-size:7pt;text-align:center">—</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="cc-footer-line">
+      <div><div style="font-weight:800">Willington Peña Montenegro — Bombero Aeronáutico BAE 373</div><div>ARFF Colombia · NFPA 1901 Table C.5.1.1 · NFPA 1962 · Compensación de Presión</div></div>
+    </div>
+  </div>
+</div>
+
 <script>
+/* ═══════════════════════════════════════════════════════════════════════
+   MOTOR HIDRÁULICO ARFF — COMPENSACIÓN DE PRESIÓN
+   NFPA 1901 Table C.5.1.1 · Modo Bombeo Estacionario
+   
+   LÓGICA CENTRAL:
+   • NP objetivo fijo = 100 psi (ajustable por pitón si se requiere)
+   • PDP_seg = 100 + FL + AL + EP  → lo que necesita cada línea
+   • PDP_bomba = MAX(PDP_seg)      → lo que marca el manómetro
+   • NP_real_seg = MAX(0, PDP_bomba − Pérdidas_seg)  → lo que llega al pitón
+   • Q_real_boquilla = 29.7 × d² × √NP_real (Torricelli/NFPA)
+   • Exceso = NP_real − 100 psi   → lo que recibe de más el pitonero
+   
+   CORRECCIONES v2:
+   • FL paralelo: cant mangueras en paralelo → Q/cant por manguera (no serie)
+   • AL usa diámetro mínimo (más restrictivo) del segmento
+   • NP_real clamped a 0 → evita NaN; flag np_insuf si pérdidas > PDP
+   • PSI_PER_M = 1.4223 (exacto: ρgh = 9807 Pa / 6894.76 Pa/psi)
+   • qDisp extrapola linealmente para psi < 150 (no meseta plana)
+   • LONA_F documentado con fuente IFSTA
+═══════════════════════════════════════════════════════════════════════ */
 
+// ─── CONSTANTES ───────────────────────────────────────────────────────
+const C_NFPA    = {'1.5':24,'1.75':15.5,'2':8,'2.5':2,'3':0.8,'4':0.2,'5':0.08};
+const D_REAL_IN = {'1.5':1.61,'1.75':1.88,'2':2.10,'2.5':2.62,'3':3.10,'4':4.10,'5':5.10};
+// Factor de corrección para manguera de lona vs. caucho.
+// La NFPA 1961/1962 no publica un valor único; 1.20 es el coeficiente conservador
+// citado en IFSTA Fire Hydraulics (6th ed., Cap. 4) y usado en la práctica ARFF.
+// Rango bibliográfico: 1.15–1.25 según fabricante y estado de la manguera.
+const LONA_F    = 1.20; // [IFSTA Fire Hydraulics 6th ed. Cap.4 — valor conservador]
+const V_MAX     = 15.0;   // ft/s (NFPA 1962)
+const NP_MAX_NFPA = 250;  // psi — límite NFPA 1962 manguera
+const PSI_PER_M = 1.4223;  // ρ·g·h: 1000 kg/m³ × 9.807 m/s² × 1 m = 9807 Pa / 6894.76 Pa/psi
+const GPM_TO_M3S= 6.30902e-5;
+const G         = 9.807;
 
-/* ══════════ COEFICIENTES C POR DIAMETRO ══════════
-   Basados en NFPA 1963 / IFSTA Pumping Apparatus
-   C = psi / (Q/100)^2 / 100ft
-*/
-const COEF = {
-  1.5:  24.0,
-  1.75: 15.5,
-  2.0:   8.0,
-  2.5:   2.0,
-  3.0:   0.8,
-  4.0:   0.2,
+// ─── BOMBAS ARFF ─────────────────────────────────────────────────────
+const BOMBAS = {
+  panther_r600:{nombre:'Rosenbauer Panther R600', q150:1850,q200:1400,q250:1000},
+  panther_n80: {nombre:'Rosenbauer Panther N80',  q150:2250,q200:1700,q250:1200},
+  panther_n110:{nombre:'Rosenbauer Panther N110', q150:3000,q200:2250,q250:1600},
+  striker:     {nombre:'Oshkosh Striker (Waterous)',q150:2000,q200:1500,q250:1100},
+  iturri_s:    {nombre:'Iturri 4x4 pequeño',     q150:1000,q200:750, q250:500},
+  iturri_m:    {nombre:'Iturri 4x4 mediano',     q150:1500,q200:1100,q250:750},
+  iturri_toro: {nombre:'Iturri Toro / 6x6',      q150:2500,q200:1750,q250:1250},
+  naffco_4x4:  {nombre:'NAFFCO 4x4',             q150:1250,q200:950, q250:700},
+  naffco_6x6:  {nombre:'NAFFCO 6x6',             q150:2500,q200:1750,q250:1200},
+  custom:      {nombre:'Personalizada',           q150:1500,q200:1100,q250:750},
 };
+let _bomba = {...BOMBAS.panther_r600};
 
-/* ══════════ ESTADO ══════════ */
-var diamSelec  = 1.75;
-var historial  = [];
-var calcActual = null;
-/* ══════════ SISTEMA DE PITONES DINÁMICOS ══════════
-   Cada pitón tiene: tipo (NP), caudal propio O compartido,
-   y opcionalmente un ramal con diámetro y longitud propios.
-
-   Física (NFPA 1963 / IFSTA):
-   - Q_bomba total se distribuye entre N pitones según sus caudales.
-   - FL_troncal usa Q_bomba total.
-   - FL_ramal de cada pitón usa su Q_piton individual.
-   - NP de cada pitón es su presión de boquilla.
-   - PDP = NP_max + FL_troncal + FL_ramal_max + EP + AL
-     (el caso más desfavorable determina la PDP requerida)
-══════════ */
-
-var pitones = []; // [{id, np, q, ramalDiam, ramalFt, abierto}]
-var pitonUID = 0;
-
-var NP_TIPOS = {
-  '100': 'Neblinero (100 psi)',
-  '50':  'Liso / Monitor (50 psi)',
-  '80':  'Piton CAFS (80 psi)',
-  '60':  'Turbo neblinero (60 psi)',
-};
-
-function agregarPiton(npVal, qPropio) {
-  var id = ++pitonUID;
-  pitones.push({
-    id: id,
-    np: npVal || 100,
-    q: qPropio || 150,   // Ahora el default es 150 GPM por piton
-    ramalDiam: 1.75,
-    ramalFt: 100,
-    ramalActivo: false,
-    abierto: true,
-  });
-  renderPitones();
-}
-
-function eliminarPiton(id) {
-  if (pitones.length <= 1) return; // siempre al menos 1
-  pitones = pitones.filter(function(p) { return p.id !== id; });
-  renderPitones();
-}
-
-function togglePitonBody(id) {
-  var p = pitones.find(function(p) { return p.id === id; });
-  if (p) { p.abierto = !p.abierto; renderPitones(); }
-}
-
-function toggleRamal(id) {
-  var p = pitones.find(function(p) { return p.id === id; });
-  if (p) { p.ramalActivo = !p.ramalActivo; renderPitones(); }
-}
-
-function onPitonField(id, campo, val) {
-  var p = pitones.find(function(p) { return p.id === id; });
-  if (!p) return;
-  if (campo === 'np')        p.np        = parseFloat(val) || 100;
-  if (campo === 'ramalDiam') p.ramalDiam = parseFloat(val) || 1.75;
-  if (campo === 'ramalFt')   p.ramalFt   = parseFloat(val) || 0;
-  actualizarResumen();
-}
-
-function selCaudalPiton(id, btn, q) {
-  var p = pitones.find(function(p) { return p.id === id; });
-  if (!p) return;
-  p.q = q;
-  // Desmarcar otros botones de este pitón
-  var card = document.querySelector('.piton-card[data-id="' + id + '"]');
-  if (card) card.querySelectorAll('.piton-caudal-btn').forEach(function(b) { b.classList.remove('sel'); });
-  btn.classList.add('sel');
-  actualizarResumen();
-}
-
-function actualizarResumen() {
-  var N = pitones.length;
-  if (!N) return;
-
-  // 1. Calcular Caudal Total (Q_total = suma de todos los pitones)
-  var QVal = pitones.reduce(function(s, p) { return s + (parseFloat(p.q) || 0); }, 0);
-
-  // 2. Sincronizar _qReal (en este sistema simplificado, qReal es igual a p.q manual)
-  pitones.forEach(function(p) {
-    p._qReal = parseFloat(p.q) || 0;
-  });
-
-  // 4. Render previews
-  pitones.forEach(function(p) {
-    var card = document.querySelector('.piton-card[data-id="' + p.id + '"]');
-    if (!card) return;
-    
-    var preview = card.querySelector('.piton-fl-preview');
-    var summary = card.querySelector('.piton-card-summary');
-    
-    var FLr = 0;
-    if (p.ramalActivo && p.ramalFt > 0) {
-      var CR = COEF[p.ramalDiam] || 15.5;
-      FLr = CR * Math.pow(p._qReal/100, 2) * (p.ramalFt/100);
-    }
-    
-    if (preview) {
-      preview.innerHTML = 'Q: <strong>' + p._qReal.toFixed(1) + ' GPM</strong>'
-        + (p.ramalActivo ? ' &nbsp;|&nbsp; FL ramal: <strong>' + FLr.toFixed(1) + ' psi</strong>' : '');
-    }
-    if (summary) {
-      summary.textContent = NP_TIPOS[String(p.np)] + ' \u00b7 ' + p._qReal.toFixed(0) + ' GPM';
-    }
-  });
-
-  // 5. Resumen total en panel
-  var res = document.getElementById('pitones-resumen');
-  if (!res) return;
-  
-  var totalSum = pitones.reduce(function(s,p) { return s + (parseFloat(p._qReal) || 0); }, 0);
-  var html = '<strong>' + N + ' pitones activos</strong> &nbsp;&middot;&nbsp; Q Total Bomba: <strong style="color:var(--amber)">' + totalSum.toFixed(0) + ' GPM</strong><br>';
-  pitones.forEach(function(p, i) {
-    html += '&#x1F525; P' + (i+1) + ': <strong>' + p._qReal.toFixed(0) + ' GPM</strong>';
-    if (i < pitones.length-1) html += ' &middot; ';
-  });
-  res.innerHTML = html;
-  res.style.display = '';
-
-  // Reactividad: actualizar tramos y cálculos
-  renderSegmentos();
-  if (window._autoCalcEnabled) {
-    calcular();
+// Interpolación en curva de bomba — GPM disponibles a X psi
+// < 150 psi: extrapolación lineal con la pendiente del primer segmento (q100→q150)
+// 150–250 psi: interpolación lineal entre los tres puntos de curva
+// > 250 psi: extrapolación conservadora con pendiente final
+function qDisp(psi){
+  if(psi<=0) return _bomba.q150; // caudal máximo nominal (presión 0 = bomba abierta)
+  if(psi<150){
+    const slope=(_bomba.q200-_bomba.q150)/50; // psi/GPM del tramo 150–200
+    return Math.round(_bomba.q150+(psi-150)*slope); // extrapola hacia atrás (slope<0 → q sube)
   }
+  if(psi<=200){const t=(psi-150)/50; return Math.round(_bomba.q150+t*(_bomba.q200-_bomba.q150));}
+  if(psi<=250){const t=(psi-200)/50; return Math.round(_bomba.q200+t*(_bomba.q250-_bomba.q200));}
+  const slope=(_bomba.q250-_bomba.q200)/50;
+  return Math.max(0,Math.round(_bomba.q250+(psi-250)*slope));
 }
 
-function renderPitones() {
-  var lista = document.getElementById('pitones-lista');
-  if (!lista) return;
-  lista.innerHTML = '';
-  pitones.forEach(function(p, idx) {
-    var Qest = parseFloat(p.q) || 150;
-
-    var tiposHTML = Object.keys(NP_TIPOS).map(function(v) {
-      return '<option value="' + v + '"' + (parseFloat(v) === p.np ? ' selected' : '') + '>' + NP_TIPOS[v] + '</option>';
-    }).join('');
-
-    var caudalBtns = [95,125,150,185,250,300].map(function(q) {
-      return '<button class="piton-caudal-btn' + (p.q === q ? ' sel' : '') + '"'
-        + ' onmousedown="event.preventDefault()" onclick="selCaudalPiton(' + p.id + ',this,' + q + ')">' + q + '</button>';
-    }).join('');
-
-    var card = document.createElement('div');
-    card.className = 'piton-card';
-    card.setAttribute('data-id', p.id);
-
-    var FLr = 0;
-    if (p.ramalActivo && p.ramalFt > 0) {
-      var CR = COEF[p.ramalDiam] || 15.5;
-      FLr = CR * Math.pow(Qest/100, 2) * (p.ramalFt/100);
-    }
-
-    card.innerHTML =
-      '<div class="piton-card-header" onclick="togglePitonBody(' + p.id + ')">'
-        + '<div class="piton-card-title">'
-          + '<span class="piton-num">' + (idx+1) + '</span>'
-          + 'Pit\u00f3n ' + (idx+1)
-        + '</div>'
-        + '<div style="display:flex;align-items:center;gap:8px">'
-          + '<span class="piton-card-summary">' + NP_TIPOS[String(p.np)] + ' &middot; ~' + Qest.toFixed(0) + ' GPM</span>'
-          + (pitones.length > 1
-            ? '<button class="btn-del-piton" onclick="event.stopPropagation();eliminarPiton(' + p.id + ')" title="Quitar pit\u00f3n">&times;</button>'
-            : '')
-        + '</div>'
-      + '</div>'
-      + (p.abierto ? '<div class="piton-card-body">'
-
-          + '<div class="field-label">Tipo de pit\u00f3n (NP)</div>'
-          + '<select class="field-input" style="margin-bottom:8px;width:100%" onchange="onPitonField(' + p.id + ',\'np\',this.value)">' + tiposHTML + '</select>'
-
-          + '<div class="field-label">Caudal del pit\u00f3n (GPM)</div>'
-          + '<div class="piton-caudal-btns">' + caudalBtns + '</div>'
-          + '<div class="field-input-wrap" style="margin-bottom:6px">'
-            + '<input class="field-input" type="number" value="' + p.q + '" min="10" max="2000"'
-            + ' oninput="onPitonField(' + p.id + ',\'q\',parseFloat(this.value)||0)"/>'
-            + '<span class="field-unit">GPM</span>'
-          + '</div>'
-
-          + '<div class="piton-fl-preview">Q: <strong>' + Qest.toFixed(1) + ' GPM</strong>'
-            + (p.ramalActivo ? ' &nbsp;|&nbsp; FL ramal: <strong>' + FLr.toFixed(1) + ' psi</strong>' : '')
-          + '</div>'
-
-          + '<div class="piton-ramal-toggle">'
-            + '<button class="btn-toggle-ramal' + (p.ramalActivo ? ' open' : '') + '"'
-            + ' onclick="toggleRamal(' + p.id + ')">'
-            + (p.ramalActivo ? '&#x25BC;' : '&#x25BA;') + ' Ramal propio (despu\u00e9s de bifurcaci\u00f3n / siam\u00e9s)'
-            + '</button>'
-            + '<div class="piton-ramal-body' + (p.ramalActivo ? ' open' : '') + '">'
-              + '<div class="piton-ramal-label">&#x2514; Configuraci\u00f3n del ramal</div>'
-              + '<div class="g2">'
-                + '<div class="field">'
-                  + '<div class="field-label">Di\u00e1metro del ramal</div>'
-                  + '<select class="field-input" onchange="onPitonField(' + p.id + ',\'ramalDiam\',this.value)">'
-                    + '<option value="1.5"' + (p.ramalDiam===1.5?' selected':'') + '>1.5&Prime; (38mm) C=24</option>'
-                    + '<option value="1.75"' + (p.ramalDiam===1.75?' selected':'') + '>1.75&Prime; (45mm) C=15.5</option>'
-                    + '<option value="2"' + (p.ramalDiam===2?' selected':'') + '>2&Prime; (50mm) C=8</option>'
-                    + '<option value="2.5"' + (p.ramalDiam===2.5?' selected':'') + '>2.5&Prime; (65mm) C=2</option>'
-                  + '</select>'
-                + '</div>'
-                + '<div class="field">'
-                  + '<div class="field-label">Longitud del ramal</div>'
-                  + '<div class="field-input-wrap">'
-                    + '<input class="field-input" type="number" value="' + p.ramalFt + '" min="0" max="999"'
-                    + ' oninput="onPitonField(' + p.id + ',\'ramalFt\',this.value);actualizarResumen()"/>'
-                    + '<span class="field-unit">ft</span>'
-                  + '</div>'
-                + '</div>'
-              + '</div>'
-            + '</div>'
-          + '</div>'
-
-        + '</div>' : '');
-
-    lista.appendChild(card);
-  });
-  actualizarResumen();
-}
-
-function onCaudalInput() {
-  actualizarResumen();
-  renderPitones();
-}
-
-/* ══════════ AUTH ══════════ */
-window.onSEIReady = function(user, rol, nombre) {
-  document.getElementById('sb-nombre').textContent = nombre || (user.email ? user.email.split('@')[0] : 'Operador');
-  document.getElementById('sb-rol').textContent    = rol ? rol.toUpperCase().replace('_',' ') : 'OPERADOR';
-  if (['admin','jefe_nacional'].indexOf(rol) !== -1) {
-    document.getElementById('sb-admin-section').style.display = 'block';
-  }
-};
-
-/* ══════════ RELOJ ══════════ */
-function tick() {
-  document.getElementById('tb-clock').textContent =
-    new Date().toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
-}
-tick(); setInterval(tick, 1000);
-
-
-
-/* ══════════════════════════════════════════════════
-   SEGMENTOS DE TENDIDO — diámetro + cantidad + longitud
-   Cada segmento: FL_i = C_i × (Q_i/100)² × (L_i/100)
-   Q_i se calcula como Q_bomba / pitones_servidos
-   (por defecto todos los segmentos sirven a todos los pitones)
-══════════════════════════════════════════════════ */
-var segmentos  = [];   // [{id, diam, cant, longFt, pitones}]
-var segUID = 0;
-
-var DIAM_OPTS = [
-  {v:1.5,  lbl:'1.5\u2033 (38mm)',  C:24.0},
-  {v:1.75, lbl:'1.75\u2033 (45mm)', C:15.5},
-  {v:2,    lbl:'2\u2033 (50mm)',    C:8.0},
-  {v:2.5,  lbl:'2.5\u2033 (65mm)', C:2.0},
-  {v:3,    lbl:'3\u2033 (75mm)',    C:0.8},
-  {v:4,    lbl:'4\u2033 (100mm)',   C:0.2},
+// ─── ACCESORIOS ───────────────────────────────────────────────────────
+const ACCESORIOS=[
+  {id:'valvula',    nombre:'Válvula de línea',  k:6.0},
+  {id:'bifurcacion',nombre:'Wye / Bifurcación', k:4.5},
+  {id:'siames',     nombre:'Siamés / Unión',    k:2.0},
+  {id:'codo',       nombre:'Codo / Curva',       k:1.5},
+  {id:'reductor',   nombre:'Reductor diámetro', k:0.8},
+  {id:'adaptador',  nombre:'Adaptador',          k:1.5},
 ];
-var LONG_OPTS = [25, 50, 75, 100, 150, 200];
 
-function agregarSegmento(diam, cant, longFt) {
-  var id = ++segUID;
-  segmentos.push({ id:id, diam:diam||1.75, cant:cant||1, longFt:longFt||100 });
+// ─── ESTADO ───────────────────────────────────────────────────────────
+// Cada segmento = línea desde la salida del camión hasta pitones.
+// Un pitón tiene: q (GPM nominal), np_obj (NP objetivo, default 100),
+//                 boquilla_d (diámetro boquilla en pulgadas, para Q real)
+var segmentos=[], segUID=0, pitonUID=0;
+var _lastPDP=0, _lastFlow=0, _lastStats={fl:0,al:0,ep:0};
+var _velWarnings=[];
+var _pumpMonitor=0; // presión actual del manómetro (slider)
+
+// ─── FÓRMULAS ────────────────────────────────────────────────────────
+// cant = número de mangueras en PARALELO del mismo diámetro y longitud.
+// El caudal se reparte equitativamente → Q por manguera = Q/cant
+// FL = C × (Q_por_manguera/100)² × (longFt/100)  [misma para todas, en paralelo]
+// Equivalente simplificado: FL_par = C × (Q/100)² × (longFt/100) / cant
+function calcFL(Q,diam,cant,longFt,mat){
+  const C=C_NFPA[String(diam)]; if(!C||!Q) return 0;
+  const n=Math.max(1,cant);
+  return C*Math.pow((Q/n)/100,2)*(longFt/100)*(mat==='lona'?LONA_F:1);
+}
+function calcV(Q,diam){
+  const Dr=D_REAL_IN[String(diam)]; if(!Dr||!Q) return 0;
+  return (Q*GPM_TO_M3S/(Math.PI*Math.pow(Dr*0.0254/2,2)))*3.28084;
+}
+function calcAL(Q,diam,K){
+  const Dr=D_REAL_IN[String(diam)]||parseFloat(diam); if(!Q||!K) return 0;
+  const V=Q*GPM_TO_M3S/(Math.PI*Math.pow(Dr*0.0254/2,2));
+  return K*(V*V/(2*G))*PSI_PER_M;
+}
+function calcEP(elev,unit){
+  if(!elev) return 0;
+  let m=parseFloat(elev)||0;
+  if(unit==='ft') m*=0.3048;
+  if(unit==='pisos') m*=3.0;
+  return m*PSI_PER_M;
+}
+// Caudal real por boquilla dado NP real (Torricelli/NFPA)
+// Q = 29.7 × d² × √NP   (d en pulgadas, Q en GPM, NP en psi)
+function qBoquilla(d_in, np_psi){
+  if(!d_in||!np_psi||np_psi<=0) return 0;
+  return Math.round(29.7 * d_in * d_in * Math.sqrt(np_psi));
+}
+
+// ─── CÁLCULO DE UN SEGMENTO ───────────────────────────────────────────
+function calcSegmento(seg){
+  // Caudal nominal = suma de caudales de pitones (Q que usamos para FL)
+  const Q = seg.pitones.reduce((s,p)=>s+parseFloat(p.q||0),0);
+  seg.totalQ = Q;
+
+  // FL total (todos los tramos en serie, mismo Q)
+  seg.fl = seg.hoses.reduce((s,h)=>s+calcFL(Q,h.diam,h.cant,parseFloat(h.longFt||0),h.material),0);
+
+  // AL — se aplica al diámetro más restrictivo del segmento (el de menor ID).
+  // En ARFF los accesorios suelen estar en el tramo de mayor diámetro;
+  // usamos el diámetro del primer tramo como referencia operativa conservadora.
+  // Si el segmento tiene tramos mixtos, la pérdida real puede diferir.
+  const dRef = seg.hoses.reduce((min,h)=>{
+    const idMin=D_REAL_IN[String(min)]||9, idH=D_REAL_IN[String(h.diam)]||9;
+    return idH<idMin ? h.diam : min;
+  }, seg.hoses[0]?String(seg.hoses[0].diam):'2.5');
+  seg.al = ACCESORIOS.reduce((s,a)=>s+(seg.accs[a.id]?calcAL(Q,dRef,a.k):0),0);
+
+  // EP
+  seg.ep = calcEP(seg.elev, seg.elevUnit);
+
+  // NP objetivo (siempre 100 psi — presión objetivo en pitón)
+  seg.np_obj = 100;
+
+  // PDP requerida para este segmento = 100 + todas las pérdidas
+  seg.perdidas = seg.fl + seg.al + seg.ep;
+  seg.pdp = seg.np_obj + seg.perdidas;
+
+  // Velocidad máxima
+  seg.maxVel=0; seg.velDiam='2.5';
+  seg.hoses.forEach(h=>{const v=calcV(Q,h.diam); if(v>seg.maxVel){seg.maxVel=v;seg.velDiam=h.diam;}});
+}
+
+// ─── MOTOR PRINCIPAL ─────────────────────────────────────────────────
+function recalcAll(){
+  _velWarnings=[];
+  segmentos.forEach(s=>calcSegmento(s));
+
+  // Segmento crítico = el que exige mayor PDP
+  let segCrit=null;
+  segmentos.forEach(s=>{
+    if(!segCrit||s.pdp>segCrit.pdp) segCrit=s;
+    if(s.maxVel>V_MAX) _velWarnings.push(s);
+  });
+
+  const pdpBomba = segCrit ? segCrit.pdp : 0;
+  const caudal   = segmentos.reduce((s,x)=>s+x.totalQ,0);
+
+  // Para cada segmento: calcular NP real que llegará al pitón cuando
+  // la bomba esté a pdpBomba (que es lo que el maquinista configura)
+  segmentos.forEach(s=>{
+    const npCalc  = pdpBomba - s.perdidas;
+    s.np_real     = Math.max(0, npCalc);   // nunca negativo — evita NaN en √
+    s.np_insuf    = npCalc < 0;            // flag: pérdidas > PDP bomba (error config.)
+    s.exceso      = s.np_real - s.np_obj;  // exceso sobre NP objetivo
+    s.isCrit      = (s===segCrit);
+
+    // Caudal real por cada boquilla con la NP real
+    s.pitones.forEach(p=>{
+      p.np_real = s.np_real;
+      p.q_real  = qBoquilla(parseFloat(p.boquilla_d||1.0), s.np_real);
+    });
+
+    // Caudal real total del segmento
+    s.totalQ_real = s.pitones.reduce((sum,p)=>sum+p.q_real,0);
+  });
+
+  const caudal_real = segmentos.reduce((s,x)=>s+x.totalQ_real,0);
+
+  _lastPDP   = pdpBomba;
+  _lastFlow  = caudal_real;   // autonomía basada en caudal real
+  _lastStats = segCrit ? {fl:segCrit.fl,al:segCrit.al,ep:segCrit.ep} : {fl:0,al:0,ep:0};
+
+  updateUI(pdpBomba, caudal, caudal_real, segCrit);
+  updateTank();
+  buildRecommendations(pdpBomba, caudal, caudal_real);
+  buildSchematic();
   renderSegmentos();
+  onPumpMonitor(); // refrescar feedback del slider
 }
 
-function eliminarSegmento(id) {
-  if (segmentos.length <= 1) return;
-  segmentos = segmentos.filter(function(s){ return s.id !== id; });
-  renderSegmentos();
-}
-
-function onSegField(id, campo, val) {
-  var s = segmentos.find(function(s){ return s.id === id; });
-  if (!s) return;
-  if (campo === 'diam')   s.diam   = parseFloat(val) || 1.75;
-  if (campo === 'cant')   s.cant   = parseInt(val)   || 1;
-  if (campo === 'longFt') s.longFt = parseFloat(val) || 0;
-  renderSegmentos();
-}
-
-function calcFL_seg(seg, Qseg) {
-  var C = COEF[seg.diam] || 15.5;
-  var Ltotal = seg.cant * seg.longFt;
-  return C * Math.pow(Qseg/100, 2) * (Ltotal/100);
-}
-
-function renderSegmentos() {
-  var lista = document.getElementById('seg-lista');
-  if (!lista) return;
-  var Q = pitones.reduce(function(s, p) { return s + (parseFloat(p.q) || 0); }, 0);
-  var N = pitones.length || 1;
-  var Qseg = Q; 
-
-  lista.innerHTML = '';
-  var FLtotal = 0;
-  var Ltotal  = 0;
-
-  segmentos.forEach(function(s, idx) {
-    // Heurística: si es el último segmento y hay >1 pitón, es ramal → Q/N
-    // El usuario puede anular esto en versiones futuras
-    var Quse = (idx === segmentos.length - 1 && N > 1) ? (Q / N) : Q;
-    var FL = calcFL_seg(s, Quse);
-    FLtotal += FL;
-    Ltotal  += s.cant * s.longFt;
-
-    var diamOpts = DIAM_OPTS.map(function(o){
-      return '<option value="' + o.v + '"' + (o.v === s.diam ? ' selected' : '') + '>' + o.lbl + ' C=' + o.C + '</option>';
+// ─── UI PRINCIPAL ─────────────────────────────────────────────────────
+function updateUI(pdp, caudal_nom, caudal_real, segCrit){
+  // Velocity alerts
+  const va=document.getElementById('vel-alert');
+  if(_velWarnings.length){
+    va.classList.add('show');
+    document.getElementById('vel-alert-items').innerHTML=_velWarnings.map(s=>{
+      const si=segmentos.indexOf(s)+1, dRec=diamMin(s.totalQ);
+      return `<div style="font-size:11px;color:var(--text-dim);margin:3px 0;font-family:var(--ff-m)">⚠ Seg.${si}: ${s.maxVel.toFixed(1)} ft/s con ${s.totalQ} GPM en ${s.velDiam}" → cambiar a ${dRec}" (${calcV(s.totalQ,String(dRec)).toFixed(1)} ft/s ✓)</div>`;
     }).join('');
-    var longOpts = LONG_OPTS.map(function(l){
-      return '<option value="' + l + '"' + (l === s.longFt ? ' selected' : '') + '>' + l + ' ft</option>';
-    }).join('');
+  } else va.classList.remove('show');
 
-    var row = document.createElement('div');
-    row.className = 'seg-card';
-    row.innerHTML =
-      '<div class="seg-card-head">'
-        + '<span class="seg-num-badge">' + (idx+1) + '</span>'
-        + '<span class="seg-title">Segmento ' + (idx+1)
-          + (idx === segmentos.length-1 && N > 1 ? ' <span style="color:var(--text-muted);font-size:8px">(ramal \u2014 Q/' + N + ')</span>' : ' <span style="color:var(--text-muted);font-size:8px">(troncal)</span>')
-          + '</span>'
-        + '<span class="seg-fl-badge">FL: ' + FL.toFixed(1) + ' psi</span>'
-        + (segmentos.length > 1 ? '<button class="btn-del-seg" onclick="eliminarSegmento(' + s.id + ')">&times;</button>' : '')
-      + '</div>'
-      + '<div class="seg-card-body">'
-        + '<div class="seg-field"><label>Di\u00e1metro</label>'
-          + '<select onchange="onSegField(' + s.id + ',\'diam\',this.value)">' + diamOpts + '</select>'
-        + '</div>'
-        + '<div class="seg-field"><label>Cantidad</label>'
-          + '<input type="number" value="' + s.cant + '" min="1" max="20"'
-          + ' oninput="onSegField(' + s.id + ',\'cant\',this.value)"/>'
-        + '</div>'
-        + '<div class="seg-field"><label>Long. c/u</label>'
-          + '<select onchange="onSegField(' + s.id + ',\'longFt\',this.value)">' + longOpts + '</select>'
-        + '</div>'
-        + '<div class="seg-field"><label>Caudal usado</label>'
-          + '<div style="font-family:var(--ff-m);font-size:11px;color:var(--sky);padding-top:6px">' + Quse.toFixed(0) + ' GPM</div>'
-          + '<div class="seg-q-auto">' + s.cant + '\u00d7' + s.longFt + 'ft = ' + (s.cant*s.longFt) + 'ft</div>'
-        + '</div>'
-      + '</div>';
-    lista.appendChild(row);
-  });
+  document.getElementById('result-idle').style.display='none';
+  document.getElementById('result-body').style.display='block';
 
-  // Resumen
-  var res = document.getElementById('seg-resumen');
-  if (res) {
-    res.style.display = '';
-    res.innerHTML = 'FL total tendido: <strong>' + FLtotal.toFixed(1) + ' psi</strong>'
-      + ' &nbsp;&middot;&nbsp; Long. total: <strong>' + Ltotal + ' ft (' + (Ltotal*0.3048).toFixed(0) + ' m)</strong>'
-      + ' &nbsp;&middot;&nbsp; ' + segmentos.length + ' segmento(s)';
-  }
-}
+  // Status
+  const el=document.getElementById('res-pdp'), st=document.getElementById('result-status');
+  el.innerHTML=pdp.toFixed(1)+'<span class="consigna-unit">psi</span>';
 
-/* ══════════ CAUDAL ══════════ */
-// selector global eliminado - ahora reactivo a pitones
+  const qD=qDisp(pdp), margen=qD-caudal_nom;
+  let col, msg;
+  if(_velWarnings.length)            {col='var(--red)';  msg='🚨 VELOCIDAD EXCESIVA — CORREGIR TENDIDO';}
+  else if(pdp>NP_MAX_NFPA)           {col='var(--red)';  msg='⛔ PELIGRO — EXCEDE LÍMITE MANGUERA (NFPA 1962)';}
+  else if(caudal_nom>qD)             {col='var(--red)';  msg='⚠ CAUDAL INSUFICIENTE — REDUCIR SEGMENTOS';}
+  else if(pdp>200||margen<caudal_nom*.15){col='var(--amber)';msg='⚡ OPERABLE — VERIFICAR MARGEN';}
+  else                               {col='var(--green)';msg='✓ SISTEMA CORRECTO — LISTO PARA OPERAR';}
+  el.style.color=col; st.style.color=col; st.innerText=msg;
 
-/* ══════════ PITON ══════════ */
-function onPitonChange() {
-  var v = document.getElementById('sel-piton');
-  if (v) document.getElementById('np-custom-wrap').style.display = (v.value === 'custom') ? '' : 'none';
-}
+  // Pump capacity
+  const pcEl=document.getElementById('pump-cap-box');
+  const pcCls=caudal_nom>qD?'pc-bad':pdp>200?'pc-warn':'pc-ok';
+  pcEl.className='pump-cap '+pcCls;
+  pcEl.innerHTML=`
+    <div class="pump-cap-row"><span style="color:var(--text-dim)">Presión requerida</span><span style="font-family:var(--ff-m);font-weight:700;color:${col}">${pdp.toFixed(1)} psi</span></div>
+    <div class="pump-cap-row"><span style="color:var(--text-dim)">Caudal nominal</span><span style="font-family:var(--ff-m);font-weight:700">${caudal_nom} GPM</span></div>
+    <div class="pump-cap-row"><span style="color:var(--text-dim)">Caudal real (con excesos)</span><span style="font-family:var(--ff-m);font-weight:700;color:var(--amber)">${caudal_real} GPM</span></div>
+    <div class="pump-cap-row"><span style="color:var(--text-dim)">Bomba disponible @ ${pdp.toFixed(0)} psi</span><span style="font-family:var(--ff-m);font-weight:700;color:${caudal_nom<=qD?'var(--green)':'var(--red)'}">${qD} GPM</span></div>
+    <div class="pump-cap-row"><span style="color:var(--text-dim)">Margen de caudal</span><span style="font-family:var(--ff-m);font-weight:700;color:${margen>=0?'var(--green)':'var(--red)'}">${margen>=0?'+':''}${margen} GPM</span></div>`;
 
-/* ══════════════════════════════════════════════════
-   ACCESORIOS CON CONTADOR DE CANTIDAD
-   Cada accesorio tiene psi/unidad × cantidad = AL parcial
-══════════════════════════════════════════════════ */
-var ACC_DEFS = [
-  {id:'bifurcacion',  nombre:'Bifurcaci\u00f3n',        psi:10, max:4},
-  {id:'siames',       nombre:'Siam\u00e9s',              psi:10, max:4},
-  {id:'monitor',      nombre:'Monitor port\u00e1til',   psi:25, max:2},
-  {id:'valvula',      nombre:'V\u00e1lvula en l\u00ednea', psi:15, max:6},
-  {id:'codo90',       nombre:'Codo 90\u00b0',            psi:5,  max:10},
-  {id:'espumador',    nombre:'Espumador en l\u00ednea',  psi:20, max:2},
-];
-var accQty = {};  // {id: cantidad}
-ACC_DEFS.forEach(function(a){ accQty[a.id] = 0; });
+  // Breakdown
+  document.getElementById('res-np').innerText='100 psi';
+  document.getElementById('res-fl').innerText=(segCrit?segCrit.fl:0).toFixed(1)+' psi';
+  document.getElementById('res-al').innerText=(segCrit?segCrit.al:0).toFixed(1)+' psi';
+  document.getElementById('res-ep').innerText=(segCrit?segCrit.ep:0).toFixed(1)+' psi';
+  document.getElementById('res-q').innerText=`${caudal_nom} GPM nom. / ${caudal_real} GPM real`;
 
-function renderAccesorios() {
-  var lista = document.getElementById('acc-lista');
-  if (!lista) return;
-  lista.innerHTML = '';
-  var total = 0;
-  ACC_DEFS.forEach(function(a) {
-    var qty = accQty[a.id] || 0;
-    total += qty * a.psi;
-    var row = document.createElement('div');
-    row.className = 'acc-item-new' + (qty > 0 ? ' activo' : '');
-    row.innerHTML =
-      '<span class="acc-nombre">' + a.nombre + '</span>'
-      + '<span class="acc-psi-lbl">+' + a.psi + ' psi/ud</span>'
-      + '<div class="acc-qty-wrap">'
-        + '<button class="acc-qty-btn" onclick="cambiarAcc(\'' + a.id + '\',-1)">&#x2212;</button>'
-        + '<span class="acc-qty-val">' + qty + '</span>'
-        + '<button class="acc-qty-btn" onclick="cambiarAcc(\'' + a.id + '\',1)">+</button>'
-      + '</div>'
-      + (qty > 0 ? '<span style="font-family:var(--ff-m);font-size:9px;color:var(--sky);min-width:42px;text-align:right">' + (qty*a.psi) + ' psi</span>' : '');
-    lista.appendChild(row);
-  });
+  // Per-segment analysis
+  const ss=document.getElementById('segs-summary');
+  ss.innerHTML=segmentos.map((s,i)=>{
+    const excCol = s.exceso>50?'var(--red)':s.exceso>20?'var(--amber)':'var(--green)';
+    const excMsg = s.isCrit ? 'Segmento crítico — NP exacto: 100 psi ✓'
+                             : `NP real en pitón: ${s.np_real.toFixed(1)} psi (+${s.exceso.toFixed(1)} psi exceso)`;
+    return `<div class="seg-result-card ${s.isCrit?'critical':''}">
+      <div class="seg-result-title">
+        <span>Seg. ${i+1} ${s.isCrit?'<span style="font-family:var(--ff-m);font-size:9px;color:var(--sky)">← CRÍTICO</span>':''}</span>
+        <span style="font-family:var(--ff-m);font-size:11px;color:${s.pdp>NP_MAX_NFPA?'var(--red)':s.pdp>200?'var(--amber)':'var(--green)'}">${s.pdp.toFixed(1)} psi PDP</span>
+      </div>
+      <div class="seg-result-row"><span style="color:var(--text-dim)">Pérdidas totales</span><span style="font-family:var(--ff-m);color:var(--red)">${s.perdidas.toFixed(1)} psi</span></div>
+      <div class="seg-result-row"><span style="color:var(--text-dim)">Caudal nominal</span><span style="font-family:var(--ff-m)">${s.totalQ} GPM</span></div>
+      <div class="seg-result-row"><span style="color:var(--text-dim)">Caudal real (boquilla)</span><span style="font-family:var(--ff-m);color:var(--amber)">${s.totalQ_real} GPM</span></div>
+      <div class="seg-result-row" style="border-bottom:none"><span style="color:var(--text-dim)">${excMsg}</span><span style="font-family:var(--ff-m);color:${excCol}">${s.isCrit?'':'±'+s.exceso.toFixed(1)+'psi'}</span></div>
+    </div>`;
+  }).join('');
 
-  var prev = document.getElementById('acc-total-preview');
-  if (prev) {
-    if (total > 0) {
-      prev.style.display = '';
-      prev.textContent = 'AL total accesorios: ' + total + ' psi';
-    } else {
-      prev.style.display = 'none';
-    }
-  }
-}
-
-function cambiarAcc(id, delta) {
-  var def = ACC_DEFS.find(function(a){ return a.id === id; });
-  if (!def) return;
-  accQty[id] = Math.max(0, Math.min(def.max, (accQty[id]||0) + delta));
-  renderAccesorios();
-}
-
-function getAccTotal() {
-  return ACC_DEFS.reduce(function(sum, a){
-    return sum + (accQty[a.id]||0) * a.psi;
-  }, 0);
-}
-
-/* Funciones legacy no usadas — mantener compatibilidad */
-function selDiam() {}
-function updateTramosTotal() { renderSegmentos(); }
-function getTotalFt() {
-  // retorna longitud total de segmentos para compatibilidad
-  return segmentos.reduce(function(s,seg){ return s + seg.cant*seg.longFt; }, 0);
-}
-
-/* ══════════ ELEVACION ══════════ */
-function onElevUnit() {}
-
-function getElevMetros() {
-  var val = parseFloat(document.getElementById('inp-elev').value) || 0;
-  var unit = document.getElementById('sel-elev-unit').value;
-  if (unit === 'pisos') return val * 3.0;   // 3m por piso
-  if (unit === 'ft')    return val * 0.3048;
-  return val;
-}
-
-function getEP() {
-  var m = getElevMetros();
-  return m * 1.42;  // 1 m H2O = 1.42 psi
-}
-
-/* ══════════════════════════════════════════════════════
-   CALCULAR — segmentos multi-diámetro + N pitones
-   
-   FÍSICA (NFPA 1963 / IFSTA Pumping Apparatus):
-   
-   1. FL por segmento: FL_i = C_i × (Q_i/100)² × (cant_i×L_i/100)
-      - Segmentos troncales: Q_i = Q_bomba
-      - Segmento(s) ramal (último seg con >1 pitón): Q_i = Q_bomba/N_pitones
-   
-   2. FL_total = Σ FL_i  (suma de todos los segmentos)
-   
-   3. NP = NP del pitón más exigente (caso desfavorable)
-   
-   4. PDP = NP_max + FL_total + EP + AL_total
-   
-   Referencia: NFPA 1963 §5 / IFSTA Ch.12
-══════════════════════════════════════════════════════ */
-function calcular() {
-  window._autoCalcEnabled = true; // Activar reactividad tras el primer clic
-  
-  // Caudal Total = Suma de pitones
-  var Q = pitones.reduce(function(s, p) { return s + (parseFloat(p.q) || 0); }, 0);
-  var N = pitones.length || 1;
-
-  // Asegurar que Q refleje la suma real
-  var totalQReal = Q;
-  
-  if (Q <= 0) { alertCalc('error', 'Ingrese un caudal válido en los pitones'); return; }
-  
-  // Sincronizar _qReal final
-  pitones.forEach(p => { p._qReal = parseFloat(p.q) || 0; });
-
-  // ── FL por segmento ──
-  // Heurística: el último segmento con N>1 pitones es ramal → Q/N
-  // Todos los demás son troncales → Q total
-  var detallesSeg = [];
-  var FL = 0;
-  var Ltotal = 0;
-
-  segmentos.forEach(function(s, idx) {
-    var esRamal = (idx === segmentos.length - 1 && N > 1);
-    var Quse = esRamal ? Q / N : Q;
-    var FLi = calcFL_seg(s, Quse);
-    FL += FLi;
-    Ltotal += s.cant * s.longFt;
-    detallesSeg.push({ idx:idx+1, diam:s.diam, cant:s.cant, longFt:s.longFt,
-                        Quse:Quse, FL:FLi, esRamal:esRamal });
-  });
-
-  // ── NP máximo ──
-  var NPmax = 0;
-  var detallesPit = [];
-  pitones.forEach(function(p, i) {
-    if (p.np > NPmax) NPmax = p.np;
-    detallesPit.push({ idx:i+1, np:p.np, q:p._qReal });
-  });
-
-  var C = COEF[segmentos[0].diam] || 15.5; // para compatibilidad res-c
-  var L = Ltotal;
-  var EP  = getEP();
-  var AL  = getAccTotal();
-  var PDP = NPmax + FL + EP + AL;
-
-  calcActual = { PDP:PDP, NP:NPmax, FL:FL, EP:EP, AL:AL,
-                 Q:Q, C:C, L:L, N:N,
-                 detallesSeg:detallesSeg, detallesPit:detallesPit };
-
-  // ── Render resultado ──
-  var pdpEl = document.getElementById('res-pdp');
-  pdpEl.textContent = Math.round(PDP);
-  pdpEl.className = 'result-pdp ' + (PDP < 150 ? 'safe' : PDP < 200 ? 'warn' : 'danger');
-
-    document.getElementById('res-np').textContent   = NPmax.toFixed(0) + ' psi' + (N>1?' (máx)':'');
-  document.getElementById('res-fl').textContent   = FL.toFixed(1) + ' psi';
-  document.getElementById('res-ep').textContent   = EP.toFixed(1) + ' psi';
-  document.getElementById('res-al').textContent   = AL.toFixed(0) + ' psi';
-  document.getElementById('res-long').textContent = L + ' ft (' + (L*0.3048).toFixed(0) + ' m)';
-  document.getElementById('lbl-res-q').textContent = N>1 ? 'Caudal bomba ('+N+' pit.)' : 'Caudal calculado';
-  document.getElementById('res-q').textContent    = Q + ' GPM';
-  document.getElementById('res-c').textContent    = segmentos.length + ' segmento(s)';
-
-  var isMulti = segmentos.length > 1 || N > 1;
-  document.getElementById('row-fl-troncal').style.display = isMulti ? '' : 'none';
-  document.getElementById('row-fl-ramal').style.display   = isMulti ? '' : 'none';
-  document.getElementById('row-q-piton').style.display    = isMulti ? '' : 'none';
-  if (isMulti) {
-    var descSeg = detallesSeg.map(function(d){
-      return 'S'+d.idx+':'+d.diam+'"×'+d.cant+'×'+d.longFt+'ft='+d.FL.toFixed(1)+'psi';
-    }).join(' | ');
-    document.getElementById('res-fl-troncal').textContent = descSeg;
-    document.getElementById('res-fl-ramal2').textContent  = N>1?'Q/pit:'+(Q/N).toFixed(1)+' GPM':'—';
-    document.getElementById('res-q-piton').textContent    = N+' pitón(es) · NP:'+NPmax+'psi';
-  }
-
-  // ── Barras de distribucion ──
-  renderBars(NPmax, FL, EP, AL, PDP);
-
-  // ── Alerta de friccion ──
-  var pctFL = FL / PDP * 100;
-  document.getElementById('fd-warn-txt').textContent = pctFL > 50 ? '⚠ Friccion domina (' + pctFL.toFixed(0) + '%)' : '';
-
-  // ── Alerta general ──
-  var nStr = N > 1 ? ' (' + N + ' pitones)' : '';
-  var alertMsg, alertCls;
-  if (PDP > 250) {
-    alertMsg = '🚨 PDP muy alta (' + Math.round(PDP) + ' psi)' + nStr + '. Verifique tendido y presion maxima del vehiculo SEI.';
-    alertCls = 'danger';
-  } else if (PDP > 175) {
-    alertMsg = '⚠ PDP elevada (' + Math.round(PDP) + ' psi)' + nStr + '. Confirme que la bomba sostenga esta presion.';
-    alertCls = 'warn';
-  } else {
-    alertMsg = '✅ PDP ' + Math.round(PDP) + ' psi' + nStr + ' — dentro de rango operacional normal.';
-    alertCls = 'ok';
-  }
-  document.getElementById('result-alert').textContent = alertMsg;
-  document.getElementById('result-alert').className   = 'result-alert ' + alertCls;
-
-  // ── Recomendaciones Operativas ──
-  var recomBox = document.getElementById('recom-box');
-  if (alertCls !== 'ok') {
-    var recoms = [];
-    // 1. Fricción dominante (>60% de PDP)
-    if (FL > (PDP * 0.6)) {
-      recoms.push({ icon: '💡', text: '<b>La fricción es crítica</b>. Use mangueras de mayor diámetro para reducir la resistencia.' });
-    }
-    // 2. Caudal excesivo (>200 GPM y PDP alta)
-    if (Q > 200) {
-      recoms.push({ icon: '💧', text: '<b>Caudal elevado</b>. Reduzca el ajuste de GPM en los pitones o cierre una línea secundaria.' });
-    }
-    // 3. Tendido largo (>250 ft)
-    if (L > 250) {
-      recoms.push({ icon: '📏', text: '<b>Tendido extenso</b>. Acerque el vehículo al objetivo para eliminar tramos de manguera.' });
-    }
-    // 4. Elevación significativa (>10 PSI)
-    if (EP > 10) {
-      recoms.push({ icon: '⛰️', text: '<b>Pérdida por altura detectada</b>. Considere el factor de gravedad en el posicionamiento del ataque.' });
-    }
-
-    if (recoms.length > 0) {
-      recomBox.innerHTML = recoms.map(function(r) {
-        return '<div class="recom-item">' +
-               '<span class="recom-icon">' + r.icon + '</span>' +
-               '<span class="recom-text">' + r.text + '</span>' +
-               '</div>';
-      }).join('');
-      recomBox.style.display = 'flex';
-    } else {
-      recomBox.style.display = 'none';
-    }
-  } else {
-    recomBox.style.display = 'none';
-  }
-
-  document.getElementById('result-idle').style.display = 'none';
-  document.getElementById('result-body').style.display = '';
-
-  comparar();
-  addHistorial(PDP, Q, L, C);
-}
-
-function renderBars(NP, FL, EP, AL, PDP) {
-  var comps = [
-    { label:'NP (piton)', val:NP, color:'#38bdf8' },
-    { label:'FL (friccion)', val:FL, color:'#f59f00' },
-    { label:'EP (elevacion)', val:EP, color:'#40c057' },
-    { label:'AL (accesorios)', val:AL, color:'#7c3aed' },
-  ];
-  var html = '';
-  comps.forEach(function(c) {
-    var pct = PDP > 0 ? (c.val / PDP * 100).toFixed(1) : 0;
-    html += '<div class="fd-bar-wrap"><div class="fd-bar" style="width:' + pct + '%;background:' + c.color + '"></div></div>';
-    html += '<div class="fd-row"><span>' + c.label + '</span><span style="color:' + c.color + '">' + c.val.toFixed(1) + ' psi (' + pct + '%)</span></div>';
-  });
-  document.getElementById('fd-bars').innerHTML = html;
-}
-
-function alertCalc(tipo, msg) {
-  document.getElementById('result-idle').innerHTML = '<div style="text-align:center;padding:30px;font-family:var(--ff-m);font-size:11px;color:var(--red)">' + msg + '</div>';
-  document.getElementById('result-idle').style.display = '';
-  document.getElementById('result-body').style.display = 'none';
-}
-
-/* ══════════ COMPARADOR ══════════ */
-function comparar() {
-  if (!calcActual) return;
-  var actual = parseFloat(document.getElementById('cmp-actual').value);
-  var resEl = document.getElementById('cmp-result');
-  if (isNaN(actual)) { resEl.textContent = '—'; resEl.className = 'cmp-result'; return; }
-  var diff = actual - calcActual.PDP;
-  if (diff >= 0) {
-    resEl.textContent = '✅ Suficiente (+' + diff.toFixed(0) + ' psi)';
-    resEl.className = 'cmp-result ok';
-  } else if (diff >= -15) {
-    resEl.textContent = '⚠ Limite (' + diff.toFixed(0) + ' psi)';
-    resEl.className = 'cmp-result warn';
-  } else {
-    resEl.textContent = '🚨 Insuficiente (' + diff.toFixed(0) + ' psi)';
-    resEl.className = 'cmp-result danger';
-  }
-}
-
-/* ══════════ HISTORIAL LOCAL ══════════ */
-function addHistorial(PDP, Q, L, C) {
-  var ts = new Date().toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit'});
-  historial.unshift({ PDP:PDP, Q:Q, L:L, C:C, ts:ts });
-  if (historial.length > 8) historial.pop();
-  renderHistorial();
-}
-
-function renderHistorial() {
-  if (!historial.length) return;
-  var sec = document.getElementById('hist-section');
-  var list = document.getElementById('hist-list');
-  sec.style.display = '';
-  list.innerHTML = historial.map(function(h) {
-    return '<div class="hist-item" onclick="cargarHistorial(' + historial.indexOf(h) + ')">' +
-      '<span class="hist-pdp">' + Math.round(h.PDP) + ' psi</span>' +
-      '<span class="hist-info">' + h.Q + ' GPM &middot; ' + h.L + ' ft</span>' +
-      '<span class="hist-ts">' + h.ts + '</span>' +
-      '</div>';
+  // Velocities
+  const vw=document.getElementById('res-velocidades');
+  vw.style.display='block';
+  document.getElementById('res-vel-items').innerHTML=segmentos.map((s,i)=>{
+    const ok=s.maxVel<=V_MAX;
+    return `<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border);font-family:var(--ff-m);font-size:11px;">
+      <span style="color:var(--text-dim)">Seg.${i+1} <span style="font-size:9px;color:var(--text-muted)">(${s.totalQ}GPM)</span></span>
+      <span style="color:${ok?'var(--green)':'var(--red)'};font-weight:700">${s.maxVel.toFixed(1)} ft/s ${ok?'✓':'⚠'}</span></div>`;
   }).join('');
 }
 
-function cargarHistorial(i) {
-  var h = historial[i];
-  if (!h) return;
-  document.getElementById('inp-q').value = h.Q;
-  // En este módulo el coeficiente se basa en los segmentos, no hay un campo global
-  calcular();
+// ─── PUMP MONITOR — feedback en tiempo real ───────────────────────────
+function onPumpMonitor(){
+  const psi=parseFloat(document.getElementById('pm-slider').value)||0;
+  _pumpMonitor=psi;
+  document.getElementById('pm-val-num').innerText=psi;
+
+  if(psi===0){
+    document.getElementById('pm-note').innerText='↑ Mueva el slider para ver qué presión llega actualmente a cada pitón';
+    // Limpiar feedback de pitones
+    document.querySelectorAll('[id^="pf-"]').forEach(el=>{
+      el.className='piton-feedback pf-idle';
+      el.innerHTML='Calcule primero para activar feedback';
+    });
+    return;
+  }
+
+  if(_lastPDP===0){
+    document.getElementById('pm-note').innerText='⚙ Calcule primero para activar el feedback';
+    return;
+  }
+
+  const req=_lastPDP;
+  if(psi<req){
+    document.getElementById('pm-note').innerText=`⚠ Bomba en ${psi} psi — necesita ${req.toFixed(0)} psi — INSUFICIENTE`;
+    document.getElementById('pm-note').style.color='var(--red)';
+  } else if(psi===req||Math.abs(psi-req)<=5){
+    document.getElementById('pm-note').innerText=`✓ Bomba en ${psi} psi — presión correcta — pitones reciben ~100 psi`;
+    document.getElementById('pm-note').style.color='var(--green)';
+  } else {
+    document.getElementById('pm-note').innerText=`ℹ Bomba en ${psi} psi — por encima de la consigna (${req.toFixed(0)} psi)`;
+    document.getElementById('pm-note').style.color='var(--amber)';
+  }
+
+  // Actualizar feedback en cada pitón de cada segmento
+  segmentos.forEach((s,si)=>{
+    const npReal = psi - s.perdidas;
+    s.pitones.forEach((p,pi)=>{
+      const el=document.getElementById(`pf-${s.id}-${p.id}`); if(!el) return;
+      const qR=qBoquilla(parseFloat(p.boquilla_d||1.0),npReal);
+      if(npReal<50){
+        el.className='piton-feedback pf-bad';
+        el.innerHTML=`🔴 <strong>INSUFICIENTE</strong> — Presión en pitón: ${npReal.toFixed(0)} psi (necesita 100 psi) · Flujo estimado: ${qR} GPM`;
+      } else if(npReal<80){
+        el.className='piton-feedback pf-warn';
+        el.innerHTML=`🟡 <strong>BAJA</strong> — Presión en pitón: ${npReal.toFixed(0)} psi · Flujo: ${qR} GPM — Pitón no alcanza efectividad plena`;
+      } else if(npReal<=110){
+        el.className='piton-feedback pf-ok';
+        el.innerHTML=`✅ <strong>CORRECTO</strong> — Presión en pitón: ${npReal.toFixed(0)} psi ≈ 100 psi · Flujo: ${qR} GPM`;
+      } else if(npReal<=150){
+        el.className='piton-feedback pf-warn';
+        el.innerHTML=`🟡 <strong>EXCESO +${(npReal-100).toFixed(0)} psi</strong> — Presión real: ${npReal.toFixed(0)} psi · Flujo: ${qR} GPM · Mayor esfuerzo físico para el pitonero`;
+      } else {
+        el.className='piton-feedback pf-bad';
+        el.innerHTML=`🔴 <strong>EXCESO CRÍTICO +${(npReal-100).toFixed(0)} psi</strong> — Presión real: ${npReal.toFixed(0)} psi · Flujo: ${qR} GPM · PELIGRO — Reducir tendido`;
+      }
+    });
+  });
 }
 
-/* ══════════ RESET ══════════ */
-function resetAll() {
-  document.getElementById('inp-elev').value = 0;
-  document.getElementById('sel-elev-unit').value = 'm';
-  document.getElementById('cmp-actual').value = '';
-  
-  // Caudal por defecto ahora es la suma de pitones iniciales
-
-  pitones = []; 
-  pitonUID = 0; 
-  agregarPiton(100, 0);
-  
-  segmentos = []; 
-  segUID = 0; 
-  agregarSegmento(1.75, 1, 100);
-  
-  accQty = {}; 
-  ACC_DEFS.forEach(function(a){ accQty[a.id] = 0; }); 
-  renderAccesorios();
-  
-  document.getElementById('result-idle').style.display = '';
-  document.getElementById('result-body').style.display = 'none';
-  document.getElementById('result-idle').innerHTML = '<div class="idle-icon">&#x1F4CF;</div><div>Complete los parametros<br>y presione CALCULAR PDP</div>';
-  
-  calcActual = null;
+// ─── VEHICLE SELECTOR ────────────────────────────────────────────────
+function onVehicleChange(){
+  const v=document.getElementById('vehicle-select').value;
+  const cf=document.getElementById('custom-fields');
+  if(v==='custom'){
+    cf.style.display='grid';
+    _bomba={nombre:'Personalizada',q150:parseFloat(document.getElementById('c-q150').value)||1500,q200:parseFloat(document.getElementById('c-q200').value)||1100,q250:parseFloat(document.getElementById('c-q250').value)||750};
+  } else {
+    cf.style.display='none';
+    _bomba={...BOMBAS[v]};
+  }
+  document.getElementById('vc-150').innerText=_bomba.q150+' GPM';
+  document.getElementById('vc-200').innerText=_bomba.q200+' GPM';
+  document.getElementById('vc-250').innerText=_bomba.q250+' GPM';
+  if(_lastPDP>0) recalcAll();
 }
 
-    function exportPDF() {
-      window.print();
+// ─── AUTONOMÍA ───────────────────────────────────────────────────────
+function updateTank(){
+  const capRaw=parseFloat(document.getElementById('tank-cap').value)||0;
+  const unit=document.getElementById('tank-unit').value;
+  const flow=_lastFlow; // usamos caudal REAL
+  const capGal=unit==='lit'?capRaw*.264172:capRaw;
+  document.getElementById('tank-cap-label').innerText=capRaw?(capRaw+(unit==='gal'?' GAL':' L')):'—';
+  if(!capRaw||flow<=0){
+    ['tank-min','tank-sec'].forEach(id=>document.getElementById(id).innerText='—');
+    document.getElementById('tank-bar').style.width='0%';
+    document.getElementById('tank-bar-mid').innerText='—';
+    document.getElementById('tank-warning').innerHTML=''; return;
+  }
+  const totalSec=(capGal/flow)*60, totalMin=totalSec/60;
+  const md=Math.floor(totalMin),sd=Math.round((totalMin-md)*60);
+  document.getElementById('tank-min').innerText=md+'m '+sd+'s';
+  document.getElementById('tank-sec').innerText=Math.round(totalSec)+' seg';
+  document.getElementById('tank-bar-mid').innerText=Math.round(capGal/2)+' GAL';
+  const bar=document.getElementById('tank-bar');
+  bar.style.width=Math.min(100,(totalMin/10)*100)+'%';
+  bar.style.background=totalMin<2?'#f43f5e':totalMin<4?'#f59f00':'#10b981';
+  const tw=document.getElementById('tank-warning');
+  const base='border-radius:6px;padding:8px 12px;font-size:11px;font-weight:700;margin-top:10px;';
+  if(totalMin<1)      tw.innerHTML=`<div style="${base}background:rgba(244,63,94,.08);border-left:3px solid var(--red);color:var(--red)">🔴 <strong>CRÍTICO:</strong> &lt;1 min. Reabastecimiento inmediato.</div>`;
+  else if(totalMin<3) tw.innerHTML=`<div style="${base}background:rgba(245,159,0,.08);border-left:3px solid var(--amber);color:var(--amber)">🟡 <strong>ALERTA:</strong> &lt;3 min. Coordinar reabastecimiento.</div>`;
+  else if(totalMin<5) tw.innerHTML=`<div style="${base}background:rgba(56,189,248,.06);border-left:3px solid var(--sky);color:var(--sky)">🔵 <strong>NOTA:</strong> 3–5 min. Identificar punto de reabastecimiento.</div>`;
+  else tw.innerHTML='';
+}
+
+// ─── RECOMENDACIONES ─────────────────────────────────────────────────
+function diamMin(Q){
+  for(const d of [1.5,1.75,2.0,2.5,3.0,4.0,5.0])
+    if(calcV(Q,String(d))<=V_MAX) return d;
+  return 5.0;
+}
+
+function buildRecommendations(pdp, caudal_nom, caudal_real){
+  const panel=document.getElementById('recs-panel'), body=document.getElementById('recs-body');
+  body.innerHTML=''; let bloques=[];
+
+  // 1. Límite NFPA 1962 — manguera
+  if(pdp>NP_MAX_NFPA){
+    bloques.push({p:-2,icon:'🚨',
+      title:`PELIGRO — PDP = ${pdp.toFixed(1)} psi excede límite NFPA 1962 (${NP_MAX_NFPA} psi)`,
+      sub:'NFPA 1962 §4.3 · Límite estructural de manguera',
+      desc:`La presión requerida supera el límite máximo de trabajo de la manguera. <strong>RIESGO DE FALLA ESTRUCTURAL — NO OPERAR</strong>.<br>
+      Soluciones inmediatas: subir diámetro en los tramos con más pérdida, reducir longitud de tendido o reducir el número de pitones activos.`
+    });
+  }
+
+  // 2. Capacidad bomba
+  const qD=qDisp(pdp), deficit=caudal_nom-qD;
+  if(deficit>0){
+    bloques.push({p:-1,icon:'🔴',
+      title:`Bomba no puede sostener ${caudal_nom} GPM a ${pdp.toFixed(0)} psi`,
+      sub:`${_bomba.nombre} · disponible: ${qD} GPM · déficit: ${deficit} GPM`,
+      desc:`A ${pdp.toFixed(0)} psi esta bomba solo puede dar <strong>${qD} GPM</strong>.<br>
+      El tendido demanda ${caudal_nom} GPM — déficit de <strong>${deficit} GPM</strong>.<br>
+      Reducir caudal en uno o más segmentos, o cambiar a diámetros mayores para bajar la PDP requerida.`
+    });
+  }
+
+  // 3. Velocidad excesiva — por tramo
+  segmentos.forEach((seg,si)=>{
+    if(!seg.totalQ) return;
+    seg.hoses.forEach((h,hi)=>{
+      const v=calcV(seg.totalQ,h.diam);
+      if(v<=V_MAX) return;
+      const dMin=diamMin(seg.totalQ);
+      const flAct=calcFL(seg.totalQ,h.diam,h.cant,parseFloat(h.longFt||0),h.material);
+      const flRec=calcFL(seg.totalQ,String(dMin),h.cant,parseFloat(h.longFt||0),h.material);
+      const ahorro=flAct-flRec;
+      const tabla=[1.5,1.75,2.0,2.5,3.0].map(d=>{
+        const vd=calcV(seg.totalQ,String(d)),fld=calcFL(seg.totalQ,String(d),h.cant,parseFloat(h.longFt||0),h.material),ok=vd<=V_MAX;
+        const bg=d===parseFloat(h.diam)?'rgba(244,63,94,.1)':d===dMin?'rgba(16,185,129,.06)':'transparent';
+        return `<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;padding:4px 9px;background:${bg};font-family:var(--ff-m);font-size:10px;">
+          <span>${d}"${d===parseFloat(h.diam)?' ←':d===dMin?' ✓':''}</span>
+          <span style="color:${ok?'var(--green)':'var(--red)'};text-align:right">${vd.toFixed(1)} ft/s</span>
+          <span style="color:var(--text-dim);text-align:right">${fld.toFixed(1)} psi</span>
+          <span style="text-align:right">${ok?'✓':'⚠'}</span></div>`;
+      }).join('');
+      bloques.push({p:v>20?0:1,icon:v>20?'🚨':'⚠️',
+        title:`Seg.${si+1} Tramo ${hi+1}: ${v.toFixed(1)} ft/s — Riesgo golpe de ariete`,
+        sub:`NFPA 1962 §4.2 · ${seg.totalQ} GPM en ${h.diam}" (ID ${D_REAL_IN[h.diam]||h.diam}")`,
+        desc:`Velocidad es <strong>${(v/15).toFixed(1)}× el límite</strong> de 15 ft/s. Pérdida actual: ${flAct.toFixed(1)} psi en este tramo.<br>
+        <strong>Cambiar a ${dMin}" → ahorro ~${ahorro.toFixed(0)} psi en PDP requerida</strong>`,
+        extra:`<div style="margin-top:8px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:5px;overflow:hidden;">
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;padding:4px 9px;font-size:9px;font-weight:800;color:var(--text-muted);border-bottom:1px solid rgba(255,255,255,.05)">
+            <span>Diámetro</span><span style="text-align:right">Velocidad</span><span style="text-align:right">FL tramo</span><span style="text-align:right">Estado</span></div>
+          ${tabla}</div>`
+      });
+    });
+  });
+
+  // 4. Exceso de presión en líneas no críticas
+  segmentos.forEach((s,si)=>{
+    if(s.isCrit||!s.totalQ) return;
+    if(s.exceso>20){
+      const gravedad=s.exceso>50?'CRÍTICO':'ELEVADO';
+      const icon=s.exceso>50?'🔴':'🟡';
+      // Sugerir diámetro óptimo que igualaría las pérdidas al segmento crítico
+      const perdCrit=_lastPDP-100;
+      bloques.push({p:s.exceso>50?2:3,icon,
+        title:`Seg.${si+1}: Exceso ${gravedad} de presión en pitón (+${s.exceso.toFixed(0)} psi)`,
+        sub:'Efecto de bomba sin regulación individual por salida · IFSTA Fire Hydraulics §6.4',
+        desc:`La bomba está a <strong>${_lastPDP.toFixed(0)} psi</strong> pero este segmento solo tiene <strong>${s.perdidas.toFixed(1)} psi</strong> de pérdidas.<br>
+        El pitón recibirá <strong>${s.np_real.toFixed(0)} psi</strong> en lugar de 100 psi.<br>
+        • Caudal real estimado: <strong>${s.totalQ_real} GPM</strong> (en lugar de ${s.totalQ} GPM nominal)<br>
+        • Mayor esfuerzo físico para el pitonero${s.exceso>50?' — RIESGO DE PÉRDIDA DE CONTROL':''}<br>
+        • Autonomía real del tanque se reduce${s.exceso>50?' significativamente':''}<br><br>
+        <strong>Solución:</strong> Agregar longitud o reducir diámetro en Seg.${si+1} para equilibrar las pérdidas (~${perdCrit.toFixed(0)} psi objetivo).`
+      });
+    }
+  });
+
+  // 5. Presión elevada (>200 psi, dentro del límite)
+  if(pdp>200&&pdp<=NP_MAX_NFPA&&!bloques.find(b=>b.p===-2)){
+    bloques.push({p:4,icon:'⚡',
+      title:`PDP = ${pdp.toFixed(1)} psi — Presión elevada para operación ARFF`,
+      sub:`Rango típico ARFF: 100–200 psi · Capacidad bomba: ${qDisp(pdp)} GPM disponibles`,
+      desc:`Operación posible pero en la parte alta de la curva de la bomba.<br>
+      La bomba pierde capacidad de caudal: a ${pdp.toFixed(0)} psi disponibles ${qDisp(pdp)} GPM vs ${_bomba.q150} GPM nominales.<br>
+      Evaluar si se puede optimizar el tendido para bajar a &lt;200 psi.`
+    });
+  }
+
+  if(!bloques.length&&pdp>0){
+    panel.style.display='block';
+    const vMax=segmentos.reduce((mx,s)=>Math.max(mx,s.maxVel||0),0);
+    body.innerHTML=`<div style="background:rgba(16,185,129,.06);border:1px solid rgba(16,185,129,.3);border-radius:var(--rs);padding:14px 16px;display:flex;gap:12px;align-items:flex-start;">
+      <div style="font-size:19px">✅</div>
+      <div>
+        <div style="font-size:13px;font-weight:800;color:var(--green);margin-bottom:4px;">Sistema correcto — Listo para operar</div>
+        <div style="font-size:11px;color:var(--text-dim);line-height:1.7;">
+          • Consigna bomba: <strong>${pdp.toFixed(1)} psi</strong> — dentro de capacidad ✓<br>
+          • Velocidad máxima: <strong>${vMax.toFixed(1)} ft/s</strong> ≤ 15 ft/s ✓<br>
+          • Caudal disponible @ ${pdp.toFixed(0)} psi: <strong>${qDisp(pdp)} GPM</strong> vs ${caudal_nom} GPM demandados ✓<br>
+          • Caudal real (con excesos): <strong>${caudal_real} GPM</strong>
+        </div>
+      </div></div>`; return;
+  }
+
+  panel.style.display=bloques.length?'block':'none';
+  bloques.sort((a,b)=>a.p-b.p);
+  bloques.forEach(b=>{
+    body.innerHTML+=`<div class="rec-item">
+      <div class="rec-icon">${b.icon}</div>
+      <div style="flex:1">
+        <div class="rec-title">${b.title}</div>
+        <div class="rec-sub">${b.sub}</div>
+        <div class="rec-desc">${b.desc}</div>
+        ${b.extra||''}
+      </div></div>`;
+  });
+}
+
+// ─── DIAGRAMA SVG ────────────────────────────────────────────────────
+function buildSchematic(){
+  const wrap=document.getElementById('schematic-svg-wrap');
+  if(!segmentos.length){wrap.innerHTML='<div style="padding:20px;color:var(--text-muted);font-size:12px;text-align:center;font-family:var(--ff-m)">⚙ Configure y calcule</div>';return;}
+
+  const nS=segmentos.length, W=860, H=Math.max(220,90+nS*95);
+  const CP='#0ea5e9',CS='#38bdf8',CP2='#a78bfa',CD='#94a3b8',CB='#0f172a',CW='#f43f5e',CG='#10b981',CA='#f59f00';
+
+  let svg=`<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-height:280px;font-family:'JetBrains Mono',monospace;display:block;">`;
+  svg+=`<rect width="${W}" height="${H}" fill="${CB}" rx="8"/>`;
+
+  const bx=W/2,by=36,br=28;
+  svg+=`<circle cx="${bx}" cy="${by}" r="${br}" fill="${CP}18" stroke="${CP}" stroke-width="2"/>`;
+  svg+=`<text x="${bx}" y="${by-10}" text-anchor="middle" fill="${CP}" font-size="9" font-weight="800">BOMBA</text>`;
+  svg+=`<text x="${bx}" y="${by+1}" text-anchor="middle" fill="${CP}" font-size="8">${_lastFlow>0?_lastFlow+'GPM':''}</text>`;
+  svg+=`<text x="${bx}" y="${by+12}" text-anchor="middle" fill="${CP}" font-size="8">${_lastPDP>0?_lastPDP.toFixed(0)+'psi':''}</text>`;
+
+  const sW=155,sH=54,segY=by+br+52;
+  const spacing=Math.min(200,(W-60)/Math.max(nS,1));
+  const startX=W/2-(spacing*(nS-1))/2;
+
+  segmentos.forEach((s,i)=>{
+    const sx=startX+i*spacing,sy=segY;
+    const col=s.maxVel>V_MAX?CW:s.isCrit?CS:CG;
+    const exceso=s.exceso||0;
+    const excCol=exceso>50?CW:exceso>20?CA:CG;
+
+    svg+=`<line x1="${bx}" y1="${by+br}" x2="${sx}" y2="${sy}" stroke="${col}" stroke-width="1.8" stroke-dasharray="6,3"/>`;
+    svg+=`<rect x="${sx-sW/2}" y="${sy}" width="${sW}" height="${sH}" rx="5" fill="${col}12" stroke="${col}" stroke-width="1.5"/>`;
+    svg+=`<text x="${sx}" y="${sy+12}" text-anchor="middle" fill="${col}" font-size="9" font-weight="800">SEG ${i+1}${s.isCrit?' ★':''}</text>`;
+    const ht=s.hoses.map(h=>`${h.diam}"`).join('+');
+    svg+=`<text x="${sx}" y="${sy+23}" text-anchor="middle" fill="${CD}" font-size="7.5">${ht} · ${s.totalQ}GPM</text>`;
+    svg+=`<text x="${sx}" y="${sy+34}" text-anchor="middle" fill="${CD}" font-size="7">PDP=${s.pdp.toFixed(0)}psi · Pérd=${s.perdidas.toFixed(0)}psi</text>`;
+    const npRealTxt=s.np_real?`NP real=${s.np_real.toFixed(0)}psi`:'';
+    svg+=`<text x="${sx}" y="${sy+45}" text-anchor="middle" fill="${excCol}" font-size="7">${npRealTxt}${exceso>5?` (+${exceso.toFixed(0)})`:''}</text>`;
+
+    // Pitones
+    const pY=sy+sH+44;
+    s.pitones.forEach((p,pi)=>{
+      const nP=s.pitones.length,pSpX=Math.min(50,80/Math.max(nP,1));
+      const px=sx-(pSpX*(nP-1))/2+pi*pSpX;
+      svg+=`<line x1="${sx}" y1="${sy+sH}" x2="${px}" y2="${pY-12}" stroke="${CP2}" stroke-width="1.2"/>`;
+      svg+=`<circle cx="${px}" cy="${pY}" r="12" fill="${CP2}15" stroke="${CP2}" stroke-width="1.2"/>`;
+      svg+=`<text x="${px}" y="${pY-3}" text-anchor="middle" fill="${CP2}" font-size="6.5" font-weight="800">PITÓN</text>`;
+      svg+=`<text x="${px}" y="${pY+6}" text-anchor="middle" fill="${CP2}" font-size="6">${p.q}g</text>`;
+    });
+  });
+
+  const ly=H-11;
+  [[CP,'Bomba'],[CS,'Seg. crítico'],[CG,'Seg. OK'],[CW,'V>15ft/s o exceso crítico'],[CA,'Exceso >20psi'],[CP2,'Pitón']].forEach(([c,lbl],i)=>{
+    const lx=12+i*110;
+    svg+=`<circle cx="${lx+4}" cy="${ly}" r="4" fill="${c}18" stroke="${c}" stroke-width="1.2"/>`;
+    svg+=`<text x="${lx+11}" y="${ly+3}" fill="${CD}" font-size="7">${lbl}</text>`;
+  });
+  svg+=`</svg>`;
+  wrap.innerHTML=svg;
+  const cc=document.getElementById('cc-svgwrap'); if(cc) cc.innerHTML=svg;
+}
+
+// ─── RENDER SEGMENTOS ────────────────────────────────────────────────
+function renderSegmentos(){
+  const lista=document.getElementById('seg-lista'); if(!lista) return; lista.innerHTML='';
+  segmentos.forEach((s,sidx)=>{
+    const velOk=!s.maxVel||s.maxVel<=V_MAX;
+    const pdpCol=s.pdp>NP_MAX_NFPA?'badge-pdp-bad':s.pdp>200?'badge-pdp-warn':'badge-pdp-ok';
+    const exceso=s.exceso||0;
+    let excessHtml='';
+    if(_lastPDP>0&&!s.isCrit){
+      const ecls = s.np_insuf ? 'excess-bad'
+                  : exceso>50  ? 'excess-bad'
+                  : exceso>20  ? 'excess-warn'
+                  : 'excess-ok';
+      const icon = s.np_insuf ? '🔴'
+                  : exceso>50  ? '🔴'
+                  : exceso>20  ? '🟡'
+                  : '✅';
+      const titleColor = s.np_insuf ? 'var(--red)'
+                       : exceso>50  ? 'var(--red)'
+                       : exceso>20  ? 'var(--amber)'
+                       : 'var(--green)';
+      const titleText = s.np_insuf
+        ? `⛔ PRESIÓN INSUFICIENTE — Pérdidas (${s.perdidas.toFixed(1)} psi) > PDP bomba (${_lastPDP.toFixed(1)} psi) — Revisar tendido`
+        : `${icon} Presión real en pitón: ${s.np_real.toFixed(1)} psi${exceso>5?' (+'+exceso.toFixed(0)+' psi exceso)':' ✓'}`;
+      excessHtml=`<div class="excess-box ${ecls}">
+        <div class="excess-title" style="color:${titleColor}">${titleText}</div>
+        <div style="font-size:10px;color:var(--text-dim);line-height:1.6;">
+          ${s.np_insuf?`Las pérdidas del tendido superan la presión que puede generar la bomba. Reducir longitud, aumentar diámetro o eliminar accesorios.`
+            :exceso>50?`<strong>Exceso crítico</strong> — El pitonero recibe ${exceso.toFixed(0)} psi adicionales. Caudal real: ${s.totalQ_real} GPM. Riesgo de pérdida de control.`
+            :exceso>20?`Exceso moderado — pitonero recibe ${exceso.toFixed(0)} psi adicionales. Caudal real: ${s.totalQ_real} GPM. Mayor esfuerzo físico.`
+            :`Sistema equilibrado — NP dentro del rango objetivo.`}
+        </div>
+      </div>`;
+    } else if(_lastPDP>0&&s.isCrit){
+      excessHtml=`<div class="excess-box excess-ok"><div class="excess-title" style="color:var(--sky)">★ Segmento crítico — NP exacto: 100 psi ✓ · Caudal real: ${s.totalQ_real} GPM</div></div>`;
     }
 
-/* Init */
-updateTramosTotal();
-agregarPiton(100, 150); // Pitón inicial con 150 GPM
-agregarSegmento(1.75, 1, 100); // Segmento inicial
-renderAccesorios(); // Accesorios con contador
+    const card=document.createElement('div'); card.className='seg-card';
+    card.innerHTML=`
+      <div class="seg-card-head">
+        <span class="seg-num">${sidx+1}</span>
+        <span class="seg-label">Segmento ${sidx+1}</span>
+        <span class="badge badge-fl">${s.perdidas.toFixed(1)} psi pérd.</span>
+        <span class="badge ${pdpCol}">${s.pdp.toFixed(1)} psi PDP</span>
+        <span class="badge ${velOk?'badge-vel-ok':'badge-vel-bad'}">${s.maxVel?s.maxVel.toFixed(1)+' ft/s':'—'}</span>
+        <span style="margin-left:auto;font-family:var(--ff-m);font-size:9px;color:var(--text-muted)">${s.totalQ} GPM nom.</span>
+        ${segmentos.length>1?`<button class="btn-del" onclick="eliminarSegmento(${s.id})">&times;</button>`:''}
+      </div>
+      <div class="seg-card-body">
+
+        ${excessHtml}
+
+        <div class="acc-title" style="margin-top:${excessHtml?'10px':'0'}">Mangueras en Serie</div>
+        ${s.hoses.map((h,hi)=>`
+          <div class="hose-row">
+            <select class="field-input" style="padding:4px;font-size:11px" onchange="onHose(${s.id},${hi},'diam',this.value)">
+              ${['1.5','1.75','2','2.5','3','4','5'].map(d=>`<option value="${d}" ${d==h.diam?'selected':''}>${d}" (ID ${D_REAL_IN[d]}")</option>`).join('')}
+            </select>
+            <input class="field-input" type="number" style="padding:4px" value="${h.cant}" min="1" max="30" title="Cantidad" oninput="onHose(${s.id},${hi},'cant',this.value)">
+            <select class="field-input" style="padding:4px" onchange="onHose(${s.id},${hi},'longFt',this.value)">
+              ${[25,50,75,100,150,200,250,300].map(l=>`<option value="${l}" ${l==h.longFt?'selected':''}>${l} ft</option>`).join('')}
+            </select>
+            <select class="field-input" style="padding:4px;font-size:11px" onchange="onHose(${s.id},${hi},'material',this.value)">
+              <option value="caucho" ${h.material==='caucho'?'selected':''}>Caucho</option>
+              <option value="lona"   ${h.material==='lona'?'selected':''}>Lona +20%</option>
+            </select>
+            <button class="btn-del" onclick="eliminarHose(${s.id},${hi})">&times;</button>
+          </div>`).join('')}
+        <div style="font-family:var(--ff-m);font-size:10px;color:var(--text-muted);margin:4px 0 2px;">
+          Q nominal: <strong style="color:var(--sky)">${s.totalQ} GPM</strong>
+          ${s.maxVel>0?` · V máx: <strong style="color:${s.maxVel>15?'var(--red)':'var(--green)'}">${s.maxVel.toFixed(1)} ft/s</strong>`:''}
+          ${s.fl>0?` · FL: <strong style="color:var(--amber)">${s.fl.toFixed(1)} psi</strong>`:''}
+        </div>
+        <button class="btn-add" onclick="agregarHose(${s.id})">+ Agregar tramo</button>
+
+        <div class="acc-title">Pitones</div>
+        ${s.pitones.map((p,pi)=>`
+          <div class="piton-row">
+            <div class="piton-row-head">
+              <span class="piton-badge">PITÓN ${pi+1}</span>
+              <button class="btn-del" style="margin-left:auto" onclick="eliminarPiton(${s.id},${p.id})">&times;</button>
+            </div>
+            <div class="piton-fields">
+              <div>
+                <span class="piton-field-label">Caudal nominal</span>
+                <select class="field-input" style="padding:6px;font-size:11px" onchange="onPiton(${s.id},${p.id},'q',this.value)">
+                  ${[50,75,95,125,150,200,250,300,400,500].map(g=>`<option value="${g}" ${p.q==g?'selected':''}>${g} GPM</option>`).join('')}
+                </select>
+              </div>
+              <div>
+                <span class="piton-field-label">NP objetivo</span>
+                <select class="field-input" style="padding:6px;font-size:11px" onchange="onPiton(${s.id},${p.id},'np_obj',this.value)">
+                  <option value="80"  ${p.np_obj==80?'selected':''}>80 psi</option>
+                  <option value="100" ${(!p.np_obj||p.np_obj==100)?'selected':''}>100 psi (std)</option>
+                </select>
+              </div>
+              <div>
+                <span class="piton-field-label">Boquilla (pulgadas)</span>
+                <select class="field-input" style="padding:6px;font-size:11px" onchange="onPiton(${s.id},${p.id},'boquilla_d',this.value)">
+                  ${[0.5,0.75,1.0,1.125,1.25,1.375,1.5].map(d=>`<option value="${d}" ${parseFloat(p.boquilla_d||1.0)==d?'selected':''}>${d}"</option>`).join('')}
+                </select>
+              </div>
+            </div>
+            <div class="piton-feedback pf-idle" id="pf-${s.id}-${p.id}">Calcule para ver presión y caudal real en este pitón</div>
+          </div>`).join('')}
+        <button class="btn-add" onclick="agregarPiton(${s.id})" style="border-color:var(--purple);color:var(--purple);background:rgba(167,139,250,.04)">+ Conectar Pitón</button>
+
+        <div class="acc-title">Accesorios</div>
+        <div class="acc-grid">
+          ${ACCESORIOS.map(a=>`<div class="acc-btn ${s.accs[a.id]?'active':''}" onclick="toggleAcc(${s.id},'${a.id}')">
+            <span>${a.nombre}</span><span style="font-family:var(--ff-m);font-size:9px">K=${a.k}</span>
+          </div>`).join('')}
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px">
+          <input class="field-input" type="number" value="${s.elev||0}" oninput="onSegField(${s.id},'elev',this.value)" placeholder="Elevación ±">
+          <select class="field-input" onchange="onSegField(${s.id},'elevUnit',this.value)">
+            <option value="m"     ${s.elevUnit==='m'?'selected':''}>metros</option>
+            <option value="ft"    ${s.elevUnit==='ft'?'selected':''}>pies</option>
+            <option value="pisos" ${s.elevUnit==='pisos'?'selected':''}>pisos (3m)</option>
+          </select>
+        </div>
+      </div>`;
+    lista.appendChild(card);
+  });
+  // Después de renderizar, refrescar el feedback del slider
+  if(_pumpMonitor>0) onPumpMonitor();
+}
+
+// ─── COMBAT CARD ─────────────────────────────────────────────────────
+function populateCombatCard(){
+  const now=new Date();
+  document.getElementById('cc-ts').innerText='Generado: '+now.toLocaleDateString('es-CO')+' '+now.toLocaleTimeString('es-CO');
+  document.getElementById('cc-vehicle-label').innerText='Vehículo: '+_bomba.nombre+' · NFPA 1901 Table C.5.1.1';
+  document.getElementById('cc-pdp').innerHTML=_lastPDP.toFixed(1)+'<span class="cc-badge-unit"> psi</span>';
+  document.getElementById('cc-q-badge').innerHTML=_lastFlow+'<span class="cc-badge-unit"> GPM</span>';
+  document.getElementById('cc-fl').innerText=_lastStats.fl.toFixed(1)+' psi';
+  document.getElementById('cc-al').innerText=_lastStats.al.toFixed(1)+' psi';
+  document.getElementById('cc-ep').innerText=_lastStats.ep.toFixed(1)+' psi';
+  const qd=qDisp(_lastPDP);
+  const nom=segmentos.reduce((s,x)=>s+x.totalQ,0);
+  let sv,ss,sc;
+  if(nom>qd)          {sv='⚠ CAUDAL INSUFICIENTE';ss='Reducir segmentos activos';sc='#c00';}
+  else if(_lastPDP>250){sv='⛔ PELIGRO MANGUERA';ss='Excede límite NFPA 1962';sc='#c00';}
+  else if(_lastPDP>200){sv='⚡ PRESIÓN ELEVADA';ss='Verificar antes de operar';sc='#8a5200';}
+  else                {sv='✓ OPERACIÓN SEGURA';ss='Sistema dentro de parámetros NFPA';sc='#175c28';}
+  document.getElementById('cc-sv').innerText=sv; document.getElementById('cc-sv').style.color=sc;
+  document.getElementById('cc-ss').innerText=ss; document.getElementById('cc-status-box').style.borderColor=sc;
+  const capRaw=parseFloat(document.getElementById('tank-cap').value)||0;
+  const unit=document.getElementById('tank-unit').value;
+  if(capRaw&&_lastFlow>0){
+    const cg=unit==='lit'?capRaw*.264172:capRaw, tm=(cg/_lastFlow)*60;
+    const md=Math.floor(tm),sd=Math.round((tm-md)*60);
+    document.getElementById('cc-aut-badge').style.display='block';
+    document.getElementById('cc-aut').innerHTML=md+'m'+sd+'s';
+    document.getElementById('cc-tank-sec').style.display='block';
+    document.getElementById('cc-tcap').innerText=capRaw+' '+(unit==='gal'?'GAL':'L');
+    document.getElementById('cc-ttime').innerText=md+'m '+sd+'s';
+  }
+  const sd2=document.getElementById('cc-segs'); sd2.innerHTML='';
+  segmentos.forEach((s,i)=>{
+    const ht=s.hoses.map(h=>`${h.cant}×${h.diam}"/${h.longFt}ft`).join(', ');
+    const pt=s.pitones.map(p=>`${p.q}GPM@${p.boquilla_d||1.0}"`).join(' | ')||'—';
+    const excStr=s.isCrit?'Segmento crítico — NP=100psi':`NP real=${s.np_real.toFixed(0)}psi (+${s.exceso.toFixed(0)}psi exc.) · Q real=${s.totalQ_real}GPM`;
+    sd2.innerHTML+=`<div class="cc-seg-item">
+      <div class="cc-seg-title">Seg ${i+1}${s.isCrit?' ★':''} — PDP=${s.pdp.toFixed(1)}psi · Pérd=${s.perdidas.toFixed(1)}psi · V=${s.maxVel.toFixed(1)}ft/s${s.maxVel>15?' ⚠':' ✓'}</div>
+      <div class="cc-seg-detail">${ht}</div>
+      <div class="cc-seg-detail">Pitones: ${pt}</div>
+      <div class="cc-seg-detail" style="color:${s.exceso>50?'#c00':s.exceso>20?'#8a5200':'#175c28'}">${excStr}</div>
+    </div>`;
+  });
+}
+function exportPDF(){
+  if(_lastPDP===0){alert('Calcule primero la presión del sistema.');return;}
+  populateCombatCard(); setTimeout(()=>window.print(),200);
+}
+
+// ─── HELPERS ─────────────────────────────────────────────────────────
+function agregarSegmento(){
+  const pid=++pitonUID;
+  segmentos.push({id:++segUID,
+    hoses:[{diam:'2.5',cant:1,longFt:100,material:'caucho'}],
+    pitones:[{id:pid,q:95,np_obj:100,boquilla_d:1.0}],
+    accs:{},elev:0,elevUnit:'m',
+    pdp:0,fl:0,al:0,ep:0,perdidas:0,np_obj:100,np_real:100,exceso:0,
+    maxVel:0,velDiam:'2.5',totalQ:0,totalQ_real:0,isCrit:false});
+  recalcAll();
+}
+function eliminarSegmento(id){
+  if(segmentos.length<=1) return;
+  segmentos=segmentos.filter(s=>s.id!==id); recalcAll();
+}
+function agregarHose(sid){const s=segmentos.find(x=>x.id===sid);if(s)s.hoses.push({diam:'2.5',cant:1,longFt:100,material:'caucho'});recalcAll();}
+function eliminarHose(sid,hi){const s=segmentos.find(x=>x.id===sid);if(s&&s.hoses.length>1)s.hoses.splice(hi,1);recalcAll();}
+function onHose(sid,hi,f,v){const s=segmentos.find(x=>x.id===sid);if(s&&s.hoses[hi])s.hoses[hi][f]=f==='material'?v:f==='diam'?String(v):parseFloat(v);recalcAll();}
+function agregarPiton(sid){const s=segmentos.find(x=>x.id===sid);if(s)s.pitones.push({id:++pitonUID,q:95,np_obj:100,boquilla_d:1.0});recalcAll();}
+function eliminarPiton(sid,pid){const s=segmentos.find(x=>x.id===sid);if(s&&s.pitones.length>0)s.pitones=s.pitones.filter(p=>p.id!==pid);recalcAll();}
+function onPiton(sid,pid,f,v){const s=segmentos.find(x=>x.id===sid);if(!s)return;const p=s.pitones.find(x=>x.id===pid);if(p)p[f]=f==='boquilla_d'?parseFloat(v):parseFloat(v);recalcAll();}
+function toggleAcc(sid,aid){const s=segmentos.find(x=>x.id===sid);if(s)s.accs[aid]=!s.accs[aid];recalcAll();}
+function onSegField(id,f,v){const s=segmentos.find(x=>x.id===id);if(!s)return;s[f]=f==='elev'?parseFloat(v)||0:v;recalcAll();}
+function calcular(){recalcAll();}
+function resetAll(){
+  segmentos=[];segUID=0;pitonUID=0;_lastPDP=0;_lastFlow=0;_velWarnings=[];_pumpMonitor=0;
+  document.getElementById('pm-slider').value=0;
+  document.getElementById('pm-val-num').innerText='0';
+  document.getElementById('pm-note').innerText='↑ Mueva el slider para ver qué presión llega actualmente a cada pitón';
+  document.getElementById('pm-note').style.color='';
+  document.getElementById('result-idle').style.display='block';
+  document.getElementById('result-body').style.display='none';
+  document.getElementById('recs-panel').style.display='none';
+  document.getElementById('vel-alert').classList.remove('show');
+  document.getElementById('schematic-svg-wrap').innerHTML='<div style="padding:20px;color:var(--text-muted);font-size:12px;text-align:center;font-family:var(--ff-m)">⚙ Configure y calcule para ver el diagrama</div>';
+  onVehicleChange();
+  agregarSegmento();
+}
+
+setInterval(()=>{document.getElementById('tb-clock').innerText=new Date().toLocaleTimeString('es-CO');},1000);
+window.onload=resetAll;
+try{const u=JSON.parse(localStorage.getItem('arff_user')||'{}');
+  if(u.nombre)document.getElementById('sb-nombre').innerText=u.nombre;
+  if(u.rol)document.getElementById('sb-rol').innerText=u.rol;}catch(e){}
 </script>
 </body>
-
 </html>
