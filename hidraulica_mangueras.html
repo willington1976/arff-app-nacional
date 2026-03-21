@@ -18,25 +18,22 @@
       --rs:8px;--r:16px;
     }
     *{box-sizing:border-box;margin:0;padding:0;}
-    body{background:var(--bg);color:var(--text);font-family:var(--ff-t);min-height:100vh;display:flex;overflow-x:hidden;}
+    body{background:var(--bg);color:var(--text);font-family:var(--ff-t);min-height:100vh;display:flex;flex-direction:column;overflow-x:hidden;}
     .scanlines{position:fixed;top:0;left:0;width:100%;height:100%;background:linear-gradient(rgba(18,16,16,0)50%,rgba(0,0,0,.2)50%),linear-gradient(90deg,rgba(255,0,0,.03),rgba(0,255,0,.01),rgba(0,0,255,.03));background-size:100% 2px,3px 100%;pointer-events:none;z-index:9999;opacity:.1;}
 
-    .sidebar{width:240px;background:#000;border-right:1px solid var(--border);height:100vh;position:sticky;top:0;display:flex;flex-direction:column;z-index:100;flex-shrink:0;}
-    .sb-logo{padding:24px;display:flex;align-items:center;gap:12px;}
-    .sb-logo-icon{width:32px;height:32px;background:var(--sky);border-radius:8px;box-shadow:0 0 15px var(--sky-glow);display:flex;align-items:center;justify-content:center;color:#000;font-weight:800;font-size:18px;}
-    .sb-logo-text{font-size:14px;font-weight:800;letter-spacing:1px;}
-    .sb-section{padding:12px 24px 6px;font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;}
-    .sb-link{display:flex;align-items:center;gap:12px;padding:12px 24px;color:var(--text-dim);text-decoration:none;font-size:13px;transition:.2s;border-left:3px solid transparent;}
-    .sb-link:hover{color:var(--text);background:rgba(255,255,255,.03);}
-    .sb-link.active{color:var(--sky);background:rgba(56,189,248,.05);border-left-color:var(--sky);font-weight:600;}
-    .sb-user{margin-top:auto;padding:20px;border-top:1px solid var(--border);}
-    .sb-user-name{font-size:12px;font-weight:700;}
-    .sb-user-role{font-size:10px;color:var(--text-muted);text-transform:uppercase;}
+    /* TOPBAR */
+    .topbar{height:56px;background:#000;border-bottom:1px solid var(--border);padding:0 28px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:90;flex-shrink:0;width:100%;}
+    .tb-brand{display:flex;align-items:center;gap:12px;}
+    .tb-emblem{width:34px;height:34px;border-radius:6px;background:linear-gradient(135deg,#1e3a5f,#0f2040);border:1px solid rgba(56,189,248,.3);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+    .tb-brand-name{font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;line-height:1.25;color:var(--text);}
+    .tb-brand-sub{font-size:9px;color:var(--sky);text-transform:uppercase;letter-spacing:1.5px;font-family:var(--ff-m);}
+    .tb-right{display:flex;align-items:center;gap:10px;}
+    .tb-mod-badge{font-family:var(--ff-m);font-size:10px;color:var(--text-muted);background:rgba(255,255,255,.04);border:1px solid var(--border);padding:4px 10px;border-radius:4px;letter-spacing:.5px;text-transform:uppercase;}
+    .tb-clock{font-family:var(--ff-m);font-size:11px;color:var(--text-muted);}
+    .btn-dashboard{display:flex;align-items:center;gap:7px;padding:7px 14px;background:rgba(255,255,255,.05);border:1px solid var(--border2);border-radius:5px;color:var(--text-dim);text-decoration:none;font-size:11px;font-weight:700;transition:.18s;letter-spacing:.3px;}
+    .btn-dashboard:hover{background:rgba(255,255,255,.09);color:var(--text);border-color:rgba(255,255,255,.25);}
 
     .main{flex:1;display:flex;flex-direction:column;overflow-y:auto;min-width:0;}
-    .topbar{height:64px;border-bottom:1px solid var(--border);padding:0 32px;display:flex;align-items:center;justify-content:space-between;background:rgba(3,7,18,.5);backdrop-filter:blur(10px);position:sticky;top:0;z-index:90;}
-    .tb-title{font-size:14px;font-weight:600;color:var(--text-dim);}
-    .tb-clock{font-family:var(--ff-m);font-size:12px;color:var(--sky);}
     .content-inner{padding:28px 32px;max-width:1400px;margin:0 auto;width:100%;}
     .mod-header{margin-bottom:24px;}
     .mod-badge{font-family:var(--ff-m);font-size:11px;color:var(--sky);margin-bottom:6px;letter-spacing:2px;font-weight:700;}
@@ -190,12 +187,15 @@
     @keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
     .fadeIn{animation:fadeIn .3s ease}
 
-    .sei-footer{text-align:center;padding:18px 24px 14px;border-top:1px solid var(--border);}
-    .sei-footer-strip{width:34px;height:3px;background:linear-gradient(90deg,var(--sky),#0ea5e9);border-radius:2px;margin:0 auto 9px;}
-    .sei-footer-name{font-weight:800;font-size:12px;text-transform:uppercase;margin-bottom:3px;}
-    .sei-footer-cargo{font-family:var(--ff-m);font-size:10px;color:var(--sky);text-transform:uppercase;margin-bottom:4px;}
-    .sei-footer-norm{font-family:var(--ff-m);font-size:9px;color:var(--text-muted);}
+    .sei-footer{border-top:1px solid var(--border);background:#000;}
+    .sei-footer-inner{max-width:1400px;margin:0 auto;padding:14px 32px;display:flex;align-items:center;justify-content:space-between;gap:20px;}
+    .sei-footer-strip{width:28px;height:3px;background:linear-gradient(90deg,var(--sky),#0ea5e9);border-radius:2px;margin-bottom:5px;}
+    .sei-footer-name{font-weight:800;font-size:11px;text-transform:uppercase;}
+    .sei-footer-cargo{font-family:var(--ff-m);font-size:9px;color:var(--sky);text-transform:uppercase;margin-top:1px;}
+    .sei-footer-app{font-weight:800;font-size:12px;text-align:center;text-transform:uppercase;letter-spacing:.5px;}
+    .sei-footer-norm{font-family:var(--ff-m);font-size:9px;color:var(--text-muted);text-align:center;margin-top:2px;}
     .sei-footer-norm span{color:var(--sky);}
+    .sei-footer-center{text-align:center;}
 
     .fab{position:fixed;bottom:26px;right:26px;z-index:200;}
     .fab-btn{width:54px;height:54px;border-radius:50%;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 24px rgba(0,0,0,.5);transition:transform .18s;background:linear-gradient(135deg,var(--sky),#0ea5e9);position:relative;}
@@ -248,24 +248,25 @@
 <body>
 <div class="scanlines"></div>
 
-<aside class="sidebar">
-  <div class="sb-logo"><div class="sb-logo-icon">D</div><div class="sb-logo-text">ARFF COLOMBIA</div></div>
-  <nav>
-    <div class="sb-section">Menu Principal</div>
-    <a class="sb-link" href="dashboard_principal.html">Principal Dashboard</a>
-    <div class="sb-section">Calculadoras SEI</div>
-    <a class="sb-link active" href="#">Hidráulica de Mangueras</a>
-  </nav>
-  <div class="sb-user">
-    <div class="sb-user-name" id="sb-nombre">Cargando...</div>
-    <div class="sb-user-role" id="sb-rol">OPERADOR</div>
-  </div>
-</aside>
-
 <div class="main">
   <header class="topbar">
-    <div class="tb-title">Hidráulica de Mangueras · Compensación de Presión ARFF</div>
-    <div class="tb-clock" id="tb-clock">00:00:00</div>
+    <div class="tb-brand">
+      <div class="tb-emblem">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+      </div>
+      <div>
+        <div class="tb-brand-name">Bomberos Aeronáuticos</div>
+        <div class="tb-brand-sub">ARFF Colombia · Cálculos Críticos</div>
+      </div>
+    </div>
+    <div class="tb-right">
+      <span class="tb-mod-badge">Hidráulica · Presión de Consigna</span>
+      <div class="tb-clock" id="tb-clock">00:00:00</div>
+      <a class="btn-dashboard" href="dashboard_principal.html">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+        Volver al Dashboard
+      </a>
+    </div>
   </header>
 
   <div class="content-inner">
@@ -446,10 +447,21 @@
   </div>
 
   <footer class="sei-footer">
-    <div class="sei-footer-strip"></div>
-    <div class="sei-footer-name">Diseño: Willington Peña Montenegro</div>
-    <div class="sei-footer-cargo">Bombero Aeronáutico · BAE 373</div>
-    <div class="sei-footer-norm">ARFF Colombia · <span>NFPA 1901</span> · NFPA 1962 · <span>Table C.5.1.1</span></div>
+    <div class="sei-footer-inner">
+      <div class="sei-footer-left">
+        <div class="sei-footer-strip"></div>
+        <div class="sei-footer-name">Willington Peña Montenegro</div>
+        <div class="sei-footer-cargo">Bombero Aeronáutico · BAE 373</div>
+      </div>
+      <div class="sei-footer-center">
+        <div class="sei-footer-app">ARFF Colombia</div>
+        <div class="sei-footer-norm"><span>NFPA 1901</span> · NFPA 1962 · <span>Table C.5.1.1</span> · Hidráulica de Mangueras</div>
+      </div>
+      <div class="sei-footer-right">
+        <div class="sei-footer-norm" style="text-align:right">Calculadoras SEI · Compensación de Presión</div>
+        <div class="sei-footer-norm" id="footer-ts" style="text-align:right;margin-top:2px"></div>
+      </div>
+    </div>
   </footer>
 </div>
 
@@ -1030,60 +1042,159 @@ function buildRecommendations(pdp, caudal_nom, caudal_real){
 // ─── DIAGRAMA SVG ────────────────────────────────────────────────────
 function buildSchematic(){
   const wrap=document.getElementById('schematic-svg-wrap');
-  if(!segmentos.length){wrap.innerHTML='<div style="padding:20px;color:var(--text-muted);font-size:12px;text-align:center;font-family:var(--ff-m)">⚙ Configure y calcule</div>';return;}
+  if(!segmentos.length){
+    wrap.innerHTML='<div style="padding:24px;color:var(--text-muted);font-size:12px;text-align:center;font-family:var(--ff-m)">⚙ Configure y calcule para ver el diagrama</div>';
+    return;
+  }
 
-  const nS=segmentos.length, W=860, H=Math.max(220,90+nS*95);
   const CP='#0ea5e9',CS='#38bdf8',CP2='#a78bfa',CD='#94a3b8',CB='#0f172a',CW='#f43f5e',CG='#10b981',CA='#f59f00';
+  const nS = segmentos.length;
 
-  let svg=`<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-height:280px;font-family:'JetBrains Mono',monospace;display:block;">`;
-  svg+=`<rect width="${W}" height="${H}" fill="${CB}" rx="8"/>`;
+  // Layout horizontal: BOMBA → [SEG → PITONES] en fila
+  // Cada segmento ocupa una fila vertical, todos alineados a la derecha de la bomba
+  // Dimensiones por segmento
+  const rowH   = 110;   // altura por segmento
+  const padT   = 24;    // padding top
+  const padB   = 38;    // padding bottom (leyenda)
+  const bombW  = 110;   // zona bomba (izquierda)
+  const segW   = 180;   // ancho tarjeta segmento
+  const gapBS  = 60;    // gap bomba→segmento
+  const gapSP  = 50;    // gap segmento→pitones
+  const pitonR = 22;    // radio pitón
+  const pitonGap = 56;  // separación entre pitones
 
-  const bx=W/2,by=36,br=28;
-  svg+=`<circle cx="${bx}" cy="${by}" r="${br}" fill="${CP}18" stroke="${CP}" stroke-width="2"/>`;
-  svg+=`<text x="${bx}" y="${by-10}" text-anchor="middle" fill="${CP}" font-size="9" font-weight="800">BOMBA</text>`;
-  svg+=`<text x="${bx}" y="${by+1}" text-anchor="middle" fill="${CP}" font-size="8">${_lastFlow>0?_lastFlow+'GPM':''}</text>`;
-  svg+=`<text x="${bx}" y="${by+12}" text-anchor="middle" fill="${CP}" font-size="8">${_lastPDP>0?_lastPDP.toFixed(0)+'psi':''}</text>`;
+  // Calcular cuántos pitones máximos hay en cualquier segmento
+  const maxPitones = Math.max(...segmentos.map(s=>s.pitones.length));
+  const pitonesZoneW = Math.max(1, maxPitones) * pitonGap + 20;
 
-  const sW=155,sH=54,segY=by+br+52;
-  const spacing=Math.min(200,(W-60)/Math.max(nS,1));
-  const startX=W/2-(spacing*(nS-1))/2;
+  const W = bombW + gapBS + segW + gapSP + pitonesZoneW + 30;
+  const H = padT + nS * rowH + padB;
 
-  segmentos.forEach((s,i)=>{
-    const sx=startX+i*spacing,sy=segY;
-    const col=s.maxVel>V_MAX?CW:s.isCrit?CS:CG;
-    const exceso=s.exceso||0;
-    const excCol=exceso>50?CW:exceso>20?CA:CG;
+  let svg = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg"
+    style="width:100%;display:block;font-family:'JetBrains Mono',monospace;">`;
+  svg += `<rect width="${W}" height="${H}" fill="${CB}" rx="8"/>`;
 
-    svg+=`<line x1="${bx}" y1="${by+br}" x2="${sx}" y2="${sy}" stroke="${col}" stroke-width="1.8" stroke-dasharray="6,3"/>`;
-    svg+=`<rect x="${sx-sW/2}" y="${sy}" width="${sW}" height="${sH}" rx="5" fill="${col}12" stroke="${col}" stroke-width="1.5"/>`;
-    svg+=`<text x="${sx}" y="${sy+12}" text-anchor="middle" fill="${col}" font-size="9" font-weight="800">SEG ${i+1}${s.isCrit?' ★':''}</text>`;
-    const ht=s.hoses.map(h=>`${h.diam}"`).join('+');
-    svg+=`<text x="${sx}" y="${sy+23}" text-anchor="middle" fill="${CD}" font-size="7.5">${ht} · ${s.totalQ}GPM</text>`;
-    svg+=`<text x="${sx}" y="${sy+34}" text-anchor="middle" fill="${CD}" font-size="7">PDP=${s.pdp.toFixed(0)}psi · Pérd=${s.perdidas.toFixed(0)}psi</text>`;
-    const npRealTxt=s.np_real?`NP real=${s.np_real.toFixed(0)}psi`:'';
-    svg+=`<text x="${sx}" y="${sy+45}" text-anchor="middle" fill="${excCol}" font-size="7">${npRealTxt}${exceso>5?` (+${exceso.toFixed(0)})`:''}</text>`;
+  // ── COLUMNA BOMBA ──────────────────────────────────────────────────
+  const bombaCY = padT + (nS * rowH) / 2;
+  const bombaR  = 36;
+  const bombaX  = bombW / 2;
 
-    // Pitones
-    const pY=sy+sH+44;
-    s.pitones.forEach((p,pi)=>{
-      const nP=s.pitones.length,pSpX=Math.min(50,80/Math.max(nP,1));
-      const px=sx-(pSpX*(nP-1))/2+pi*pSpX;
-      svg+=`<line x1="${sx}" y1="${sy+sH}" x2="${px}" y2="${pY-12}" stroke="${CP2}" stroke-width="1.2"/>`;
-      svg+=`<circle cx="${px}" cy="${pY}" r="12" fill="${CP2}15" stroke="${CP2}" stroke-width="1.2"/>`;
-      svg+=`<text x="${px}" y="${pY-3}" text-anchor="middle" fill="${CP2}" font-size="6.5" font-weight="800">PITÓN</text>`;
-      svg+=`<text x="${px}" y="${pY+6}" text-anchor="middle" fill="${CP2}" font-size="6">${p.q}g</text>`;
+  // línea vertical de distribución desde bomba
+  const lineTop    = padT + rowH / 2;
+  const lineBottom = padT + (nS - 1) * rowH + rowH / 2;
+  if(nS > 1){
+    svg += `<line x1="${bombaX}" y1="${lineTop}" x2="${bombaX}" y2="${lineBottom}"
+      stroke="${CP}50" stroke-width="2" stroke-dasharray="4,3"/>`;
+  }
+
+  // círculo bomba
+  svg += `<circle cx="${bombaX}" cy="${bombaCY}" r="${bombaR}"
+    fill="${CP}18" stroke="${CP}" stroke-width="2"/>`;
+  svg += `<text x="${bombaX}" y="${bombaCY-14}" text-anchor="middle"
+    fill="${CP}" font-size="9" font-weight="800">BOMBA</text>`;
+  svg += `<text x="${bombaX}" y="${bombaCY}" text-anchor="middle"
+    fill="${CP}" font-size="8.5" font-weight="700">${_lastPDP>0?_lastPDP.toFixed(0)+' psi':''}</text>`;
+  svg += `<text x="${bombaX}" y="${bombaCY+13}" text-anchor="middle"
+    fill="${CD}" font-size="7.5">${_lastFlow>0?_lastFlow+' GPM':''}</text>`;
+
+  // ── SEGMENTOS Y PITONES ────────────────────────────────────────────
+  const segX  = bombW + gapBS;
+  const pitX0 = segX + segW + gapSP;
+
+  segmentos.forEach((s, i) => {
+    const midY  = padT + i * rowH + rowH / 2;
+    const segY  = midY - 34;
+    const segH  = 68;
+    const col   = s.maxVel > V_MAX ? CW : s.isCrit ? CS : CG;
+    const exceso= s.exceso || 0;
+    const excCol= exceso > 50 ? CW : exceso > 20 ? CA : CG;
+
+    // línea horizontal bomba → segmento
+    const lineFromX = i === Math.floor(nS/2) || nS===1 ? bombaX+bombaR : bombaX;
+    svg += `<line x1="${bombaX}" y1="${midY}" x2="${segX}" y2="${midY}"
+      stroke="${col}90" stroke-width="2" stroke-dasharray="6,3"/>`;
+    // punto de conexión en la línea vertical
+    if(nS > 1){
+      svg += `<circle cx="${bombaX}" cy="${midY}" r="4" fill="${col}" opacity=".7"/>`;
+    }
+
+    // tarjeta segmento
+    svg += `<rect x="${segX}" y="${segY}" width="${segW}" height="${segH}" rx="6"
+      fill="${col}12" stroke="${col}" stroke-width="1.5"/>`;
+
+    // etiqueta segmento
+    svg += `<text x="${segX+10}" y="${segY+14}" fill="${col}"
+      font-size="9.5" font-weight="800">SEG ${i+1}${s.isCrit?' ★':''}</text>`;
+
+    // PDP badge
+    const pdpCol = s.pdp > NP_MAX_NFPA ? CW : s.pdp > 200 ? CA : CG;
+    svg += `<rect x="${segX+segW-58}" y="${segY+4}" width="54" height="16" rx="3"
+      fill="${pdpCol}18" stroke="${pdpCol}60" stroke-width="1"/>`;
+    svg += `<text x="${segX+segW-31}" y="${segY+15}" text-anchor="middle"
+      fill="${pdpCol}" font-size="8" font-weight="800">${s.pdp.toFixed(0)} psi</text>`;
+
+    // info mangueras
+    const ht = s.hoses.map(h=>`${h.diam}"×${h.cant}`).join(' + ');
+    svg += `<text x="${segX+10}" y="${segY+29}" fill="${CD}" font-size="7.5">${ht}</text>`;
+
+    // pérdidas
+    svg += `<text x="${segX+10}" y="${segY+43}" fill="${CD}" font-size="7">
+      Pérd: ${s.perdidas.toFixed(1)} psi · ${s.totalQ} GPM</text>`;
+
+    // NP real (exceso)
+    const npTxt = s.isCrit ? `NP: 100 psi ✓` : `NP real: ${s.np_real.toFixed(0)} psi (+${exceso.toFixed(0)})`;
+    svg += `<text x="${segX+10}" y="${segY+57}" fill="${excCol}" font-size="7">${npTxt}</text>`;
+
+    // velocidad
+    const velCol = s.maxVel > V_MAX ? CW : CG;
+    svg += `<text x="${segX+10}" y="${segY+67}" fill="${velCol}" font-size="7">
+      V: ${s.maxVel.toFixed(1)} ft/s ${s.maxVel>V_MAX?'⚠':''}</text>`;
+
+    // ── PITONES ───────────────────────────────────────────────────
+    const nP = s.pitones.length;
+    const totalPW = nP * pitonGap - (pitonGap - pitonR*2);
+    const pitStartX = pitX0 + pitonR;
+
+    // línea horizontal seg → pitones
+    svg += `<line x1="${segX+segW}" y1="${midY}" x2="${pitStartX+(nP-1)*pitonGap/2-pitonR+(nP>1?pitonGap/2:pitonR)}" y2="${midY}"
+      stroke="${CP2}60" stroke-width="1.5" stroke-dasharray="5,3"/>`;
+
+    s.pitones.forEach((p, pi) => {
+      const px = pitStartX + pi * pitonGap;
+      const py = midY;
+      const npP  = p.np_real || s.np_real || 0;
+      const pCol = npP < 50 ? CD : npP < 80 ? CA : npP > 150 ? CW : CP2;
+
+      // línea vertical si hay más de 1 pitón
+      if(nP > 1 && pi > 0){
+        svg += `<line x1="${pitStartX}" y1="${midY}" x2="${pitStartX+(nP-1)*pitonGap}" y2="${midY}"
+          stroke="${CP2}40" stroke-width="1"/>`;
+      }
+
+      svg += `<circle cx="${px}" cy="${py}" r="${pitonR}"
+        fill="${pCol}15" stroke="${pCol}" stroke-width="1.8"/>`;
+      svg += `<text x="${px}" y="${py-7}" text-anchor="middle"
+        fill="${pCol}" font-size="7" font-weight="800">P${pi+1}</text>`;
+      svg += `<text x="${px}" y="${py+4}" text-anchor="middle"
+        fill="${pCol}" font-size="8" font-weight="700">${p.q_real||p.q}g</text>`;
+      svg += `<text x="${px}" y="${py+14}" text-anchor="middle"
+        fill="${pCol}" font-size="7">${npP>0?npP.toFixed(0)+'p':''}</text>`;
     });
   });
 
-  const ly=H-11;
-  [[CP,'Bomba'],[CS,'Seg. crítico'],[CG,'Seg. OK'],[CW,'V>15ft/s o exceso crítico'],[CA,'Exceso >20psi'],[CP2,'Pitón']].forEach(([c,lbl],i)=>{
-    const lx=12+i*110;
-    svg+=`<circle cx="${lx+4}" cy="${ly}" r="4" fill="${c}18" stroke="${c}" stroke-width="1.2"/>`;
-    svg+=`<text x="${lx+11}" y="${ly+3}" fill="${CD}" font-size="7">${lbl}</text>`;
+  // ── LEYENDA ───────────────────────────────────────────────────────
+  const ly = H - 22;
+  const leyenda = [[CP,'Bomba'],[CS,'Seg.crítico'],[CG,'OK'],[CW,'V>15ft/s / exc.crítico'],[CA,'Exc.>20psi'],[CP2,'Pitón']];
+  const lStep = Math.floor(W / leyenda.length);
+  leyenda.forEach(([c,lbl],i)=>{
+    const lx = 14 + i * lStep;
+    svg += `<circle cx="${lx+4}" cy="${ly}" r="4" fill="${c}20" stroke="${c}" stroke-width="1.2"/>`;
+    svg += `<text x="${lx+11}" y="${ly+3.5}" fill="${CD}" font-size="7">${lbl}</text>`;
   });
-  svg+=`</svg>`;
-  wrap.innerHTML=svg;
-  const cc=document.getElementById('cc-svgwrap'); if(cc) cc.innerHTML=svg;
+
+  svg += `</svg>`;
+  wrap.innerHTML = svg;
+  const cc = document.getElementById('cc-svgwrap'); if(cc) cc.innerHTML = svg;
 }
 
 // ─── RENDER SEGMENTOS ────────────────────────────────────────────────
@@ -1301,11 +1412,9 @@ function resetAll(){
   agregarSegmento();
 }
 
-setInterval(()=>{document.getElementById('tb-clock').innerText=new Date().toLocaleTimeString('es-CO');},1000);
+setInterval(()=>{const t=new Date().toLocaleTimeString('es-CO');document.getElementById('tb-clock').innerText=t;const ft=document.getElementById('footer-ts');if(ft)ft.innerText=new Date().toLocaleDateString('es-CO')+' '+t;},1000);
 window.onload=resetAll;
-try{const u=JSON.parse(localStorage.getItem('arff_user')||'{}');
-  if(u.nombre)document.getElementById('sb-nombre').innerText=u.nombre;
-  if(u.rol)document.getElementById('sb-rol').innerText=u.rol;}catch(e){}
+
 </script>
 </body>
 </html>
