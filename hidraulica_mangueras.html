@@ -1026,24 +1026,38 @@ function qDisp(psi) {
 function repartirCaudalY(Q_total, pitones, np_nodo) {
   const N = pitones.length;
   if (N === 0) return [];
+
+  // ── Coeficiente de descarga K por pitón ─────────────────────────
+  // K se deriva del GLP nominal a NP_obj: Q = K × √NP  →  K = GLP / √NP_obj
+  // Esto es correcto porque la boquilla_d es el diámetro físico del orificio,
+  // pero el GLP YA incorpora el coeficiente de descarga real del pitón.
+  // Usar boquilla_d directamente (K = 29.7 × d²) sobreestima el flujo porque
+  // la boquilla real tiene su propio Cd < 1.0.
+  const Ks = pitones.map(p => {
+    const glp    = parseFloat(p.q) || 95;
+    const np_obj = parseFloat(p.np_obj) || NP_TARGET;
+    // K = GLP / √NP_obj  (coeficiente de descarga del pitón calibrado desde GLP)
+    return glp / Math.sqrt(np_obj);
+  });
+
   if (N === 1) {
-    // Un solo pitón: recibe todo
+    // Un solo pitón: recibe toda la presión disponible en el nodo
     const p   = pitones[0];
-    const d   = parseFloat(p.boquilla_d || 1.0);
-    const qR  = qBoquilla(d, np_nodo, p.tipo || 'fijo', p.q, parseFloat(p.np_obj || NP_TARGET));
+    const K   = Ks[0];
+    // Q_real = K × √NP_nodo  (directamente de Torricelli con K calibrado)
+    const qR  = Math.round(K * Math.sqrt(Math.max(0, np_nodo)));
     return [{ q_rama: qR, np_piton: np_nodo }];
   }
 
-  // Coeficientes K de cada boquilla: Q = K × √NP → Q² = K² × NP
-  const Ks = pitones.map(p => 29.7 * Math.pow(parseFloat(p.boquilla_d || 1.0), 2));
+  // ── Newton-Raphson: resolver NP_equil tal que Σ K_i × √NP_equil = Q_total ──
+  // En el nodo Y todos los ramales comparten la misma presión de equilibrio.
+  // Semilla inicial: NP proporcional a Q_total² / (ΣK)²
+  const sumK = Ks.reduce((s, k) => s + k, 0);
+  let NP = Math.pow(Q_total / sumK, 2);   // semilla hidráulicamente correcta
+  NP = Math.min(NP, np_nodo);              // no puede superar la presión del nodo
 
-  // Iteración: dado un NP_nodo compartido, Q_i = K_i × √NP_nodo
-  // Ajustamos NP_nodo para que Σ Q_i = Q_total
-  // f(NP) = Σ K_i × √NP − Q_total = 0
-  // f'(NP) = (1/2) × Σ K_i / √NP
-  let NP = np_nodo; // semilla = NP disponible en el nodo
-  const MAX_ITER = 50;
-  const TOL      = 0.05; // GPM
+  const MAX_ITER = 60;
+  const TOL      = 0.02; // GPM — tolerancia estricta
 
   for (let iter = 0; iter < MAX_ITER; iter++) {
     if (NP <= 0) { NP = 0; break; }
@@ -1051,16 +1065,17 @@ function repartirCaudalY(Q_total, pitones, np_nodo) {
     const Qsum   = Ks.reduce((s, k) => s + k * sqrtNP, 0);
     const f      = Qsum - Q_total;
     if (Math.abs(f) < TOL) break;
-    const df     = Ks.reduce((s, k) => s + k / (2 * sqrtNP), 0);
+    const df = Ks.reduce((s, k) => s + k / (2 * sqrtNP), 0);
+    if (Math.abs(df) < 1e-10) break;   // evitar división por cero
     NP = NP - f / df;
-    NP = Math.max(0, NP);
+    NP = Math.max(0, Math.min(NP, np_nodo));  // acotar entre 0 y np_nodo
   }
 
-  // Con NP_equilibrio calculado, obtener Q real de cada pitón
+  // ── Resultado: Q real y NP real de cada pitón ────────────────────
   return pitones.map((p, i) => {
-    const d     = parseFloat(p.boquilla_d || 1.0);
+    const K    = Ks[i];
     const npPit = Math.max(0, NP);
-    const qR    = qBoquilla(d, npPit, p.tipo || 'fijo', p.q, parseFloat(p.np_obj || NP_TARGET));
+    const qR   = Math.round(K * Math.sqrt(npPit));
     return { q_rama: qR, np_piton: npPit };
   });
 }
@@ -1203,10 +1218,14 @@ function recalcAll(pdpOverride) {
     caudalRealTotal += s.totalQ_real;
   });
 
-  // ── Guardar estado en modo consigna ──────────────────────
+  // ── Guardar estado global (SIEMPRE se actualiza) ─────────
+  // _lastFlow siempre refleja el caudal real actual (slider o consigna)
+  // para que updateTank() funcione en ambos modos.
+  _lastFlow = caudalRealTotal;
+
   if (pdpOverride === undefined) {
+    // Solo en modo consigna actualizamos PDP y stats de referencia
     _lastPDP   = pdpBomba;
-    _lastFlow  = caudalRealTotal;
     _lastStats = segCrit
       ? { fl: segCrit.fl, al: segCrit.al, ep: segCrit.ep }
       : { fl: 0, al: 0, ep: 0 };
@@ -1505,33 +1524,50 @@ function onVehicleChange() {
   if (_lastPDP > 0) recalcAndUpdateAll();
 }
 
-// ─── AUTONOMÍA ───────────────────────────────────────────────────────
+// ─── AUTONOMÍA DE TANQUE ────────────────────────────────────────────
 function updateTank(){
-  const capRaw=parseFloat(document.getElementById('tank-cap').value)||0;
-  const unit=document.getElementById('tank-unit').value;
-  const flow=_lastFlow; // usamos caudal REAL
-  const capGal=unit==='lit'?capRaw*.264172:capRaw;
-  document.getElementById('tank-cap-label').innerText=capRaw?(capRaw+(unit==='gal'?' GAL':' L')):'—';
-  if(!capRaw||flow<=0){
-    ['tank-min','tank-sec'].forEach(id=>document.getElementById(id).innerText='—');
-    document.getElementById('tank-bar').style.width='0%';
-    document.getElementById('tank-bar-mid').innerText='—';
-    document.getElementById('tank-warning').innerHTML=''; return;
+  const capRaw = parseFloat(document.getElementById('tank-cap').value) || 0;
+  const unit   = document.getElementById('tank-unit').value;
+  const capGal = unit === 'lit' ? capRaw * 0.264172 : capRaw;
+
+  document.getElementById('tank-cap-label').innerText =
+    capRaw ? (capRaw + (unit === 'gal' ? ' GAL' : ' L')) : '—';
+
+  // Usar caudal real actual — _lastFlow siempre se actualiza (slider o consigna)
+  // Si aún no hay cálculo, intentar sumar q_real de todos los pitones
+  let flow = _lastFlow;
+  if (flow <= 0) {
+    flow = segmentos.reduce((s, seg) =>
+      s + seg.pitones.reduce((ps, p) => ps + (p.q_real || 0), 0), 0);
   }
-  const totalSec=(capGal/flow)*60, totalMin=totalSec/60;
-  const md=Math.floor(totalMin),sd=Math.round((totalMin-md)*60);
-  document.getElementById('tank-min').innerText=md+'m '+sd+'s';
-  document.getElementById('tank-sec').innerText=Math.round(totalSec)+' seg';
-  document.getElementById('tank-bar-mid').innerText=Math.round(capGal/2)+' GAL';
-  const bar=document.getElementById('tank-bar');
-  bar.style.width=Math.min(100,(totalMin/10)*100)+'%';
-  bar.style.background=totalMin<2?'#f43f5e':totalMin<4?'#f59f00':'#10b981';
-  const tw=document.getElementById('tank-warning');
-  const base='border-radius:6px;padding:8px 12px;font-size:11px;font-weight:700;margin-top:10px;';
-  if(totalMin<1)      tw.innerHTML=`<div style="${base}background:rgba(244,63,94,.08);border-left:3px solid var(--red);color:var(--red)">🔴 <strong>CRÍTICO:</strong> &lt;1 min. Reabastecimiento inmediato.</div>`;
-  else if(totalMin<3) tw.innerHTML=`<div style="${base}background:rgba(245,159,0,.08);border-left:3px solid var(--amber);color:var(--amber)">🟡 <strong>ALERTA:</strong> &lt;3 min. Coordinar reabastecimiento.</div>`;
-  else if(totalMin<5) tw.innerHTML=`<div style="${base}background:rgba(56,189,248,.06);border-left:3px solid var(--sky);color:var(--sky)">🔵 <strong>NOTA:</strong> 3–5 min. Identificar punto de reabastecimiento.</div>`;
-  else tw.innerHTML='';
+
+  if (!capRaw || flow <= 0) {
+    ['tank-min','tank-sec'].forEach(id => document.getElementById(id).innerText = '—');
+    document.getElementById('tank-bar').style.width = '0%';
+    document.getElementById('tank-bar-mid').innerText = '—';
+    document.getElementById('tank-warning').innerHTML = '';
+    return;
+  }
+
+  const totalSec = (capGal / flow) * 60;
+  const totalMin = totalSec / 60;
+  const md = Math.floor(totalMin);
+  const sd = Math.round((totalMin - md) * 60);
+
+  document.getElementById('tank-min').innerText  = md + 'm ' + sd + 's';
+  document.getElementById('tank-sec').innerText  = Math.round(totalSec) + ' seg';
+  document.getElementById('tank-bar-mid').innerText = Math.round(capGal / 2) + ' GAL';
+
+  const bar = document.getElementById('tank-bar');
+  bar.style.width      = Math.min(100, (totalMin / 10) * 100) + '%';
+  bar.style.background = totalMin < 2 ? '#f43f5e' : totalMin < 4 ? '#f59f00' : '#10b981';
+
+  const tw   = document.getElementById('tank-warning');
+  const base = 'border-radius:6px;padding:8px 12px;font-size:11px;font-weight:700;margin-top:10px;';
+  if      (totalMin < 1) tw.innerHTML = `<div style="${base}background:rgba(244,63,94,.08);border-left:3px solid var(--red);color:var(--red)">🔴 <strong>CRÍTICO:</strong> &lt;1 min. Reabastecimiento inmediato.</div>`;
+  else if (totalMin < 3) tw.innerHTML = `<div style="${base}background:rgba(245,159,0,.08);border-left:3px solid var(--amber);color:var(--amber)">🟡 <strong>ALERTA:</strong> &lt;3 min. Coordinar reabastecimiento.</div>`;
+  else if (totalMin < 5) tw.innerHTML = `<div style="${base}background:rgba(56,189,248,.06);border-left:3px solid var(--sky);color:var(--sky)">🔵 <strong>NOTA:</strong> 3–5 min. Identificar punto de reabastecimiento.</div>`;
+  else tw.innerHTML = '';
 }
 
 // ════════════════════════════════════════════════════════════
@@ -2046,21 +2082,33 @@ function buildSchematic() {
     svg += `<circle cx="${col_wye - 6}" cy="${midY}" r="4"
       fill="${CB}" stroke="${CP2}" stroke-width="1.5"/>`;
 
-    // 4. PITONES
+    // 4. PITONES — valores reales individuales
     s.pitones.forEach((p, pi) => {
-      const nP     = s.pitones.length;
-      const halfSp = (nP - 1) * pitSpV / 2;
+      const nP2    = s.pitones.length;
+      const halfSp = (nP2 - 1) * pitSpV / 2;
       const pitY   = midY - halfSp + pi * pitSpV;
       const pitX   = col_pitStart;
 
-      const npP  = p.np_real !== undefined ? p.np_real : (s.np_real || 0);
-      const qR   = p.q_real  !== undefined ? p.q_real  : p.q;
-      const pCol = npP < 50 ? CW : npP < 85 ? CA : npP > 115 ? CW : npP > 105 ? CA : CG;
-      const tipoCls = p.tipo === 'automatico' ? '⚙' : '🔧';
+      // NP real individual: si ya se calculó se usa p.np_real; si no, mostrar NP del nodo
+      const hasCalc = (p.np_real !== undefined && (p.np_real > 0 || p.q_real >= 0))
+                      && (_lastPDP > 0 || _sliderPDP > 0);
+      const npP  = hasCalc ? p.np_real : s.np_real;
+      const qR   = hasCalc ? p.q_real  : 0;
+      const eff  = hasCalc && p.q > 0 ? Math.round((p.q_real / p.q) * 100) : null;
 
-      // Cuerpo del pitón (silueta trapezoidal — vista lateral simplificada)
-      // Boca ancha izquierda → boquilla estrecha derecha
+      // Color semáforo por NP individual del pitón
+      const pCol = !hasCalc    ? CD
+                 : npP <= 0   ? '#6b7280'        // gris — sin agua
+                 : npP < 50   ? CW               // rojo crítico
+                 : npP < 85   ? CA               // ámbar — bajo
+                 : npP > 120  ? CW               // rojo — exceso peligroso
+                 : npP > 105  ? CA               // ámbar — exceso leve
+                 : CG;                           // verde — óptimo
+
+      const tipoCls = p.tipo === 'automatico' ? '⚙' : '🔧';
       const bw = pitBodyW, bh = pitBodyH;
+
+      // Cuerpo trapezoidal del pitón
       svg += `<polygon points="
         ${pitX},${pitY - bh/2}
         ${pitX + bw*0.72},${pitY - bh/3.5}
@@ -2070,31 +2118,51 @@ function buildSchematic() {
         ${pitX},${pitY + bh/2}"
         fill="${pCol}18" stroke="${pCol}" stroke-width="1.6"/>`;
 
-      // Boquilla (pequeño rect al final del cono)
+      // Boquilla
       svg += `<rect x="${pitX + bw}" y="${pitY - bh/6}"
         width="5" height="${bh/3}" rx="1" fill="${pCol}" opacity=".9"/>`;
 
-      // Chorro (3 líneas de agua saliendo de la boquilla)
+      // Chorro — más intenso si hay presión real
       const jx = pitX + bw + 5;
+      const chorroLen = hasCalc && npP > 0 ? Math.min(18, 8 + npP / 15) : 6;
       [-1, 0, 1].forEach(offset => {
         svg += `<line x1="${jx}" y1="${pitY + offset * 3}"
-          x2="${jx + 10 + Math.abs(offset)*2}" y2="${pitY + offset * 5}"
-          stroke="${CP}60" stroke-width="${offset === 0 ? 1.5 : 1}" stroke-linecap="round"/>`;
+          x2="${jx + chorroLen + Math.abs(offset)*2}" y2="${pitY + offset * 5}"
+          stroke="${hasCalc && npP > 0 ? CP : CD}${hasCalc && npP > 0 ? '90' : '40'}"
+          stroke-width="${offset === 0 ? 1.5 : 1}" stroke-linecap="round"/>`;
       });
 
-      // Etiqueta P#
+      // Etiqueta P# y tipo
       svg += `<text x="${pitX + bw/2}" y="${pitY - bh/2 - 3}"
         text-anchor="middle" fill="${pCol}" font-size="7.5" font-weight="800">P${pi+1} ${tipoCls}</text>`;
 
-      // Datos: q_real y NP
-      svg += `<text x="${jx + 14}" y="${pitY - 3}"
-        text-anchor="start" fill="${pCol}" font-size="8" font-weight="700">${qR} GPM</text>`;
-      svg += `<text x="${jx + 14}" y="${pitY + 8}"
-        text-anchor="start" fill="${pCol}" font-size="7">${npP.toFixed(0)} psi</text>`;
-
-      // Semáforo NP (pequeño círculo de estado)
+      // Semáforo NP (círculo de estado)
       svg += `<circle cx="${pitX + bw - 4}" cy="${pitY - bh/2 + 3}" r="3"
         fill="${pCol}" opacity=".85"/>`;
+
+      // ── DATOS INDIVIDUALES DEL PITÓN ──────────────────────────────
+      const labelX = jx + 14;
+
+      if (hasCalc) {
+        // Q real individual
+        svg += `<text x="${labelX}" y="${pitY - 5}"
+          text-anchor="start" fill="${pCol}" font-size="8.5" font-weight="800">${qR} GPM</text>`;
+        // NP real individual
+        svg += `<text x="${labelX}" y="${pitY + 6}"
+          text-anchor="start" fill="${pCol}" font-size="7.5" font-weight="700">${npP.toFixed(1)} psi</text>`;
+        // Eficiencia
+        if (eff !== null) {
+          const effCol = eff >= 90 ? CG : eff >= 75 ? CA : CW;
+          svg += `<text x="${labelX}" y="${pitY + 16}"
+            text-anchor="start" fill="${effCol}" font-size="7">${eff}% eff</text>`;
+        }
+      } else {
+        // Antes del primer cálculo: mostrar GLP nominal
+        svg += `<text x="${labelX}" y="${pitY - 5}"
+          text-anchor="start" fill="${CD}" font-size="8" font-weight="700">${p.q} GPM nom.</text>`;
+        svg += `<text x="${labelX}" y="${pitY + 6}"
+          text-anchor="start" fill="${CD}" font-size="7">—calcule—</text>`;
+      }
     });
   });
 
@@ -2741,15 +2809,19 @@ function computeVelocity(gpm, diameter, cant) {
     console.assert(q > 280 && q < 315,
       `[ARFF] nozzleCurve ERROR: esperado ~297 GPM, obtenido ${q}`);
 
-    // BalanceFlow: 2 pitones iguales en 1.0" con 190 GPM totales a 100 psi
-    // → cada uno debe recibir ~95 GPM a ~100 psi
+    // BalanceFlow: 2 pitones iguales de 95 GPM a NP_obj=100 con Q_total=190 GPM
+    // → cada uno debe recibir ~95 GPM a ~100 psi de NP equilibrio
     const p1 = [
-      { boquilla_d: 1.0, np_obj: 100, tipo: 'fijo', q: 95 },
-      { boquilla_d: 1.0, np_obj: 100, tipo: 'fijo', q: 95 },
+      { q: 95, np_obj: 100, boquilla_d: 0.566, tipo: 'fijo' },
+      { q: 95, np_obj: 100, boquilla_d: 0.566, tipo: 'fijo' },
     ];
     const bal = balanceFlow(190, p1, 100);
-    console.assert(bal.length === 2 && Math.abs(bal[0].q_rama - bal[1].q_rama) < 5,
-      `[ARFF] balanceFlow ERROR: reparto no equitativo para pitones iguales`);
+    console.assert(bal.length === 2,
+      `[ARFF] balanceFlow ERROR: debe retornar 2 elementos`);
+    console.assert(Math.abs(bal[0].q_rama - 95) < 5,
+      `[ARFF] balanceFlow ERROR: P1 esperado ~95 GPM, obtenido ${bal[0].q_rama}`);
+    console.assert(Math.abs(bal[1].q_rama - 95) < 5,
+      `[ARFF] balanceFlow ERROR: P2 esperado ~95 GPM, obtenido ${bal[1].q_rama}`);
 
     // computeNozzlePressure con segmento artificial
     const fakeSeg = { fl: 40, al: 5, ep: 0, perdidas: 45 };
