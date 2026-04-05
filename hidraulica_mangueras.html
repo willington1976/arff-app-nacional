@@ -762,354 +762,657 @@
 
 <script>
 /* ═══════════════════════════════════════════════════════════════════════
-   MOTOR HIDRÁULICO ARFF — COMPENSACIÓN DE PRESIÓN
-   NFPA 1901 Table C.5.1.1 · Modo Bombeo Estacionario
-   
-   LÓGICA CENTRAL:
-   • NP objetivo fijo = 100 psi (ajustable por pitón si se requiere)
-   • PDP_seg = 100 + FL + AL + EP  → lo que necesita cada línea
-   • PDP_bomba = MAX(PDP_seg)      → lo que marca el manómetro
-   • NP_real_seg = MAX(0, PDP_bomba − Pérdidas_seg)  → lo que llega al pitón
-   • Q_real_boquilla = 29.7 × d² × √NP_real (Torricelli/NFPA)
-   • Exceso = NP_real − 100 psi   → lo que recibe de más el pitonero
-   
-   CORRECCIONES v2:
-   • FL paralelo: cant mangueras en paralelo → Q/cant por manguera (no serie)
-   • AL usa diámetro mínimo (más restrictivo) del segmento
-   • NP_real clamped a 0 → evita NaN; flag np_insuf si pérdidas > PDP
-   • PSI_PER_M = 1.4223 (exacto: ρgh = 9807 Pa / 6894.76 Pa/psi)
-   • qDisp extrapola linealmente para psi < 150 (no meseta plana)
-   • LONA_F documentado con fuente IFSTA
+   MOTOR HIDRÁULICO ARFF v5 — SIMULADOR PROFESIONAL
+   NFPA 1901 Table C.5.1.1 · NFPA 1962 · IFSTA Fire Hydraulics 6th ed.
+   PDP variable → NP real por pitón → caudal real por boquilla
 ═══════════════════════════════════════════════════════════════════════ */
 
-// ─── CONSTANTES ───────────────────────────────────────────────────────
-const C_NFPA    = {'1.5':24,'1.75':15.5,'2':8,'2.5':2,'3':0.8,'4':0.2,'5':0.08};
-const D_REAL_IN = {'1.5':1.61,'1.75':1.88,'2':2.10,'2.5':2.62,'3':3.10,'4':4.10,'5':5.10};
-// Factor de corrección para manguera de lona vs. caucho.
-// La NFPA 1961/1962 no publica un valor único; 1.20 es el coeficiente conservador
-// citado en IFSTA Fire Hydraulics (6th ed., Cap. 4) y usado en la práctica ARFF.
-// Rango bibliográfico: 1.15–1.25 según fabricante y estado de la manguera.
-const LONA_F    = 1.20; // [IFSTA Fire Hydraulics 6th ed. Cap.4 — valor conservador]
-const V_MAX     = 15.0;   // ft/s (NFPA 1962)
-const NP_MAX_NFPA = 250;  // psi — límite NFPA 1962 manguera
-const PSI_PER_M = 1.4223;  // ρ·g·h: 1000 kg/m³ × 9.807 m/s² × 1 m = 9807 Pa / 6894.76 Pa/psi
-const GPM_TO_M3S= 6.30902e-5;
-const G         = 9.807;
+// ════════════════════════════════════════════════════════════
+// 1. CONSTANTES FÍSICAS Y TABLAS NFPA
+// ════════════════════════════════════════════════════════════
 
-// ─── BOMBAS ARFF ─────────────────────────────────────────────────────
-const BOMBAS = {
-  panther_r600:{nombre:'Rosenbauer Panther R600', q150:1850,q200:1400,q250:1000},
-  panther_n80: {nombre:'Rosenbauer Panther N80',  q150:2250,q200:1700,q250:1200},
-  panther_n110:{nombre:'Rosenbauer Panther N110', q150:3000,q200:2250,q250:1600},
-  striker:     {nombre:'Oshkosh Striker (Waterous)',q150:2000,q200:1500,q250:1100},
-  iturri_s:    {nombre:'Iturri 4x4 pequeño',     q150:1000,q200:750, q250:500},
-  iturri_m:    {nombre:'Iturri 4x4 mediano',     q150:1500,q200:1100,q250:750},
-  iturri_toro: {nombre:'Iturri Toro / 6x6',      q150:2500,q200:1750,q250:1250},
-  naffco_4x4:  {nombre:'NAFFCO 4x4',             q150:1250,q200:950, q250:700},
-  naffco_6x6:  {nombre:'NAFFCO 6x6',             q150:2500,q200:1750,q250:1200},
-  custom:      {nombre:'Personalizada',           q150:1500,q200:1100,q250:750},
+// Coeficiente C de NFPA 1901 Table C.5.1.1 por diámetro nominal (pulgadas)
+// FL = C × (Q/100)² × (L/100)  → psi
+const C_NFPA = {
+  '1.5' : 24.0,    // manguera 1½"
+  '1.75': 15.5,    // manguera 1¾"
+  '2'   :  8.0,    // manguera 2"
+  '2.5' :  2.0,    // manguera 2½"
+  '3'   :  0.80,   // manguera 3"
+  '4'   :  0.20,   // manguera 4"
+  '5'   :  0.08,   // manguera 5"
 };
-let _bomba = {...BOMBAS.panther_r600};
 
-// Interpolación en curva de bomba — GPM disponibles a X psi
-// < 150 psi: extrapolación lineal con la pendiente del primer segmento (q100→q150)
-// 150–250 psi: interpolación lineal entre los tres puntos de curva
-// > 250 psi: extrapolación conservadora con pendiente final
-function qDisp(psi){
-  if(psi<=0) return _bomba.q150; // caudal máximo nominal (presión 0 = bomba abierta)
-  if(psi<150){
-    const slope=(_bomba.q200-_bomba.q150)/50; // psi/GPM del tramo 150–200
-    return Math.round(_bomba.q150+(psi-150)*slope); // extrapola hacia atrás (slope<0 → q sube)
-  }
-  if(psi<=200){const t=(psi-150)/50; return Math.round(_bomba.q150+t*(_bomba.q200-_bomba.q150));}
-  if(psi<=250){const t=(psi-200)/50; return Math.round(_bomba.q200+t*(_bomba.q250-_bomba.q200));}
-  const slope=(_bomba.q250-_bomba.q200)/50;
-  return Math.max(0,Math.round(_bomba.q250+(psi-250)*slope));
-}
+// Diámetro interior real (ID) en pulgadas por diámetro nominal
+const D_REAL_IN = {
+  '1.5' : 1.61,
+  '1.75': 1.88,
+  '2'   : 2.10,
+  '2.5' : 2.62,
+  '3'   : 3.10,
+  '4'   : 4.10,
+  '5'   : 5.10,
+};
 
-// ─── ACCESORIOS ───────────────────────────────────────────────────────
-const ACCESORIOS=[
-  {id:'valvula',    nombre:'Válvula de línea',  k:6.0},
-  {id:'bifurcacion',nombre:'Wye / Bifurcación', k:4.5},
-  {id:'siames',     nombre:'Siamés / Unión',    k:2.0},
-  {id:'codo',       nombre:'Codo / Curva',       k:1.5},
-  {id:'reductor',   nombre:'Reductor diámetro', k:0.8},
-  {id:'adaptador',  nombre:'Adaptador',          k:1.5},
+// Coeficientes K de accesorios (pérdida menor = K × hv)
+// hv = V²/(2g) en metros → convertida a PSI
+const ACC_K = {
+  valvula    : 6.0,   // válvula de globo/línea (posición más desfavorable)
+  bifurcacion: 4.5,   // wye / bifurcación
+  siames     : 2.0,   // siamés / unión
+  codo       : 1.5,   // codo 90°
+  reductor   : 0.8,   // reductor de diámetro
+  adaptador  : 1.5,   // adaptador macho-hembra
+};
+
+// Multiplicador lona vs. caucho (IFSTA Fire Hydraulics 6th ed. Cap.4)
+// Rango bibliográfico 1.15–1.25; usamos 1.20 (valor conservador ARFF)
+const LONA_F = 1.20;
+
+// Límites operativos NFPA
+const V_MAX_FTPS  = 15.0;   // ft/s velocidad máxima manguera (NFPA 1962 §4.2)
+const V_WARN_FTPS = 10.0;   // ft/s umbral de alerta temprana
+const PDP_MAX_PSI = 250;    // psi límite NFPA 1962 manguera
+const NP_TARGET   = 100;    // psi NP objetivo estándar en pitón
+
+// Conversiones
+const GPM_TO_M3S = 6.30902e-5;   // 1 GPM = 6.30902×10⁻⁵ m³/s
+const PSI_PER_M  = 1.4223;        // 1 m columna agua = 1.4223 psi (exacto ρgh)
+const G_MS2      = 9.807;          // gravedad m/s²
+const FT_PER_M   = 3.28084;
+
+// ════════════════════════════════════════════════════════════
+// 2. CATÁLOGO DE BOMBAS ARFF
+// ════════════════════════════════════════════════════════════
+// Tres puntos de la curva de bomba: GPM a 150, 200 y 250 psi
+// Fuente: fichas técnicas Rosenbauer, Oshkosh, Iturri, NAFFCO
+const BOMBAS = {
+  panther_r600 : { nombre:'Rosenbauer Panther R600',       q150:1850, q200:1400, q250:1000 },
+  panther_n80  : { nombre:'Rosenbauer Panther N80',         q150:2250, q200:1700, q250:1200 },
+  panther_n110 : { nombre:'Rosenbauer Panther N110',        q150:3000, q200:2250, q250:1600 },
+  striker      : { nombre:'Oshkosh Striker (Waterous CRQB)',q150:2000, q200:1500, q250:1100 },
+  iturri_s     : { nombre:'Iturri 4×4 pequeño',            q150:1000, q200:750,  q250:500  },
+  iturri_m     : { nombre:'Iturri 4×4 mediano',            q150:1500, q200:1100, q250:750  },
+  iturri_toro  : { nombre:'Iturri Toro / 6×6',             q150:2500, q200:1750, q250:1250 },
+  naffco_4x4   : { nombre:'NAFFCO 4×4',                    q150:1250, q200:950,  q250:700  },
+  naffco_6x6   : { nombre:'NAFFCO 6×6',                    q150:2500, q200:1750, q250:1200 },
+  custom       : { nombre:'Personalizada',                  q150:1500, q200:1100, q250:750  },
+};
+let _bomba = { ...BOMBAS.panther_r600 };
+
+// ════════════════════════════════════════════════════════════
+// 3. CATÁLOGO DE ACCESORIOS (para renderizar UI)
+// ════════════════════════════════════════════════════════════
+const ACCESORIOS = [
+  { id:'valvula',     nombre:'Válvula de línea',  k: ACC_K.valvula,     psi_ref: null },
+  { id:'bifurcacion', nombre:'Wye / Bifurcación', k: ACC_K.bifurcacion, psi_ref: null },
+  { id:'siames',      nombre:'Siamés / Unión',    k: ACC_K.siames,      psi_ref: null },
+  { id:'codo',        nombre:'Codo / Curva',      k: ACC_K.codo,        psi_ref: null },
+  { id:'reductor',    nombre:'Reductor diámetro', k: ACC_K.reductor,    psi_ref: null },
+  { id:'adaptador',   nombre:'Adaptador',         k: ACC_K.adaptador,   psi_ref: null },
 ];
 
-// ─── ESTADO ───────────────────────────────────────────────────────────
-// Cada segmento = línea desde la salida del camión hasta pitones.
-// Un pitón tiene: q (GPM nominal), np_obj (NP objetivo, default 100),
-//                 boquilla_d (diámetro boquilla en pulgadas, para Q real)
-var segmentos=[], segUID=0, pitonUID=0;
-var _lastPDP=0, _lastFlow=0, _lastStats={fl:0,al:0,ep:0};
-var _velWarnings=[];
-var _pumpMonitor=0; // presión actual del manómetro (slider)
+// ════════════════════════════════════════════════════════════
+// 4. ESTADO GLOBAL
+// ════════════════════════════════════════════════════════════
+var segmentos = [];
+var segUID    = 0;
+var pitonUID  = 0;
 
-// ─── FÓRMULAS ────────────────────────────────────────────────────────
-// cant = número de mangueras en PARALELO del mismo diámetro y longitud.
-// El caudal se reparte equitativamente → Q por manguera = Q/cant
-// FL = C × (Q_por_manguera/100)² × (longFt/100)  [misma para todas, en paralelo]
-// Equivalente simplificado: FL_par = C × (Q/100)² × (longFt/100) / cant
-function calcFL(Q,diam,cant,longFt,mat){
-  const C=C_NFPA[String(diam)]; if(!C||!Q) return 0;
-  const n=Math.max(1,cant);
-  return C*Math.pow((Q/n)/100,2)*(longFt/100)*(mat==='lona'?LONA_F:1);
-}
-function calcV(Q,diam){
-  const Dr=D_REAL_IN[String(diam)]; if(!Dr||!Q) return 0;
-  return (Q*GPM_TO_M3S/(Math.PI*Math.pow(Dr*0.0254/2,2)))*3.28084;
-}
-function calcAL(Q,diam,K){
-  const Dr=D_REAL_IN[String(diam)]||parseFloat(diam); if(!Q||!K) return 0;
-  const V=Q*GPM_TO_M3S/(Math.PI*Math.pow(Dr*0.0254/2,2));
-  return K*(V*V/(2*G))*PSI_PER_M;
-}
-function calcEP(elev,unit){
-  if(!elev) return 0;
-  let m=parseFloat(elev)||0;
-  if(unit==='ft') m*=0.3048;
-  if(unit==='pisos') m*=3.0;
-  return m*PSI_PER_M;
-}
-// Caudal real por boquilla dado NP real (Torricelli/NFPA)
-// Q = 29.7 × d² × √NP   (d en pulgadas, Q en GPM, NP en psi)
-function qBoquilla(d_in, np_psi){
-  if(!d_in||!np_psi||np_psi<=0) return 0;
-  return Math.round(29.7 * d_in * d_in * Math.sqrt(np_psi));
+// Últimos resultados del motor (modo Consigna)
+var _lastPDP   = 0;        // psi — presión de consigna calculada
+var _lastFlow  = 0;        // GPM — caudal real total
+var _lastStats = { fl:0, al:0, ep:0 };
+var _velWarnings = [];
+
+// Presión actual del slider (modo Monitor tiempo real)
+var _sliderPDP = 0;        // psi — lo que el maquinista puso en el manómetro
+
+// ════════════════════════════════════════════════════════════
+// 5. FÓRMULAS HIDRÁULICAS FUNDAMENTALES
+// ════════════════════════════════════════════════════════════
+
+/**
+ * Pérdida por fricción en manguera (NFPA 1901 Table C.5.1.1)
+ * FL = C × (Q_por_manguera/100)² × (L/100)
+ * Para mangueras en paralelo: cada una lleva Q/cant → FL = C×(Q/cant/100)²×(L/100)
+ * @param {number} Q       caudal total que entra al grupo (GPM)
+ * @param {string} diam    diámetro nominal ("1.5","1.75","2","2.5","3","4","5")
+ * @param {number} cant    cantidad de mangueras EN PARALELO
+ * @param {number} longFt  longitud de CADA manguera (ft)
+ * @param {string} mat     "caucho" o "lona"
+ * @returns {number} pérdida por fricción en psi
+ */
+function calcFL(Q, diam, cant, longFt, mat) {
+  const C = C_NFPA[String(diam)];
+  if (!C || !Q || !longFt) return 0;
+  const n  = Math.max(1, cant);
+  const Qm = Q / n;                           // caudal por manguera individual
+  const fl = C * Math.pow(Qm / 100, 2) * (longFt / 100);
+  return fl * (mat === 'lona' ? LONA_F : 1);  // corrección lona
 }
 
-// ─── CÁLCULO DE UN SEGMENTO ───────────────────────────────────────────
-function calcSegmento(seg){
-  // Caudal nominal = suma de caudales de pitones (Q que usamos para FL)
-  const Q = seg.pitones.reduce((s,p)=>s+parseFloat(p.q||0),0);
+/**
+ * Velocidad del agua en ft/s
+ * V = Q[m³/s] / A[m²]  × 3.28084 ft/m
+ * @param {number} Q      caudal total (GPM) — se divide si cant > 1
+ * @param {string} diam   diámetro nominal
+ * @param {number} cant   mangueras en paralelo (default 1)
+ * @returns {number} velocidad en ft/s de la manguera individual
+ */
+function calcV(Q, diam, cant) {
+  const Dr_in = D_REAL_IN[String(diam)];
+  if (!Dr_in || !Q) return 0;
+  const n     = Math.max(1, cant || 1);
+  const Qm    = Q / n;                            // caudal por manguera individual
+  const r_m   = (Dr_in * 0.0254) / 2;            // radio en metros
+  const A_m2  = Math.PI * r_m * r_m;             // área transversal m²
+  const Q_m3s = Qm * GPM_TO_M3S;
+  return (Q_m3s / A_m2) * FT_PER_M;             // ft/s
+}
+
+/**
+ * Pérdida en accesorios por K-factor
+ * AL = K × (V²/2g) [m] × PSI_PER_M
+ * @param {number} Q      caudal (GPM)
+ * @param {string} diam   diámetro de referencia
+ * @param {number} K      coeficiente de pérdida menor
+ * @returns {number} pérdida en psi
+ */
+function calcAL(Q, diam, K) {
+  const Dr_in = D_REAL_IN[String(diam)] || parseFloat(diam);
+  if (!Q || !K || !Dr_in) return 0;
+  const r_m   = (Dr_in * 0.0254) / 2;
+  const A_m2  = Math.PI * r_m * r_m;
+  const V_ms  = (Q * GPM_TO_M3S) / A_m2;        // m/s
+  const hv_m  = (V_ms * V_ms) / (2 * G_MS2);    // altura velocidad en metros
+  return K * hv_m * PSI_PER_M;                   // psi
+}
+
+/**
+ * Pérdida o ganancia por elevación
+ * EP = h_m × 1.4223 psi/m
+ * Positivo = sube (pierde presión), Negativo = baja (gana presión)
+ * @param {number} elev   valor numérico
+ * @param {string} unit   "m" | "ft" | "pisos"
+ * @returns {number} psi (+sube, −baja)
+ */
+function calcEP(elev, unit) {
+  let m = parseFloat(elev) || 0;
+  if (unit === 'ft')    m *= 0.3048;
+  if (unit === 'pisos') m *= 3.0;    // 3 m por piso (promedio estructural)
+  return m * PSI_PER_M;
+}
+
+/**
+ * Caudal real de boquilla fija (Torricelli / NFPA)
+ * Q = 29.7 × d² × √NP    (d en pulgadas, Q en GPM, NP en psi)
+ * Fuente: NFPA 1962 / IFSTA Fire Hydraulics eq. 4.2
+ * @param {number} d_in   diámetro de boquilla en pulgadas
+ * @param {number} np     presión real en pitón (psi)
+ * @param {string} tipo   "fijo" | "automatico"
+ * @param {number} q_nom  caudal nominal (GPM) — usado solo para pitón automático
+ * @param {number} np_obj NP objetivo del pitón — umbral pitón automático
+ * @returns {number} caudal en GPM (entero)
+ */
+function qBoquilla(d_in, np, tipo, q_nom, np_obj) {
+  if (!d_in || !np || np <= 0) return 0;
+  if (tipo === 'automatico') {
+    // Pitón automático: mantiene Q_nom mientras NP ≥ NP_obj
+    // Si NP baja del objetivo, cae con raíz cuadrada (comportamiento real)
+    if (np >= (np_obj || NP_TARGET)) return Math.round(q_nom || 0);
+    return Math.round(29.7 * d_in * d_in * Math.sqrt(np));
+  }
+  // Pitón fijo (default): siempre sigue la presión
+  return Math.round(29.7 * d_in * d_in * Math.sqrt(np));
+}
+
+/**
+ * Interpola la curva de bomba → GPM disponibles a X psi
+ * Tramo < 150 psi: extrapolación lineal hacia atrás
+ * Tramo 150–250 psi: interpolación lineal entre tres puntos
+ * Tramo > 250 psi: extrapolación conservadora (pendiente negativa)
+ */
+function qDisp(psi) {
+  if (psi <= 0) return _bomba.q150;
+  if (psi < 150) {
+    const slope = (_bomba.q200 - _bomba.q150) / 50;
+    return Math.max(0, Math.round(_bomba.q150 + (psi - 150) * slope));
+  }
+  if (psi <= 200) {
+    const t = (psi - 150) / 50;
+    return Math.round(_bomba.q150 + t * (_bomba.q200 - _bomba.q150));
+  }
+  if (psi <= 250) {
+    const t = (psi - 200) / 50;
+    return Math.round(_bomba.q200 + t * (_bomba.q250 - _bomba.q200));
+  }
+  const slope = (_bomba.q250 - _bomba.q200) / 50;
+  return Math.max(0, Math.round(_bomba.q250 + (psi - 250) * slope));
+}
+
+// ════════════════════════════════════════════════════════════
+// 6. MOTOR DE CÁLCULO DE SEGMENTO
+//    Calcula pérdidas y NP requerida para un segmento dado su Q nominal
+//    NO depende de la PDP de la bomba → solo geometría del tendido
+// ════════════════════════════════════════════════════════════
+function calcSegmento(seg) {
+  // Caudal nominal del segmento = suma de GLP de todos sus pitones
+  const Q = seg.pitones.reduce((s, p) => s + parseFloat(p.q || 0), 0);
   seg.totalQ = Q;
 
-  // FL total (todos los tramos en serie, mismo Q)
-  seg.fl = seg.hoses.reduce((s,h)=>s+calcFL(Q,h.diam,h.cant,parseFloat(h.longFt||0),h.material),0);
+  // ── Fricción FL (tramos en serie, cada tramo puede tener paralelo interno) ──
+  // Cada fila de la tabla UI es un "tramo en serie" con cant mangueras en paralelo.
+  // La FL del tramo es la misma para cada manguera del grupo paralelo.
+  seg.fl = seg.hoses.reduce((sum, h) => {
+    return sum + calcFL(Q, h.diam, h.cant, parseFloat(h.longFt || 0), h.material);
+  }, 0);
 
-  // AL — se aplica al diámetro más restrictivo del segmento (el de menor ID).
-  // En ARFF los accesorios suelen estar en el tramo de mayor diámetro;
-  // usamos el diámetro del primer tramo como referencia operativa conservadora.
-  // Si el segmento tiene tramos mixtos, la pérdida real puede diferir.
-  const dRef = seg.hoses.reduce((min,h)=>{
-    const idMin=D_REAL_IN[String(min)]||9, idH=D_REAL_IN[String(h.diam)]||9;
-    return idH<idMin ? h.diam : min;
-  }, seg.hoses[0]?String(seg.hoses[0].diam):'2.5');
-  seg.al = ACCESORIOS.reduce((s,a)=>s+(seg.accs[a.id]?calcAL(Q,dRef,a.k):0),0);
+  // ── Accesorios AL ──
+  // Se aplican con el diámetro del primer tramo (más conservador para ARFF).
+  // Si hay accesorios mezclados con diferentes tramos, el operador debe
+  // dividirlos en segmentos separados.
+  const dRef = seg.hoses[0] ? String(seg.hoses[0].diam) : '2.5';
+  seg.al = ACCESORIOS.reduce((sum, a) => {
+    if (!seg.accs[a.id]) return sum;
+    return sum + calcAL(Q, dRef, a.k);
+  }, 0);
 
-  // EP
+  // ── Elevación EP ──
   seg.ep = calcEP(seg.elev, seg.elevUnit);
 
-  // NP objetivo (siempre 100 psi — presión objetivo en pitón)
-  seg.np_obj = 100;
+  // ── NP objetivo del segmento (máximo de los NP objetivo de sus pitones) ──
+  // Esto permite configurar pitones con diferentes NP objetivo.
+  seg.np_obj = seg.pitones.reduce((mx, p) => Math.max(mx, parseFloat(p.np_obj || NP_TARGET)), NP_TARGET);
 
-  // PDP requerida para este segmento = 100 + todas las pérdidas
+  // ── Pérdidas totales y PDP requerida ──
   seg.perdidas = seg.fl + seg.al + seg.ep;
-  seg.pdp = seg.np_obj + seg.perdidas;
+  seg.pdp      = seg.np_obj + seg.perdidas;  // PDP mínima que necesita este segmento
 
-  // Velocidad máxima
-  seg.maxVel=0; seg.velDiam='2.5';
-  seg.hoses.forEach(h=>{const v=calcV(Q,h.diam); if(v>seg.maxVel){seg.maxVel=v;seg.velDiam=h.diam;}});
-}
-
-// ─── MOTOR PRINCIPAL ─────────────────────────────────────────────────
-function recalcAll(){
-  _velWarnings=[];
-  segmentos.forEach(s=>calcSegmento(s));
-
-  // Segmento crítico = el que exige mayor PDP
-  let segCrit=null;
-  segmentos.forEach(s=>{
-    if(!segCrit||s.pdp>segCrit.pdp) segCrit=s;
-    if(s.maxVel>V_MAX) _velWarnings.push(s);
+  // ── Velocidad máxima del segmento (peor tramo) ──
+  seg.maxVel  = 0;
+  seg.velDiam = dRef;
+  seg.hoses.forEach(h => {
+    const v = calcV(Q, h.diam, h.cant);
+    if (v > seg.maxVel) { seg.maxVel = v; seg.velDiam = h.diam; }
   });
 
-  const pdpBomba = segCrit ? segCrit.pdp : 0;
-  const caudal   = segmentos.reduce((s,x)=>s+x.totalQ,0);
+  // ── Velocidades individuales por tramo (para diagnóstico detallado) ──
+  seg.hoseVels = seg.hoses.map(h => ({
+    diam: h.diam, cant: h.cant, longFt: h.longFt,
+    v: calcV(Q, h.diam, h.cant),
+    fl: calcFL(Q, h.diam, h.cant, parseFloat(h.longFt || 0), h.material),
+  }));
+}
 
-  // Para cada segmento: calcular NP real que llegará al pitón cuando
-  // la bomba esté a pdpBomba (que es lo que el maquinista configura)
-  segmentos.forEach(s=>{
+// ════════════════════════════════════════════════════════════
+// 7. MOTOR PRINCIPAL — recalcAll(pdpOverride)
+//    pdpOverride = undefined → MODO CONSIGNA (calcula PDP óptima)
+//    pdpOverride = number    → MODO MONITOR (usa PDP dada por slider)
+// ════════════════════════════════════════════════════════════
+function recalcAll(pdpOverride) {
+  _velWarnings = [];
+
+  // Calcular geometría de todos los segmentos (independiente de PDP)
+  segmentos.forEach(s => calcSegmento(s));
+
+  // Identificar segmento crítico (mayor PDP requerida)
+  let segCrit = null;
+  segmentos.forEach(s => {
+    if (!segCrit || s.pdp > segCrit.pdp) segCrit = s;
+    if (s.maxVel > V_MAX_FTPS) _velWarnings.push(s);
+  });
+
+  // Determinar PDP de la bomba según el modo activo
+  let pdpBomba;
+  if (pdpOverride !== undefined) {
+    // MODO MONITOR: el operador está probando con una PDP real
+    pdpBomba = pdpOverride;
+  } else {
+    // MODO CONSIGNA: PDP óptima = la que necesita el segmento crítico
+    pdpBomba = segCrit ? segCrit.pdp : 0;
+  }
+
+  // Calcular NP real y caudal real para cada segmento con la PDP definida
+  let caudalNomTotal = 0;
+  let caudalRealTotal = 0;
+
+  segmentos.forEach(s => {
+    caudalNomTotal += s.totalQ;
+
+    // NP real en pitón: lo que sobra después de las pérdidas del tendido
     const npCalc  = pdpBomba - s.perdidas;
-    s.np_real     = Math.max(0, npCalc);   // nunca negativo — evita NaN en √
-    s.np_insuf    = npCalc < 0;            // flag: pérdidas > PDP bomba (error config.)
-    s.exceso      = s.np_real - s.np_obj;  // exceso sobre NP objetivo
-    s.isCrit      = (s===segCrit);
+    s.np_real     = Math.max(0, npCalc);
+    s.np_insuf    = npCalc < 0;             // las pérdidas superan la PDP
+    s.exceso      = s.np_real - s.np_obj;  // exceso sobre el objetivo
+    s.isCrit      = (s === segCrit && pdpOverride === undefined);
 
-    // Caudal real por cada boquilla con la NP real
-    s.pitones.forEach(p=>{
+    // Porcentaje de pérdidas sobre la PDP
+    s.pct_perdidas = pdpBomba > 0 ? (s.perdidas / pdpBomba) * 100 : 0;
+
+    // Caudal real por pitón según NP real
+    s.pitones.forEach(p => {
       p.np_real = s.np_real;
-      p.q_real  = qBoquilla(parseFloat(p.boquilla_d||1.0), s.np_real);
+      p.q_real  = qBoquilla(
+        parseFloat(p.boquilla_d || 1.0),
+        s.np_real,
+        p.tipo || 'fijo',
+        p.q,
+        parseFloat(p.np_obj || NP_TARGET)
+      );
+      // Eficiencia de cada pitón: q_real / q_nom × 100
+      p.eficiencia = p.q > 0 ? Math.round((p.q_real / p.q) * 100) : 0;
     });
 
-    // Caudal real total del segmento
-    s.totalQ_real = s.pitones.reduce((sum,p)=>sum+p.q_real,0);
+    // Caudal real del segmento = suma de q_real de sus pitones
+    s.totalQ_real = s.pitones.reduce((sum, p) => sum + p.q_real, 0);
+
+    // Eficiencia hidráulica del segmento
+    s.eficiencia = s.totalQ > 0 ? Math.round((s.totalQ_real / s.totalQ) * 100) : 0;
+
+    caudalRealTotal += s.totalQ_real;
   });
 
-  const caudal_real = segmentos.reduce((s,x)=>s+x.totalQ_real,0);
+  // Guardar estado global
+  if (pdpOverride === undefined) {
+    // Solo actualizamos _lastPDP en modo consigna
+    _lastPDP   = pdpBomba;
+    _lastFlow  = caudalRealTotal;
+    _lastStats = segCrit ? { fl: segCrit.fl, al: segCrit.al, ep: segCrit.ep } : { fl:0, al:0, ep:0 };
+  }
 
-  _lastPDP   = pdpBomba;
-  _lastFlow  = caudal_real;   // autonomía basada en caudal real
-  _lastStats = segCrit ? {fl:segCrit.fl,al:segCrit.al,ep:segCrit.ep} : {fl:0,al:0,ep:0};
-
-  updateUI(pdpBomba, caudal, caudal_real, segCrit);
-  updateTank();
-  buildRecommendations(pdpBomba, caudal, caudal_real);
-  buildSchematic();
-  renderSegmentos();
-  onPumpMonitor(); // refrescar feedback del slider
+  return { pdpBomba, caudalNomTotal, caudalRealTotal, segCrit };
 }
 
-// ─── UI PRINCIPAL ─────────────────────────────────────────────────────
-function updateUI(pdp, caudal_nom, caudal_real, segCrit){
-  // Velocity alerts
-  const va=document.getElementById('vel-alert');
-  if(_velWarnings.length){
+// ════════════════════════════════════════════════════════════
+// 8. FUNCIÓN MAESTRA: recalcula y actualiza toda la UI
+// ════════════════════════════════════════════════════════════
+function recalcAndUpdateAll(pdpOverride) {
+  const r = recalcAll(pdpOverride);
+
+  updateUI(r.pdpBomba, r.caudalNomTotal, r.caudalRealTotal, r.segCrit, pdpOverride !== undefined);
+  updateTank();
+  buildRecommendations(r.pdpBomba, r.caudalNomTotal, r.caudalRealTotal);
+  buildSchematic();
+  renderSegmentos();
+  updateTacticIndicators();
+}
+
+// ════════════════════════════════════════════════════════════
+// 9. UI PRINCIPAL — panel derecho de resultados
+// ════════════════════════════════════════════════════════════
+function updateUI(pdp, caudal_nom, caudal_real, segCrit, isMonitor) {
+  // ── Alerta de velocidad ──────────────────────────────────
+  const va = document.getElementById('vel-alert');
+  if (_velWarnings.length) {
     va.classList.add('show');
-    document.getElementById('vel-alert-items').innerHTML=_velWarnings.map(s=>{
-      const si=segmentos.indexOf(s)+1, dRec=diamMin(s.totalQ);
-      return `<div style="font-size:11px;color:var(--text-dim);margin:3px 0;font-family:var(--ff-m)">⚠ Seg.${si}: ${s.maxVel.toFixed(1)} ft/s con ${s.totalQ} GPM en ${s.velDiam}" → cambiar a ${dRec}" (${calcV(s.totalQ,String(dRec)).toFixed(1)} ft/s ✓)</div>`;
+    document.getElementById('vel-alert-items').innerHTML = _velWarnings.map(s => {
+      const si    = segmentos.indexOf(s) + 1;
+      const dRec  = diamMin(s.totalQ);
+      const vRec  = calcV(s.totalQ, String(dRec), 1);
+      return `<div style="font-size:11px;color:var(--text-dim);margin:3px 0;font-family:var(--ff-m)">
+        ⚠ Seg.${si}: <strong style="color:var(--red)">${s.maxVel.toFixed(1)} ft/s</strong>
+        con ${s.totalQ} GPM en ${s.velDiam}" →
+        cambiar a <strong>${dRec}"</strong> (${vRec.toFixed(1)} ft/s ✓)
+      </div>`;
     }).join('');
-  } else va.classList.remove('show');
+  } else { va.classList.remove('show'); }
 
-  document.getElementById('result-idle').style.display='none';
-  document.getElementById('result-body').style.display='block';
+  document.getElementById('result-idle').style.display = 'none';
+  document.getElementById('result-body').style.display = 'block';
 
-  // Status
-  const el=document.getElementById('res-pdp'), st=document.getElementById('result-status');
-  el.innerHTML=pdp.toFixed(1)+'<span class="consigna-unit">psi</span>';
+  // ── Gran número — PDP ────────────────────────────────────
+  const elPdp = document.getElementById('res-pdp');
+  const elSt  = document.getElementById('result-status');
+  elPdp.innerHTML = pdp.toFixed(1) + '<span class="consigna-unit">psi</span>';
 
-  const qD=qDisp(pdp), margen=qD-caudal_nom;
+  // Etiqueta contextual según modo
+  const consignaLbl = document.querySelector('.consigna-label');
+  if (consignaLbl) {
+    consignaLbl.textContent = isMonitor
+      ? 'Presión Actual en Manómetro (Simulación)'
+      : 'Presión de Consigna — Maquinista';
+  }
+
+  const qD = qDisp(pdp), margen = qD - caudal_nom;
   let col, msg;
-  if(_velWarnings.length)            {col='var(--red)';  msg='🚨 VELOCIDAD EXCESIVA — CORREGIR TENDIDO';}
-  else if(pdp>NP_MAX_NFPA)           {col='var(--red)';  msg='⛔ PELIGRO — EXCEDE LÍMITE MANGUERA (NFPA 1962)';}
-  else if(caudal_nom>qD)             {col='var(--red)';  msg='⚠ CAUDAL INSUFICIENTE — REDUCIR SEGMENTOS';}
-  else if(pdp>200||margen<caudal_nom*.15){col='var(--amber)';msg='⚡ OPERABLE — VERIFICAR MARGEN';}
-  else                               {col='var(--green)';msg='✓ SISTEMA CORRECTO — LISTO PARA OPERAR';}
-  el.style.color=col; st.style.color=col; st.innerText=msg;
+  if      (_velWarnings.length)               { col='var(--red)';   msg='🚨 VELOCIDAD EXCESIVA — CORREGIR TENDIDO'; }
+  else if (pdp > PDP_MAX_PSI)                 { col='var(--red)';   msg='⛔ PELIGRO — EXCEDE LÍMITE NFPA 1962 (250 psi)'; }
+  else if (caudal_nom > qD)                   { col='var(--red)';   msg='⚠ CAUDAL INSUFICIENTE — BOMBA NO ALCANZA'; }
+  else if (pdp > 200 || margen < caudal_nom * .15) { col='var(--amber)'; msg='⚡ OPERABLE — VERIFICAR MARGEN DE SEGURIDAD'; }
+  else                                        { col='var(--green)'; msg='✓ SISTEMA CORRECTO — LISTO PARA OPERAR'; }
 
-  // Pump capacity
-  const pcEl=document.getElementById('pump-cap-box');
-  const pcCls=caudal_nom>qD?'pc-bad':pdp>200?'pc-warn':'pc-ok';
-  pcEl.className='pump-cap '+pcCls;
-  pcEl.innerHTML=`
-    <div class="pump-cap-row"><span style="color:var(--text-dim)">Presión requerida</span><span style="font-family:var(--ff-m);font-weight:700;color:${col}">${pdp.toFixed(1)} psi</span></div>
-    <div class="pump-cap-row"><span style="color:var(--text-dim)">Caudal nominal</span><span style="font-family:var(--ff-m);font-weight:700">${caudal_nom} GPM</span></div>
-    <div class="pump-cap-row"><span style="color:var(--text-dim)">Caudal real (con excesos)</span><span style="font-family:var(--ff-m);font-weight:700;color:var(--amber)">${caudal_real} GPM</span></div>
-    <div class="pump-cap-row"><span style="color:var(--text-dim)">Bomba disponible @ ${pdp.toFixed(0)} psi</span><span style="font-family:var(--ff-m);font-weight:700;color:${caudal_nom<=qD?'var(--green)':'var(--red)'}">${qD} GPM</span></div>
-    <div class="pump-cap-row"><span style="color:var(--text-dim)">Margen de caudal</span><span style="font-family:var(--ff-m);font-weight:700;color:${margen>=0?'var(--green)':'var(--red)'}">${margen>=0?'+':''}${margen} GPM</span></div>`;
+  // En modo monitor, matizar según si la bomba alcanza o no
+  if (isMonitor) {
+    const critSeg = segmentos.reduce((m, s) => (!m || s.pdp > m.pdp) ? s : m, null);
+    const pdpReq  = critSeg ? critSeg.pdp : 0;
+    if (pdp < pdpReq && pdpReq > 0) {
+      col = 'var(--red)';
+      msg = `🔴 PRESIÓN INSUFICIENTE — Faltan ${(pdpReq - pdp).toFixed(0)} psi para alimentar el segmento crítico`;
+    } else if (pdp > 0 && pdpReq > 0 && Math.abs(pdp - pdpReq) <= 5) {
+      col = 'var(--green)';
+      msg = `✅ PRESIÓN CORRECTA ≈ ${pdpReq.toFixed(0)} psi — Pitones reciben ~${NP_TARGET} psi`;
+    } else if (pdp > pdpReq && pdpReq > 0) {
+      const exceso = (pdp - pdpReq).toFixed(0);
+      col = exceso > 30 ? 'var(--red)' : 'var(--amber)';
+      msg = `ℹ EXCESO +${exceso} psi sobre consigna — Pitones reciben más presión del objetivo`;
+    }
+  }
 
-  // Breakdown
-  document.getElementById('res-np').innerText='100 psi';
-  document.getElementById('res-fl').innerText=(segCrit?segCrit.fl:0).toFixed(1)+' psi';
-  document.getElementById('res-al').innerText=(segCrit?segCrit.al:0).toFixed(1)+' psi';
-  document.getElementById('res-ep').innerText=(segCrit?segCrit.ep:0).toFixed(1)+' psi';
-  document.getElementById('res-q').innerText=`${caudal_nom} GPM nom. / ${caudal_real} GPM real`;
+  elPdp.style.color = col;
+  elSt.style.color  = col;
+  elSt.innerText    = msg;
 
-  // Per-segment analysis
-  const ss=document.getElementById('segs-summary');
-  ss.innerHTML=segmentos.map((s,i)=>{
-    const excCol = s.exceso>50?'var(--red)':s.exceso>20?'var(--amber)':'var(--green)';
-    const excMsg = s.isCrit ? 'Segmento crítico — NP exacto: 100 psi ✓'
-                             : `NP real en pitón: ${s.np_real.toFixed(1)} psi (+${s.exceso.toFixed(1)} psi exceso)`;
-    return `<div class="seg-result-card ${s.isCrit?'critical':''}">
+  // ── Capacidad de Bomba ───────────────────────────────────
+  const pcEl  = document.getElementById('pump-cap-box');
+  const pcCls = caudal_nom > qD ? 'pc-bad' : pdp > 200 ? 'pc-warn' : 'pc-ok';
+  pcEl.className = 'pump-cap ' + pcCls;
+
+  // Calcular PDP de consigna siempre (incluso en modo monitor)
+  const pdpConsigna = _lastPDP;
+
+  pcEl.innerHTML = `
+    <div class="pump-cap-row">
+      <span style="color:var(--text-dim)">PDP ${isMonitor ? 'actual (slider)' : 'de consigna'}</span>
+      <span style="font-family:var(--ff-m);font-weight:700;color:${col}">${pdp.toFixed(1)} psi</span>
+    </div>
+    ${isMonitor && pdpConsigna > 0 ? `
+    <div class="pump-cap-row">
+      <span style="color:var(--text-dim)">PDP de consigna (calculada)</span>
+      <span style="font-family:var(--ff-m);font-weight:700;color:var(--sky)">${pdpConsigna.toFixed(1)} psi</span>
+    </div>` : ''}
+    <div class="pump-cap-row">
+      <span style="color:var(--text-dim)">Caudal nominal total</span>
+      <span style="font-family:var(--ff-m);font-weight:700">${caudal_nom} GPM</span>
+    </div>
+    <div class="pump-cap-row">
+      <span style="color:var(--text-dim)">Caudal real (boquillas)</span>
+      <span style="font-family:var(--ff-m);font-weight:700;color:var(--amber)">${caudal_real} GPM</span>
+    </div>
+    <div class="pump-cap-row">
+      <span style="color:var(--text-dim)">Bomba disponible @ ${pdp.toFixed(0)} psi</span>
+      <span style="font-family:var(--ff-m);font-weight:700;color:${caudal_nom <= qD ? 'var(--green)' : 'var(--red)'}">${qD} GPM</span>
+    </div>
+    <div class="pump-cap-row">
+      <span style="color:var(--text-dim)">Margen de caudal</span>
+      <span style="font-family:var(--ff-m);font-weight:700;color:${margen >= 0 ? 'var(--green)' : 'var(--red)'}">
+        ${margen >= 0 ? '+' : ''}${margen} GPM
+      </span>
+    </div>
+    <div class="pump-cap-row">
+      <span style="color:var(--text-dim)">Eficiencia global del sistema</span>
+      <span style="font-family:var(--ff-m);font-weight:700;color:${
+        caudal_nom > 0 && caudal_real / caudal_nom >= 0.9 ? 'var(--green)'
+        : caudal_nom > 0 && caudal_real / caudal_nom >= 0.75 ? 'var(--amber)'
+        : 'var(--red)'
+      }">
+        ${caudal_nom > 0 ? Math.round((caudal_real / caudal_nom) * 100) : '—'}%
+      </span>
+    </div>`;
+
+  // ── Desglose segmento crítico ────────────────────────────
+  document.getElementById('res-np').innerText = (segCrit ? segCrit.np_obj : NP_TARGET) + ' psi';
+  document.getElementById('res-fl').innerText = (segCrit ? segCrit.fl : 0).toFixed(1) + ' psi';
+  document.getElementById('res-al').innerText = (segCrit ? segCrit.al : 0).toFixed(1) + ' psi';
+  document.getElementById('res-ep').innerText = (segCrit ? segCrit.ep : 0).toFixed(1) + ' psi';
+  document.getElementById('res-q').innerText  = `${caudal_nom} GPM nom. / ${caudal_real} GPM real`;
+
+  // ── Análisis por segmento ────────────────────────────────
+  const ss = document.getElementById('segs-summary');
+  ss.innerHTML = segmentos.map((s, i) => {
+    const npColor = s.np_insuf ? 'var(--red)'
+                  : s.np_real < 85 ? 'var(--red)'
+                  : s.np_real > 115 ? 'var(--red)'
+                  : s.np_real < 95 || s.np_real > 105 ? 'var(--amber)'
+                  : 'var(--green)';
+
+    const efColor = s.eficiencia >= 90 ? 'var(--green)'
+                  : s.eficiencia >= 75 ? 'var(--amber)'
+                  : 'var(--red)';
+
+    const npMsg = s.np_insuf
+      ? `⛔ Pérdidas (${s.perdidas.toFixed(1)} psi) > PDP bomba (${pdp.toFixed(1)} psi)`
+      : s.isCrit
+        ? `★ Segmento crítico — NP objetivo ${s.np_obj} psi exacto`
+        : `NP real: ${s.np_real.toFixed(1)} psi (+${s.exceso.toFixed(1)} psi sobre objetivo)`;
+
+    // Detalle por pitón
+    const pitonRows = s.pitones.map((p, pi) => {
+      const pc = p.np_real < 85 ? 'var(--red)'
+               : p.np_real > 115 ? 'var(--red)'
+               : p.np_real < 95 || p.np_real > 105 ? 'var(--amber)'
+               : 'var(--green)';
+      const tipo = p.tipo === 'automatico' ? '⚙ Auto' : '🔧 Fijo';
+      return `<div style="display:flex;gap:6px;font-size:9px;font-family:var(--ff-m);padding:2px 4px;background:rgba(255,255,255,.02);border-radius:3px;margin-top:2px;">
+        <span style="color:var(--text-muted)">P${pi+1} ${tipo}</span>
+        <span style="color:${pc};font-weight:700">${p.np_real ? p.np_real.toFixed(0) : '—'} psi</span>
+        <span style="color:var(--amber)">${p.q_real || '—'} GPM</span>
+        <span style="color:var(--text-muted)">(nom: ${p.q} GPM)</span>
+        <span style="color:${p.eficiencia >= 90 ? 'var(--green)' : p.eficiencia >= 75 ? 'var(--amber)' : 'var(--red)'}">${p.eficiencia}%</span>
+      </div>`;
+    }).join('');
+
+    return `<div class="seg-result-card ${s.isCrit ? 'critical' : ''}">
       <div class="seg-result-title">
-        <span>Seg. ${i+1} ${s.isCrit?'<span style="font-family:var(--ff-m);font-size:9px;color:var(--sky)">← CRÍTICO</span>':''}</span>
-        <span style="font-family:var(--ff-m);font-size:11px;color:${s.pdp>NP_MAX_NFPA?'var(--red)':s.pdp>200?'var(--amber)':'var(--green)'}">${s.pdp.toFixed(1)} psi PDP</span>
+        <span>Seg. ${i+1} ${s.isCrit ? '<span style="font-family:var(--ff-m);font-size:9px;color:var(--sky)">← CRÍTICO</span>' : ''}</span>
+        <span style="font-family:var(--ff-m);font-size:11px;color:${s.pdp > PDP_MAX_PSI ? 'var(--red)' : s.pdp > 200 ? 'var(--amber)' : 'var(--green)'}">
+          ${s.pdp.toFixed(1)} psi PDP
+        </span>
       </div>
-      <div class="seg-result-row"><span style="color:var(--text-dim)">Pérdidas totales</span><span style="font-family:var(--ff-m);color:var(--red)">${s.perdidas.toFixed(1)} psi</span></div>
-      <div class="seg-result-row"><span style="color:var(--text-dim)">Caudal nominal</span><span style="font-family:var(--ff-m)">${s.totalQ} GPM</span></div>
-      <div class="seg-result-row"><span style="color:var(--text-dim)">Caudal real (boquilla)</span><span style="font-family:var(--ff-m);color:var(--amber)">${s.totalQ_real} GPM</span></div>
-      <div class="seg-result-row" style="border-bottom:none"><span style="color:var(--text-dim)">${excMsg}</span><span style="font-family:var(--ff-m);color:${excCol}">${s.isCrit?'':'±'+s.exceso.toFixed(1)+'psi'}</span></div>
+      <div class="seg-result-row">
+        <span style="color:var(--text-dim)">FL + AL + EP</span>
+        <span style="font-family:var(--ff-m);color:var(--amber)">
+          ${s.fl.toFixed(1)} + ${s.al.toFixed(1)} + ${s.ep.toFixed(1)} = ${s.perdidas.toFixed(1)} psi
+        </span>
+      </div>
+      <div class="seg-result-row">
+        <span style="color:var(--text-dim)">NP real en pitón</span>
+        <span style="font-family:var(--ff-m);color:${npColor};font-weight:800">${s.np_real.toFixed(1)} psi</span>
+      </div>
+      <div class="seg-result-row">
+        <span style="color:var(--text-dim)">Caudal nominal / real</span>
+        <span style="font-family:var(--ff-m)">${s.totalQ} / <span style="color:var(--amber)">${s.totalQ_real} GPM</span></span>
+      </div>
+      <div class="seg-result-row">
+        <span style="color:var(--text-dim)">Eficiencia hidráulica</span>
+        <span style="font-family:var(--ff-m);color:${efColor};font-weight:700">${s.eficiencia}%</span>
+      </div>
+      <div class="seg-result-row" style="border-bottom:none">
+        <span style="color:${npColor};font-size:10px">${npMsg}</span>
+      </div>
+      ${pitonRows}
     </div>`;
   }).join('');
 
-  // Velocities
-  const vw=document.getElementById('res-velocidades');
-  vw.style.display='block';
-  document.getElementById('res-vel-items').innerHTML=segmentos.map((s,i)=>{
-    const ok=s.maxVel<=V_MAX;
+  // ── Velocidades por segmento ─────────────────────────────
+  const vw = document.getElementById('res-velocidades');
+  vw.style.display = 'block';
+  document.getElementById('res-vel-items').innerHTML = segmentos.map((s, i) => {
+    const ok   = s.maxVel <= V_MAX_FTPS;
+    const warn = s.maxVel > V_WARN_FTPS && ok;
+    const col2  = ok ? (warn ? 'var(--amber)' : 'var(--green)') : 'var(--red)';
+    const icon = ok ? (warn ? '⚠' : '✓') : '🚨';
     return `<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border);font-family:var(--ff-m);font-size:11px;">
-      <span style="color:var(--text-dim)">Seg.${i+1} <span style="font-size:9px;color:var(--text-muted)">(${s.totalQ}GPM)</span></span>
-      <span style="color:${ok?'var(--green)':'var(--red)'};font-weight:700">${s.maxVel.toFixed(1)} ft/s ${ok?'✓':'⚠'}</span></div>`;
+      <span style="color:var(--text-dim)">Seg.${i+1}
+        <span style="font-size:9px;color:var(--text-muted)">(${s.totalQ} GPM · ${s.velDiam}")</span>
+      </span>
+      <span style="color:${col2};font-weight:700">${s.maxVel.toFixed(1)} ft/s ${icon} / ${(s.maxVel * 0.3048).toFixed(2)} m/s</span>
+    </div>`;
   }).join('');
 }
 
-// ─── PUMP MONITOR — feedback en tiempo real ───────────────────────────
-function onPumpMonitor(){
-  const psi=parseFloat(document.getElementById('pm-slider').value)||0;
-  _pumpMonitor=psi;
-  document.getElementById('pm-val-num').innerText=psi;
+// ════════════════════════════════════════════════════════════
+// 10. SLIDER DE PRESIÓN ACTUAL (MODO MONITOR EN TIEMPO REAL)
+//     Cada movimiento del slider recalcula todo el sistema
+//     con la PDP que el operador está poniendo en el manómetro
+// ════════════════════════════════════════════════════════════
+function onPumpMonitor() {
+  const psi = parseFloat(document.getElementById('pm-slider').value) || 0;
+  _sliderPDP = psi;
+  document.getElementById('pm-val-num').innerText = psi;
 
-  if(psi===0){
-    document.getElementById('pm-note').innerText='↑ Mueva el slider para ver qué presión llega actualmente a cada pitón';
-    // Limpiar feedback de pitones
-    document.querySelectorAll('[id^="pf-"]').forEach(el=>{
-      el.className='piton-feedback pf-idle';
-      el.innerHTML='Calcule primero para activar feedback';
+  const noteEl = document.getElementById('pm-note');
+
+  if (psi === 0) {
+    noteEl.innerText = '↑ Mueva el slider para simular la presión que el maquinista pone en el manómetro';
+    noteEl.style.color = '';
+    // Limpiar piton feedbacks
+    document.querySelectorAll('[id^="pf-"]').forEach(el => {
+      el.className = 'piton-feedback pf-idle';
+      el.innerHTML = 'Mueva el slider o calcule para ver presión y caudal real en este pitón';
     });
+    // En modo slider=0, volver a mostrar la última consigna calculada
+    if (_lastPDP > 0) {
+      recalcAndUpdateAll(); // modo consigna
+    }
     return;
   }
 
-  if(_lastPDP===0){
-    document.getElementById('pm-note').innerText='⚙ Calcule primero para activar el feedback';
-    return;
-  }
+  // Con PDP real del slider → recalcular todo instantáneamente
+  recalcAndUpdateAll(psi);
 
-  const req=_lastPDP;
-  if(psi<req){
-    document.getElementById('pm-note').innerText=`⚠ Bomba en ${psi} psi — necesita ${req.toFixed(0)} psi — INSUFICIENTE`;
-    document.getElementById('pm-note').style.color='var(--red)';
-  } else if(psi===req||Math.abs(psi-req)<=5){
-    document.getElementById('pm-note').innerText=`✓ Bomba en ${psi} psi — presión correcta — pitones reciben ~100 psi`;
-    document.getElementById('pm-note').style.color='var(--green)';
+  // Mensaje pedagógico en la nota del slider
+  const pdpReq = _lastPDP;
+  if (pdpReq > 0) {
+    if (psi < pdpReq - 5) {
+      noteEl.innerText = `🔴 INSUFICIENTE — Bomba en ${psi} psi / Consigna ${pdpReq.toFixed(0)} psi — Faltan ${(pdpReq-psi).toFixed(0)} psi`;
+      noteEl.style.color = 'var(--red)';
+    } else if (Math.abs(psi - pdpReq) <= 5) {
+      noteEl.innerText = `✅ CORRECTO — Bomba en ${psi} psi ≈ consigna ${pdpReq.toFixed(0)} psi — Pitones reciben ~${NP_TARGET} psi`;
+      noteEl.style.color = 'var(--green)';
+    } else {
+      const exc = (psi - pdpReq).toFixed(0);
+      noteEl.innerText = `⚡ EXCESO +${exc} psi sobre consigna (${pdpReq.toFixed(0)} psi) — Pitones reciben más presión`;
+      noteEl.style.color = 'var(--amber)';
+    }
   } else {
-    document.getElementById('pm-note').innerText=`ℹ Bomba en ${psi} psi — por encima de la consigna (${req.toFixed(0)} psi)`;
-    document.getElementById('pm-note').style.color='var(--amber)';
+    noteEl.innerText = `ℹ Simulando PDP = ${psi} psi — Calcule primero para conocer la consigna`;
+    noteEl.style.color = 'var(--sky)';
   }
-
-  // Actualizar feedback en cada pitón de cada segmento
-  segmentos.forEach((s,si)=>{
-    const npReal = psi - s.perdidas;
-    s.pitones.forEach((p,pi)=>{
-      const el=document.getElementById(`pf-${s.id}-${p.id}`); if(!el) return;
-      const qR=qBoquilla(parseFloat(p.boquilla_d||1.0),npReal);
-      if(npReal<50){
-        el.className='piton-feedback pf-bad';
-        el.innerHTML=`🔴 <strong>INSUFICIENTE</strong> — Presión en pitón: ${npReal.toFixed(0)} psi (necesita 100 psi) · Flujo estimado: ${qR} GPM`;
-      } else if(npReal<80){
-        el.className='piton-feedback pf-warn';
-        el.innerHTML=`🟡 <strong>BAJA</strong> — Presión en pitón: ${npReal.toFixed(0)} psi · Flujo: ${qR} GPM — Pitón no alcanza efectividad plena`;
-      } else if(npReal<=110){
-        el.className='piton-feedback pf-ok';
-        el.innerHTML=`✅ <strong>CORRECTO</strong> — Presión en pitón: ${npReal.toFixed(0)} psi ≈ 100 psi · Flujo: ${qR} GPM`;
-      } else if(npReal<=150){
-        el.className='piton-feedback pf-warn';
-        el.innerHTML=`🟡 <strong>EXCESO +${(npReal-100).toFixed(0)} psi</strong> — Presión real: ${npReal.toFixed(0)} psi · Flujo: ${qR} GPM · Mayor esfuerzo físico para el pitonero`;
-      } else {
-        el.className='piton-feedback pf-bad';
-        el.innerHTML=`🔴 <strong>EXCESO CRÍTICO +${(npReal-100).toFixed(0)} psi</strong> — Presión real: ${npReal.toFixed(0)} psi · Flujo: ${qR} GPM · PELIGRO — Reducir tendido`;
-      }
-    });
-  });
 }
 
-// ─── VEHICLE SELECTOR ────────────────────────────────────────────────
-function onVehicleChange(){
-  const v=document.getElementById('vehicle-select').value;
-  const cf=document.getElementById('custom-fields');
-  if(v==='custom'){
-    cf.style.display='grid';
-    _bomba={nombre:'Personalizada',q150:parseFloat(document.getElementById('c-q150').value)||1500,q200:parseFloat(document.getElementById('c-q200').value)||1100,q250:parseFloat(document.getElementById('c-q250').value)||750};
+// ════════════════════════════════════════════════════════════
+// 11. VEHÍCULO / BOMBA
+// ════════════════════════════════════════════════════════════
+function onVehicleChange() {
+  const v  = document.getElementById('vehicle-select').value;
+  const cf = document.getElementById('custom-fields');
+  if (v === 'custom') {
+    cf.style.display = 'grid';
+    _bomba = {
+      nombre: 'Personalizada',
+      q150: parseFloat(document.getElementById('c-q150').value) || 1500,
+      q200: parseFloat(document.getElementById('c-q200').value) || 1100,
+      q250: parseFloat(document.getElementById('c-q250').value) || 750,
+    };
   } else {
-    cf.style.display='none';
-    _bomba={...BOMBAS[v]};
+    cf.style.display = 'none';
+    _bomba = { ...BOMBAS[v] };
   }
-  document.getElementById('vc-150').innerText=_bomba.q150+' GPM';
-  document.getElementById('vc-200').innerText=_bomba.q200+' GPM';
-  document.getElementById('vc-250').innerText=_bomba.q250+' GPM';
-  if(_lastPDP>0) recalcAll();
+  document.getElementById('vc-150').innerText = _bomba.q150 + ' GPM';
+  document.getElementById('vc-200').innerText = _bomba.q200 + ' GPM';
+  document.getElementById('vc-250').innerText = _bomba.q250 + ' GPM';
+  if (_lastPDP > 0) recalcAndUpdateAll();
 }
 
 // ─── AUTONOMÍA ───────────────────────────────────────────────────────
@@ -1141,10 +1444,12 @@ function updateTank(){
   else tw.innerHTML='';
 }
 
-// ─── RECOMENDACIONES ─────────────────────────────────────────────────
-function diamMin(Q){
-  for(const d of [1.5,1.75,2.0,2.5,3.0,4.0,5.0])
-    if(calcV(Q,String(d))<=V_MAX) return d;
+// ════════════════════════════════════════════════════════════
+// 13. RECOMENDACIONES PEDAGÓGICAS
+// ════════════════════════════════════════════════════════════
+function diamMin(Q) {
+  for (const d of [1.5, 1.75, 2.0, 2.5, 3.0, 4.0, 5.0])
+    if (calcV(Q, String(d), 1) <= V_MAX_FTPS) return d;
   return 5.0;
 }
 
@@ -1153,9 +1458,9 @@ function buildRecommendations(pdp, caudal_nom, caudal_real){
   body.innerHTML=''; let bloques=[];
 
   // 1. Límite NFPA 1962 — manguera
-  if(pdp>NP_MAX_NFPA){
+  if(pdp>PDP_MAX_PSI){
     bloques.push({p:-2,icon:'🚨',
-      title:`PELIGRO — PDP = ${pdp.toFixed(1)} psi excede límite NFPA 1962 (${NP_MAX_NFPA} psi)`,
+      title:`PELIGRO — PDP = ${pdp.toFixed(1)} psi excede límite NFPA 1962 (${PDP_MAX_PSI} psi)`,
       sub:'NFPA 1962 §4.3 · Límite estructural de manguera',
       desc:`La presión requerida supera el límite máximo de trabajo de la manguera. <strong>RIESGO DE FALLA ESTRUCTURAL — NO OPERAR</strong>.<br>
       Soluciones inmediatas: subir diámetro en los tramos con más pérdida, reducir longitud de tendido o reducir el número de pitones activos.`
@@ -1179,13 +1484,13 @@ function buildRecommendations(pdp, caudal_nom, caudal_real){
     if(!seg.totalQ) return;
     seg.hoses.forEach((h,hi)=>{
       const v=calcV(seg.totalQ,h.diam);
-      if(v<=V_MAX) return;
+      if(v<=V_MAX_FTPS) return;
       const dMin=diamMin(seg.totalQ);
       const flAct=calcFL(seg.totalQ,h.diam,h.cant,parseFloat(h.longFt||0),h.material);
       const flRec=calcFL(seg.totalQ,String(dMin),h.cant,parseFloat(h.longFt||0),h.material);
       const ahorro=flAct-flRec;
       const tabla=[1.5,1.75,2.0,2.5,3.0].map(d=>{
-        const vd=calcV(seg.totalQ,String(d)),fld=calcFL(seg.totalQ,String(d),h.cant,parseFloat(h.longFt||0),h.material),ok=vd<=V_MAX;
+        const vd=calcV(seg.totalQ,String(d)),fld=calcFL(seg.totalQ,String(d),h.cant,parseFloat(h.longFt||0),h.material),ok=vd<=V_MAX_FTPS;
         const bg=d===parseFloat(h.diam)?'rgba(244,63,94,.1)':d===dMin?'rgba(16,185,129,.06)':'transparent';
         return `<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;padding:4px 9px;background:${bg};font-family:var(--ff-m);font-size:10px;">
           <span>${d}"${d===parseFloat(h.diam)?' ←':d===dMin?' ✓':''}</span>
@@ -1213,12 +1518,12 @@ function buildRecommendations(pdp, caudal_nom, caudal_real){
       const gravedad=s.exceso>50?'CRÍTICO':'ELEVADO';
       const icon=s.exceso>50?'🔴':'🟡';
       // Sugerir diámetro óptimo que igualaría las pérdidas al segmento crítico
-      const perdCrit=_lastPDP-100;
+      const perdCrit=_lastPDP-NP_TARGET;
       bloques.push({p:s.exceso>50?2:3,icon,
         title:`Seg.${si+1}: Exceso ${gravedad} de presión en pitón (+${s.exceso.toFixed(0)} psi)`,
         sub:'Efecto de bomba sin regulación individual por salida · IFSTA Fire Hydraulics §6.4',
         desc:`La bomba está a <strong>${_lastPDP.toFixed(0)} psi</strong> pero este segmento solo tiene <strong>${s.perdidas.toFixed(1)} psi</strong> de pérdidas.<br>
-        El pitón recibirá <strong>${s.np_real.toFixed(0)} psi</strong> en lugar de 100 psi.<br>
+        El pitón recibirá <strong>${s.np_real.toFixed(0)} psi</strong> en lugar de ${s.np_obj||NP_TARGET} psi.<br>
         • Caudal real estimado: <strong>${s.totalQ_real} GPM</strong> (en lugar de ${s.totalQ} GPM nominal)<br>
         • Mayor esfuerzo físico para el pitonero${s.exceso>50?' — RIESGO DE PÉRDIDA DE CONTROL':''}<br>
         • Autonomía real del tanque se reduce${s.exceso>50?' significativamente':''}<br><br>
@@ -1228,7 +1533,7 @@ function buildRecommendations(pdp, caudal_nom, caudal_real){
   });
 
   // 5. Presión elevada (>200 psi, dentro del límite)
-  if(pdp>200&&pdp<=NP_MAX_NFPA&&!bloques.find(b=>b.p===-2)){
+  if(pdp>200&&pdp<=PDP_MAX_PSI&&!bloques.find(b=>b.p===-2)){
     bloques.push({p:4,icon:'⚡',
       title:`PDP = ${pdp.toFixed(1)} psi — Presión elevada para operación ARFF`,
       sub:`Rango típico ARFF: 100–200 psi · Capacidad bomba: ${qDisp(pdp)} GPM disponibles`,
@@ -1334,7 +1639,7 @@ function buildSchematic(){
     const midY  = padT + i * rowH + rowH / 2;
     const segY  = midY - 34;
     const segH  = 68;
-    const col   = s.maxVel > V_MAX ? CW : s.isCrit ? CS : CG;
+    const col   = s.maxVel > V_MAX_FTPS ? CW : s.isCrit ? CS : CG;
     const exceso= s.exceso || 0;
     const excCol= exceso > 50 ? CW : exceso > 20 ? CA : CG;
 
@@ -1356,7 +1661,7 @@ function buildSchematic(){
       font-size="9.5" font-weight="800">SEG ${i+1}${s.isCrit?' ★':''}</text>`;
 
     // PDP badge
-    const pdpCol = s.pdp > NP_MAX_NFPA ? CW : s.pdp > 200 ? CA : CG;
+    const pdpCol = s.pdp > PDP_MAX_PSI ? CW : s.pdp > 200 ? CA : CG;
     svg += `<rect x="${segX+segW-58}" y="${segY+4}" width="54" height="16" rx="3"
       fill="${pdpCol}18" stroke="${pdpCol}60" stroke-width="1"/>`;
     svg += `<text x="${segX+segW-31}" y="${segY+15}" text-anchor="middle"
@@ -1375,9 +1680,9 @@ function buildSchematic(){
     svg += `<text x="${segX+10}" y="${segY+57}" fill="${excCol}" font-size="7">${npTxt}</text>`;
 
     // velocidad
-    const velCol = s.maxVel > V_MAX ? CW : CG;
+    const velCol = s.maxVel > V_MAX_FTPS ? CW : CG;
     svg += `<text x="${segX+10}" y="${segY+67}" fill="${velCol}" font-size="7">
-      V: ${s.maxVel.toFixed(1)} ft/s ${s.maxVel>V_MAX?'⚠':''}</text>`;
+      V: ${s.maxVel.toFixed(1)} ft/s ${s.maxVel>V_MAX_FTPS?'⚠':''}</text>`;
 
     // ── PITONES ───────────────────────────────────────────────────
     const nP = s.pitones.length;
@@ -1430,8 +1735,8 @@ function buildSchematic(){
 function renderSegmentos(){
   const lista=document.getElementById('seg-lista'); if(!lista) return; lista.innerHTML='';
   segmentos.forEach((s,sidx)=>{
-    const velOk=!s.maxVel||s.maxVel<=V_MAX;
-    const pdpCol=s.pdp>NP_MAX_NFPA?'badge-pdp-bad':s.pdp>200?'badge-pdp-warn':'badge-pdp-ok';
+    const velOk=!s.maxVel||s.maxVel<=V_MAX_FTPS;
+    const pdpCol=s.pdp>PDP_MAX_PSI?'badge-pdp-bad':s.pdp>200?'badge-pdp-warn':'badge-pdp-ok';
     const exceso=s.exceso||0;
     let excessHtml='';
     if(_lastPDP>0&&!s.isCrit){
@@ -1496,21 +1801,51 @@ function renderSegmentos(){
           </div>`).join('')}
         <div style="font-family:var(--ff-m);font-size:10px;color:var(--text-muted);margin:4px 0 2px;">
           Q nominal: <strong style="color:var(--sky)">${s.totalQ} GPM</strong>
-          ${s.maxVel>0?` · V máx: <strong style="color:${s.maxVel>15?'var(--red)':'var(--green)'}">${s.maxVel.toFixed(1)} ft/s</strong>`:''}
+          ${s.maxVel>0?` · V máx: <strong style="color:${s.maxVel>V_MAX_FTPS?'var(--red)':'var(--green)'}">${s.maxVel.toFixed(1)} ft/s</strong>`:''}
           ${s.fl>0?` · FL: <strong style="color:var(--amber)">${s.fl.toFixed(1)} psi</strong>`:''}
         </div>
         <button class="btn-add" onclick="agregarHose(${s.id})">+ Agregar tramo</button>
 
         <div class="acc-title">Pitones</div>
-        ${s.pitones.map((p,pi)=>`
+        ${s.pitones.map((p,pi)=>{
+          const npR  = p.np_real !== undefined ? p.np_real : null;
+          const qR   = p.q_real  !== undefined ? p.q_real  : null;
+          const eff  = p.eficiencia !== undefined ? p.eficiencia : null;
+          let pfCls='piton-feedback pf-idle', pfHtml='Calcule o mueva el slider para ver presión y caudal real';
+          if(npR !== null && (_lastPDP>0 || _sliderPDP>0)){
+            if(npR<0||s.np_insuf){
+              pfCls='piton-feedback pf-bad';
+              pfHtml=`🔴 <strong>SIN PRESIÓN</strong> — Las pérdidas del tendido superan la PDP. Reducir longitud o aumentar diámetro.`;
+            } else if(npR<50){
+              pfCls='piton-feedback pf-bad';
+              pfHtml=`🔴 <strong>CRÍTICO</strong> — NP real: <strong>${npR.toFixed(0)} psi</strong> (obj: ${p.np_obj||NP_TARGET} psi) · Q real: <strong>${qR||0} GPM</strong> · Eficiencia: ${eff||0}% — Sistema inoperable`;
+            } else if(npR<85){
+              pfCls='piton-feedback pf-bad';
+              pfHtml=`🔴 <strong>INSUFICIENTE</strong> — NP real: <strong>${npR.toFixed(0)} psi</strong> · Q real: <strong>${qR||0} GPM</strong> (nom: ${p.q} GPM) · Eff: ${eff||0}% — Pitón muy por debajo del GLP`;
+            } else if(npR<95){
+              pfCls='piton-feedback pf-warn';
+              pfHtml=`🟡 <strong>BAJA</strong> — NP real: <strong>${npR.toFixed(0)} psi</strong> · Q real: <strong>${qR||0} GPM</strong> (nom: ${p.q} GPM) · Eff: ${eff||0}% — Por debajo del rango óptimo`;
+            } else if(npR<=105){
+              pfCls='piton-feedback pf-ok';
+              pfHtml=`✅ <strong>ÓPTIMO</strong> — NP real: <strong>${npR.toFixed(0)} psi</strong> ≈ ${p.np_obj||NP_TARGET} psi · Q real: <strong>${qR||0} GPM</strong> (nom: ${p.q} GPM) · Eff: ${eff||0}%`;
+            } else if(npR<=115){
+              pfCls='piton-feedback pf-warn';
+              pfHtml=`🟡 <strong>EXCESO +${(npR-(p.np_obj||NP_TARGET)).toFixed(0)} psi</strong> — NP real: <strong>${npR.toFixed(0)} psi</strong> · Q real: <strong>${qR||0} GPM</strong> · Mayor esfuerzo para el pitonero`;
+            } else {
+              pfCls='piton-feedback pf-bad';
+              pfHtml=`🔴 <strong>EXCESO CRÍTICO +${(npR-(p.np_obj||NP_TARGET)).toFixed(0)} psi</strong> — NP real: <strong>${npR.toFixed(0)} psi</strong> · Q real: <strong>${qR||0} GPM</strong> · PELIGRO — Riesgo de pérdida de control`;
+            }
+          }
+          return `
           <div class="piton-row">
             <div class="piton-row-head">
               <span class="piton-badge">PITÓN ${pi+1}</span>
+              ${p.tipo==='automatico'?'<span style="font-family:var(--ff-m);font-size:9px;color:var(--purple);margin-left:4px">⚙ AUTO</span>':'<span style="font-family:var(--ff-m);font-size:9px;color:var(--sky);margin-left:4px">🔧 FIJO</span>'}
               <button class="btn-del" style="margin-left:auto" onclick="eliminarPiton(${s.id},${p.id})">&times;</button>
             </div>
-            <div class="piton-fields">
+            <div class="piton-fields" style="grid-template-columns:1fr 1fr 1fr 1fr">
               <div>
-                <span class="piton-field-label">Caudal nominal</span>
+                <span class="piton-field-label">GLP nominal</span>
                 <select class="field-input" style="padding:6px;font-size:11px" onchange="onPiton(${s.id},${p.id},'q',this.value)">
                   ${[50,75,95,125,150,200,250,300,400,500].map(g=>`<option value="${g}" ${p.q==g?'selected':''}>${g} GPM</option>`).join('')}
                 </select>
@@ -1518,19 +1853,29 @@ function renderSegmentos(){
               <div>
                 <span class="piton-field-label">NP objetivo</span>
                 <select class="field-input" style="padding:6px;font-size:11px" onchange="onPiton(${s.id},${p.id},'np_obj',this.value)">
+                  <option value="75"  ${p.np_obj==75?'selected':''}>75 psi</option>
                   <option value="80"  ${p.np_obj==80?'selected':''}>80 psi</option>
                   <option value="100" ${(!p.np_obj||p.np_obj==100)?'selected':''}>100 psi (std)</option>
+                  <option value="125" ${p.np_obj==125?'selected':''}>125 psi</option>
                 </select>
               </div>
               <div>
-                <span class="piton-field-label">Boquilla (pulgadas)</span>
+                <span class="piton-field-label">Boquilla (pulg.)</span>
                 <select class="field-input" style="padding:6px;font-size:11px" onchange="onPiton(${s.id},${p.id},'boquilla_d',this.value)">
                   ${[0.5,0.75,1.0,1.125,1.25,1.375,1.5].map(d=>`<option value="${d}" ${parseFloat(p.boquilla_d||1.0)==d?'selected':''}>${d}"</option>`).join('')}
                 </select>
               </div>
+              <div>
+                <span class="piton-field-label">Tipo</span>
+                <select class="field-input" style="padding:6px;font-size:11px" onchange="onPiton(${s.id},${p.id},'tipo',this.value)">
+                  <option value="fijo"        ${(!p.tipo||p.tipo==='fijo')?'selected':''}>Fijo</option>
+                  <option value="automatico"  ${p.tipo==='automatico'?'selected':''}>Automático</option>
+                </select>
+              </div>
             </div>
-            <div class="piton-feedback pf-idle" id="pf-${s.id}-${p.id}">Calcule para ver presión y caudal real en este pitón</div>
-          </div>`).join('')}
+            <div class="${pfCls}" id="pf-${s.id}-${p.id}">${pfHtml}</div>
+          </div>`;
+        }).join('')}
         <button class="btn-add" onclick="agregarPiton(${s.id})" style="border-color:var(--purple);color:var(--purple);background:rgba(167,139,250,.04)">+ Conectar Pitón</button>
 
         <div class="acc-title">Accesorios</div>
@@ -1550,8 +1895,6 @@ function renderSegmentos(){
       </div>`;
     lista.appendChild(card);
   });
-  // Después de renderizar, refrescar el feedback del slider
-  if(_pumpMonitor>0) onPumpMonitor();
 }
 
 // ─── COMBAT CARD ─────────────────────────────────────────────────────
@@ -1590,7 +1933,7 @@ function populateCombatCard(){
     const pt=s.pitones.map(p=>`${p.q}GPM@${p.boquilla_d||1.0}"`).join(' | ')||'—';
     const excStr=s.isCrit?'Segmento crítico — NP=100psi':`NP real=${s.np_real.toFixed(0)}psi (+${s.exceso.toFixed(0)}psi exc.) · Q real=${s.totalQ_real}GPM`;
     sd2.innerHTML+=`<div class="cc-seg-item">
-      <div class="cc-seg-title">Seg ${i+1}${s.isCrit?' ★':''} — PDP=${s.pdp.toFixed(1)}psi · Pérd=${s.perdidas.toFixed(1)}psi · V=${s.maxVel.toFixed(1)}ft/s${s.maxVel>15?' ⚠':' ✓'}</div>
+      <div class="cc-seg-title">Seg ${i+1}${s.isCrit?' ★':''} — PDP=${s.pdp.toFixed(1)}psi · Pérd=${s.perdidas.toFixed(1)}psi · V=${s.maxVel.toFixed(1)}ft/s${s.maxVel>V_MAX_FTPS?' ⚠':' ✓'}</div>
       <div class="cc-seg-detail">${ht}</div>
       <div class="cc-seg-detail">Pitones: ${pt}</div>
       <div class="cc-seg-detail" style="color:${s.exceso>50?'#c00':s.exceso>20?'#8a5200':'#175c28'}">${excStr}</div>
@@ -1602,41 +1945,104 @@ function exportPDF(){
   populateCombatCard(); setTimeout(()=>window.print(),200);
 }
 
-// ─── HELPERS ─────────────────────────────────────────────────────────
-function agregarSegmento(){
-  const pid=++pitonUID;
-  segmentos.push({id:++segUID,
-    hoses:[{diam:'2.5',cant:1,longFt:100,material:'caucho'}],
-    pitones:[{id:pid,q:95,np_obj:100,boquilla_d:1.0}],
-    accs:{},elev:0,elevUnit:'m',
-    pdp:0,fl:0,al:0,ep:0,perdidas:0,np_obj:100,np_real:100,exceso:0,
-    maxVel:0,velDiam:'2.5',totalQ:0,totalQ_real:0,isCrit:false});
-  recalcAll();
+// ════════════════════════════════════════════════════════════
+// 12. CRUD — segmentos, mangueras, pitones, accesorios
+// ════════════════════════════════════════════════════════════
+function agregarSegmento() {
+  const pid = ++pitonUID;
+  segmentos.push({
+    id: ++segUID,
+    hoses:   [{ diam:'2.5', cant:1, longFt:100, material:'caucho' }],
+    pitones: [{ id:pid, q:95, np_obj:NP_TARGET, boquilla_d:1.0, tipo:'fijo' }],
+    accs: {}, elev:0, elevUnit:'m',
+    // campos calculados (se rellenan en calcSegmento)
+    pdp:0, fl:0, al:0, ep:0, perdidas:0, np_obj:NP_TARGET,
+    np_real:0, exceso:0, maxVel:0, velDiam:'2.5',
+    totalQ:0, totalQ_real:0, eficiencia:0, isCrit:false,
+    np_insuf:false, hoseVels:[],
+  });
+  recalcAndUpdateAll();
 }
-function eliminarSegmento(id){
-  if(segmentos.length<=1) return;
-  segmentos=segmentos.filter(s=>s.id!==id); recalcAll();
+
+function eliminarSegmento(id) {
+  if (segmentos.length <= 1) return;
+  segmentos = segmentos.filter(s => s.id !== id);
+  recalcAndUpdateAll();
 }
-function agregarHose(sid){const s=segmentos.find(x=>x.id===sid);if(s)s.hoses.push({diam:'2.5',cant:1,longFt:100,material:'caucho'});recalcAll();}
-function eliminarHose(sid,hi){const s=segmentos.find(x=>x.id===sid);if(s&&s.hoses.length>1)s.hoses.splice(hi,1);recalcAll();}
-function onHose(sid,hi,f,v){const s=segmentos.find(x=>x.id===sid);if(s&&s.hoses[hi])s.hoses[hi][f]=f==='material'?v:f==='diam'?String(v):parseFloat(v);recalcAll();}
-function agregarPiton(sid){const s=segmentos.find(x=>x.id===sid);if(s)s.pitones.push({id:++pitonUID,q:95,np_obj:100,boquilla_d:1.0});recalcAll();}
-function eliminarPiton(sid,pid){const s=segmentos.find(x=>x.id===sid);if(s&&s.pitones.length>0)s.pitones=s.pitones.filter(p=>p.id!==pid);recalcAll();}
-function onPiton(sid,pid,f,v){const s=segmentos.find(x=>x.id===sid);if(!s)return;const p=s.pitones.find(x=>x.id===pid);if(p)p[f]=f==='boquilla_d'?parseFloat(v):parseFloat(v);recalcAll();}
-function toggleAcc(sid,aid){const s=segmentos.find(x=>x.id===sid);if(s)s.accs[aid]=!s.accs[aid];recalcAll();}
-function onSegField(id,f,v){const s=segmentos.find(x=>x.id===id);if(!s)return;s[f]=f==='elev'?parseFloat(v)||0:v;recalcAll();}
-function calcular(){recalcAll();}
-function resetAll(){
-  segmentos=[];segUID=0;pitonUID=0;_lastPDP=0;_lastFlow=0;_velWarnings=[];_pumpMonitor=0;
-  document.getElementById('pm-slider').value=0;
-  document.getElementById('pm-val-num').innerText='0';
-  document.getElementById('pm-note').innerText='↑ Mueva el slider para ver qué presión llega actualmente a cada pitón';
-  document.getElementById('pm-note').style.color='';
-  document.getElementById('result-idle').style.display='block';
-  document.getElementById('result-body').style.display='none';
-  document.getElementById('recs-panel').style.display='none';
+
+function agregarHose(sid) {
+  const s = segmentos.find(x => x.id === sid);
+  if (s) s.hoses.push({ diam:'2.5', cant:1, longFt:100, material:'caucho' });
+  recalcAndUpdateAll();
+}
+
+function eliminarHose(sid, hi) {
+  const s = segmentos.find(x => x.id === sid);
+  if (s && s.hoses.length > 1) s.hoses.splice(hi, 1);
+  recalcAndUpdateAll();
+}
+
+function onHose(sid, hi, f, v) {
+  const s = segmentos.find(x => x.id === sid);
+  if (s && s.hoses[hi]) {
+    if (f === 'material') s.hoses[hi][f] = v;
+    else if (f === 'diam') s.hoses[hi][f] = String(v);
+    else s.hoses[hi][f] = parseFloat(v);
+  }
+  recalcAndUpdateAll();
+}
+
+function agregarPiton(sid) {
+  const s = segmentos.find(x => x.id === sid);
+  if (s) s.pitones.push({ id:++pitonUID, q:95, np_obj:NP_TARGET, boquilla_d:1.0, tipo:'fijo' });
+  recalcAndUpdateAll();
+}
+
+function eliminarPiton(sid, pid) {
+  const s = segmentos.find(x => x.id === sid);
+  if (s && s.pitones.length > 1) s.pitones = s.pitones.filter(p => p.id !== pid);
+  recalcAndUpdateAll();
+}
+
+function onPiton(sid, pid, f, v) {
+  const s = segmentos.find(x => x.id === sid);
+  if (!s) return;
+  const p = s.pitones.find(x => x.id === pid);
+  if (!p) return;
+  if (f === 'tipo') p[f] = v;
+  else if (f === 'boquilla_d') p[f] = parseFloat(v);
+  else p[f] = parseFloat(v);
+  recalcAndUpdateAll();
+}
+
+function toggleAcc(sid, aid) {
+  const s = segmentos.find(x => x.id === sid);
+  if (s) s.accs[aid] = !s.accs[aid];
+  recalcAndUpdateAll();
+}
+
+function onSegField(id, f, v) {
+  const s = segmentos.find(x => x.id === id);
+  if (!s) return;
+  s[f] = f === 'elev' ? (parseFloat(v) || 0) : v;
+  recalcAndUpdateAll();
+}
+
+function calcular() { recalcAndUpdateAll(); }
+
+function resetAll() {
+  segmentos = []; segUID = 0; pitonUID = 0;
+  _lastPDP = 0; _lastFlow = 0; _velWarnings = []; _sliderPDP = 0;
+  document.getElementById('pm-slider').value    = 0;
+  document.getElementById('pm-val-num').innerText = '0';
+  document.getElementById('pm-note').innerText  = '↑ Mueva el slider para simular la presión del manómetro en tiempo real';
+  document.getElementById('pm-note').style.color = '';
+  document.getElementById('result-idle').style.display  = 'block';
+  document.getElementById('result-body').style.display  = 'none';
+  document.getElementById('recs-panel').style.display   = 'none';
   document.getElementById('vel-alert').classList.remove('show');
-  document.getElementById('schematic-svg-wrap').innerHTML='<div style="padding:20px;color:var(--text-muted);font-size:12px;text-align:center;font-family:var(--ff-m)">⚙ Configure y calcule para ver el diagrama</div>';
+  document.getElementById('schematic-svg-wrap').innerHTML =
+    '<div style="padding:20px;color:var(--text-muted);font-size:12px;text-align:center;font-family:var(--ff-m)">⚙ Configure y calcule para ver el diagrama</div>';
   onVehicleChange();
   agregarSegmento();
 }
@@ -1644,205 +2050,175 @@ function resetAll(){
 setInterval(()=>{const t=new Date().toLocaleTimeString('es-CO');document.getElementById('tb-clock').innerText=t;const ft=document.getElementById('footer-ts');if(ft)ft.innerText=new Date().toLocaleDateString('es-CO')+' '+t;},1000);
 window.onload=resetAll;
 
-// ═══════════════════════════════════════════════════════════════════════
-//  INDICADORES TÁCTICOS — NP / GPM / VELOCIDAD
-//  Módulo autónomo. Se llama desde updateUI() y onPumpMonitor().
-//  Entradas: segmentos[], _lastPDP, datos calculados por calcSegmento().
-// ═══════════════════════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════════════
+// 15. INDICADORES TÁCTICOS — NP / GPM / VELOCIDAD
+//     Lee directamente de segmentos[] calculados por recalcAll
+// ════════════════════════════════════════════════════════════
 
-/* ── Helpers de color ──────────────────────────────────────────────── */
-function tacNPClass(np){
-  if(np===null||np===undefined) return 'tac-idle';
-  if(np>=95&&np<=105) return 'tac-green';
-  if((np>=85&&np<95)||(np>105&&np<=115)) return 'tac-yellow';
+function tacNPClass(np) {
+  if (np === null || np === undefined || isNaN(np)) return 'tac-idle';
+  if (np >= 95 && np <= 105) return 'tac-green';
+  if ((np >= 85 && np < 95) || (np > 105 && np <= 115)) return 'tac-yellow';
   return 'tac-red';
 }
-function tacNPStatusText(np){
-  if(np===null||np===undefined) return '—';
-  if(np>=95&&np<=105) return '✓ Óptimo';
-  if(np>=85&&np<95)   return '⚠ Subpresión';
-  if(np>105&&np<=115) return '⚠ Exceso leve';
-  if(np>115&&np<=120) return '⚠ Alta';
-  return np<85 ? '🔴 Subpresurizado' : '🔴 Sobrepresurizado';
+function tacNPStatusText(np) {
+  if (np === null || np === undefined) return '—';
+  if (np >= 95 && np <= 105) return '✓ Óptimo';
+  if (np >= 85 && np < 95)   return '⚠ Subpresión';
+  if (np > 105 && np <= 115) return '⚠ Exceso leve';
+  return np < 85 ? '🔴 Baja crítica' : '🔴 Alta crítica';
 }
-function tacNPTooltip(np){
-  if(np===null||np===undefined) return 'Calcule o use el slider para activar.';
-  if(np>=95&&np<=105) return 'Presión óptima para el GLP del pitón. La línea opera correctamente.';
-  if(np<85)           return 'Presión baja: el segmento está subalimentado. Aumentar presión de bomba.';
-  if(np>120)          return 'Presión alta: riesgo de sobrepresión en manguera. Verificar tendido.';
-  if(np>=85&&np<95)   return 'Presión ligeramente baja. El pitonero recibe menos caudal del nominal.';
-  return 'Presión ligeramente alta. Mayor esfuerzo físico para el pitonero.';
+function tacNPTooltip(np) {
+  if (np === null || np === undefined) return 'Calcule o use el slider para activar.';
+  if (np >= 95 && np <= 105) return 'Presión óptima para el GLP del pitón. La línea opera correctamente dentro del rango NFPA.';
+  if (np < 85)  return 'Presión baja: el segmento está subalimentado. El pitonero no alcanza el caudal de diseño. Aumentar PDP.';
+  if (np > 120) return 'Presión alta: riesgo de sobrepresión. Mayor reacción hidráulica. Revisar tendido o reducir longitud.';
+  if (np >= 85 && np < 95) return 'Presión ligeramente baja. El pitonero recibe menos caudal del nominal.';
+  return 'Presión ligeramente alta. Mayor esfuerzo físico para el pitonero. Considera reducir tendido.';
 }
-
-function tacGPMClass(qReal, qNom){
-  if(!qNom||qNom===0) return 'tac-idle';
-  const pct = qReal/qNom;
-  if(pct>=0.90) return 'tac-green';
-  if(pct>=0.75) return 'tac-yellow';
+function tacGPMClass(qReal, qNom) {
+  if (!qNom || qNom === 0) return 'tac-idle';
+  const pct = qReal / qNom;
+  if (pct >= 0.90) return 'tac-green';
+  if (pct >= 0.75) return 'tac-yellow';
   return 'tac-red';
 }
-function tacGPMStatusText(pct){
-  if(pct===null) return '—';
-  if(pct>=0.90) return '✓ Nominal';
-  if(pct>=0.75) return '⚠ Reducido';
+function tacGPMStatusText(pct) {
+  if (pct === null || pct === undefined) return '—';
+  if (pct >= 0.90) return '✓ Nominal';
+  if (pct >= 0.75) return '⚠ Reducido';
   return '🔴 Crítico';
 }
-
-function tacVelClass(v){
-  if(v===null||v===undefined) return 'tac-idle';
-  if(v<10) return 'tac-green';
-  if(v<=15) return 'tac-yellow';
+function tacVelClass(v) {
+  if (v === null || v === undefined) return 'tac-idle';
+  if (v < V_WARN_FTPS) return 'tac-green';
+  if (v <= V_MAX_FTPS) return 'tac-yellow';
   return 'tac-red';
 }
-function tacVelStatusText(v){
-  if(v===null||v===undefined) return '—';
-  if(v<10)  return '✓ Seguro';
-  if(v<=15) return '⚠ Inestable';
+function tacVelStatusText(v) {
+  if (v === null || v === undefined) return '—';
+  if (v < V_WARN_FTPS) return '✓ Seguro';
+  if (v <= V_MAX_FTPS) return '⚠ Inestable';
   return '🔴 Latigazo';
 }
-
-/* ── Dot color helper ──────────────────────────────────────────────── */
-function dotColor(cls){
-  if(cls==='tac-green')  return '#10b981';
-  if(cls==='tac-yellow') return '#f59f00';
-  if(cls==='tac-red')    return '#f43f5e';
+function dotColor(cls) {
+  if (cls === 'tac-green')  return '#10b981';
+  if (cls === 'tac-yellow') return '#f59f00';
+  if (cls === 'tac-red')    return '#f43f5e';
   return 'var(--s3)';
 }
-
-/* ── Circular arc for NP gauge ──────────────────────────────────────
-   Arc covers 270° (stroke-dasharray=157 for r=30, circumference=188.5,
-   we use 270/360 * 188.5 ≈ 157). Range: 0–200 psi.
-*/
-function arcOffset(np, maxPsi=200){
-  const TOTAL=157;
-  const pct=Math.min(1,Math.max(0,np/maxPsi));
-  return (TOTAL-(TOTAL*pct)).toFixed(2);
+function arcOffset(np, maxPsi=200) {
+  const TOTAL = 157;
+  const pct   = Math.min(1, Math.max(0, np / maxPsi));
+  return (TOTAL - TOTAL * pct).toFixed(2);
 }
 
-/* ── Main update function ──────────────────────────────────────────── */
-function updateTacticIndicators(sourceNP){
-  // sourceNP: override for the NP reading (used by pump monitor slider).
-  // When null, we read from segmentos[] post-recalc.
+function updateTacticIndicators() {
+  if (!segmentos || segmentos.length === 0) return;
+  const hasCalt = _lastPDP > 0 || _sliderPDP > 0;
 
-  if(!segmentos||segmentos.length===0) return;
+  // Segmento crítico real
+  const critSeg = segmentos.reduce((m, s) => (!m || s.pdp > m.pdp) ? s : m, null);
 
-  const hasCalt = _lastPDP>0;
+  // ── INDICADOR 1: NP ─────────────────────────────────────
+  // Mostrar NP del segmento con MENOR NP real (el más desfavorable para el pitonero)
+  let worstNP = null;
+  if (hasCalt && segmentos.length > 0) {
+    worstNP = segmentos.reduce((mn, s) => {
+      const n = s.np_real !== undefined ? s.np_real : null;
+      if (n === null) return mn;
+      return mn === null ? n : Math.min(mn, n);
+    }, null);
+  }
 
-  // ── NP indicator ──────────────────────────────────────────────────
-  // Use critical segment NP or pump monitor NP
-  let critSeg = segmentos.reduce((m,s)=>(!m||s.pdp>m.pdp)?s:m, null);
-  let np = sourceNP!==undefined&&sourceNP!==null
-    ? (critSeg ? sourceNP - critSeg.perdidas : null)
-    : (hasCalt&&critSeg ? critSeg.np_real : null);
-  if(np!==null) np=Math.max(0,np);
-
-  const npCls = hasCalt||sourceNP!==null ? tacNPClass(np) : 'tac-idle';
-  const npEl  = document.getElementById('tac-np-ind');
-  npEl.className='tac-ind '+npCls;
-  document.getElementById('tac-np-badge').innerText = hasCalt||sourceNP!==null ? tacNPStatusText(np) : '—';
-  document.getElementById('tac-np-num').innerText = np!==null ? Math.round(np) : '—';
-  document.getElementById('tac-np-real-lbl').innerText = np!==null ? Math.round(np)+' psi' : '—';
-  const delta = np!==null ? (np-100) : null;
-  const deltaEl=document.getElementById('tac-np-delta');
-  deltaEl.innerText = delta!==null ? (delta>=0?'+':'')+delta.toFixed(1)+' psi' : '—';
-  deltaEl.style.color = delta!==null ? dotColor(npCls) : 'var(--text-muted)';
-  document.getElementById('tac-np-arc').setAttribute('stroke-dashoffset', np!==null?arcOffset(np):157);
+  const npCls = hasCalt && worstNP !== null ? tacNPClass(worstNP) : 'tac-idle';
+  document.getElementById('tac-np-ind').className = 'tac-ind ' + npCls;
+  document.getElementById('tac-np-badge').innerText = hasCalt && worstNP !== null ? tacNPStatusText(worstNP) : '—';
+  document.getElementById('tac-np-num').innerText = worstNP !== null ? Math.round(worstNP) : '—';
+  document.getElementById('tac-np-real-lbl').innerText = worstNP !== null ? Math.round(worstNP) + ' psi' : '—';
+  const delta = worstNP !== null ? worstNP - NP_TARGET : null;
+  const deltaEl = document.getElementById('tac-np-delta');
+  deltaEl.innerText = delta !== null ? (delta >= 0 ? '+' : '') + delta.toFixed(1) + ' psi' : '—';
+  deltaEl.style.color = delta !== null ? dotColor(npCls) : 'var(--text-muted)';
+  document.getElementById('tac-np-arc').setAttribute('stroke-dashoffset', worstNP !== null ? arcOffset(worstNP) : 157);
   document.getElementById('tac-np-arc').setAttribute('stroke', dotColor(npCls));
-  document.getElementById('tac-np-tooltip-text').innerText = tacNPTooltip(np);
-  // Per-segment NP rows
-  const npSegs=document.getElementById('tac-np-segs');
-  if(hasCalt&&segmentos.length>1){
-    npSegs.innerHTML=segmentos.map((s,i)=>{
-      const snp = sourceNP!==undefined&&sourceNP!==null ? Math.max(0,sourceNP-s.perdidas) : s.np_real;
-      const sc=tacNPClass(snp);
+  document.getElementById('tac-np-tooltip-text').innerText = tacNPTooltip(worstNP);
+
+  // Filas por segmento
+  const npSegs = document.getElementById('tac-np-segs');
+  if (hasCalt) {
+    npSegs.innerHTML = segmentos.map((s, i) => {
+      const sc = tacNPClass(s.np_real);
       return `<div class="tac-seg-row">
         <span class="tac-seg-row-dot" style="background:${dotColor(sc)}"></span>
-        <span class="tac-seg-row-label">Seg.${i+1}${s.isCrit?' ★':''}</span>
-        <span class="tac-seg-row-val" style="color:${dotColor(sc)}">${Math.round(snp)} psi</span>
-        <span style="color:var(--text-muted);font-size:8px;margin-left:auto">${tacNPStatusText(snp)}</span>
+        <span class="tac-seg-row-label">Seg.${i+1}${s.isCrit ? ' ★' : ''}</span>
+        <span class="tac-seg-row-val" style="color:${dotColor(sc)}">${s.np_real !== undefined ? Math.round(s.np_real) : '—'} psi</span>
+        <span style="color:var(--text-muted);font-size:8px;margin-left:auto">${tacNPStatusText(s.np_real)}</span>
       </div>`;
     }).join('');
-  } else { npSegs.innerHTML=''; }
+  } else { npSegs.innerHTML = ''; }
 
-  // ── GPM indicator ────────────────────────────────────────────────
-  const qNom  = hasCalt ? segmentos.reduce((s,x)=>s+x.totalQ,0)      : null;
-  const qReal = hasCalt ? segmentos.reduce((s,x)=>s+x.totalQ_real,0) : null;
-  const pct   = qNom>0 ? qReal/qNom : null;
-  const pctPct= pct!==null ? Math.round(pct*100) : null;
-  const gpmCls= hasCalt ? tacGPMClass(qReal,qNom) : 'tac-idle';
-  document.getElementById('tac-gpm-ind').className='tac-ind '+gpmCls;
-  document.getElementById('tac-gpm-badge').innerText  = hasCalt ? tacGPMStatusText(pct) : '—';
-  const gpmValEl=document.getElementById('tac-gpm-val');
+  // ── INDICADOR 2: GPM ────────────────────────────────────
+  const qNom  = hasCalt ? segmentos.reduce((s, x) => s + x.totalQ, 0)      : null;
+  const qReal = hasCalt ? segmentos.reduce((s, x) => s + x.totalQ_real, 0) : null;
+  const pct   = qNom > 0 ? qReal / qNom : null;
+  const pctPct = pct !== null ? Math.round(pct * 100) : null;
+  const gpmCls = hasCalt ? tacGPMClass(qReal, qNom) : 'tac-idle';
+  document.getElementById('tac-gpm-ind').className = 'tac-ind ' + gpmCls;
+  document.getElementById('tac-gpm-badge').innerText = hasCalt ? tacGPMStatusText(pct) : '—';
+  const gpmValEl = document.getElementById('tac-gpm-val');
   gpmValEl.innerText = hasCalt ? qReal : '—';
   gpmValEl.style.color = dotColor(gpmCls);
-  document.getElementById('tac-gpm-nom').innerText = hasCalt ? qNom+' GPM' : '—';
-  document.getElementById('tac-gpm-bar').style.width  = pct!==null ? Math.min(100,pct*100).toFixed(1)+'%' : '0%';
-  const effEl=document.getElementById('tac-gpm-eff');
-  if(pctPct!==null){
-    effEl.innerText=pctPct+'%';
-    effEl.style.background=gpmCls==='tac-green'?'rgba(16,185,129,.12)':gpmCls==='tac-yellow'?'rgba(245,159,0,.12)':'rgba(244,63,94,.12)';
-    effEl.style.border=`1px solid ${dotColor(gpmCls)}44`;
-    effEl.style.color=dotColor(gpmCls);
+  document.getElementById('tac-gpm-nom').innerText = hasCalt ? qNom + ' GPM' : '—';
+  document.getElementById('tac-gpm-bar').style.width = pct !== null ? Math.min(100, pct * 100).toFixed(1) + '%' : '0%';
+  const effEl = document.getElementById('tac-gpm-eff');
+  if (pctPct !== null) {
+    effEl.innerText = pctPct + '%';
+    effEl.style.background = gpmCls === 'tac-green' ? 'rgba(16,185,129,.12)' : gpmCls === 'tac-yellow' ? 'rgba(245,159,0,.12)' : 'rgba(244,63,94,.12)';
+    effEl.style.border  = `1px solid ${dotColor(gpmCls)}44`;
+    effEl.style.color   = dotColor(gpmCls);
   } else {
-    effEl.innerText='—'; effEl.style.background='rgba(255,255,255,.04)';
-    effEl.style.border='1px solid var(--border)'; effEl.style.color='var(--text-muted)';
+    effEl.innerText = '—'; effEl.style.background = 'rgba(255,255,255,.04)';
+    effEl.style.border = '1px solid var(--border)'; effEl.style.color = 'var(--text-muted)';
   }
-  // Per-segment GPM rows
-  const gpmSegs=document.getElementById('tac-gpm-segs');
-  if(hasCalt&&segmentos.length>1){
-    gpmSegs.innerHTML=segmentos.map((s,i)=>{
-      const sp=s.totalQ>0?s.totalQ_real/s.totalQ:null;
-      const sc=tacGPMClass(s.totalQ_real,s.totalQ);
+  const gpmSegs = document.getElementById('tac-gpm-segs');
+  if (hasCalt && segmentos.length > 1) {
+    gpmSegs.innerHTML = segmentos.map((s, i) => {
+      const sp = s.totalQ > 0 ? s.totalQ_real / s.totalQ : null;
+      const sc = tacGPMClass(s.totalQ_real, s.totalQ);
       return `<div class="tac-seg-row">
         <span class="tac-seg-row-dot" style="background:${dotColor(sc)}"></span>
-        <span class="tac-seg-row-label">Seg.${i+1}${s.isCrit?' ★':''}</span>
+        <span class="tac-seg-row-label">Seg.${i+1}${s.isCrit ? ' ★' : ''}</span>
         <span class="tac-seg-row-val" style="color:${dotColor(sc)}">${s.totalQ_real} GPM</span>
-        <span style="color:var(--text-muted);font-size:8px;margin-left:auto">/ ${s.totalQ} nom · ${sp?Math.round(sp*100):0}%</span>
+        <span style="color:var(--text-muted);font-size:8px;margin-left:auto">/ ${s.totalQ} nom · ${sp ? Math.round(sp*100) : 0}%</span>
       </div>`;
     }).join('');
-  } else { gpmSegs.innerHTML=''; }
+  } else { gpmSegs.innerHTML = ''; }
 
-  // ── VELOCITY indicator ────────────────────────────────────────────
-  const maxVelSeg = hasCalt ? segmentos.reduce((m,s)=>s.maxVel>m?s.maxVel:m,0) : null;
+  // ── INDICADOR 3: VELOCIDAD ──────────────────────────────
+  const maxVelSeg = hasCalt ? segmentos.reduce((m, s) => s.maxVel > m ? s.maxVel : m, 0) : null;
   const velCls = hasCalt ? tacVelClass(maxVelSeg) : 'tac-idle';
-  document.getElementById('tac-vel-ind').className='tac-ind '+velCls;
+  document.getElementById('tac-vel-ind').className = 'tac-ind ' + velCls;
   document.getElementById('tac-vel-badge').innerText = hasCalt ? tacVelStatusText(maxVelSeg) : '—';
-  const velValEl=document.getElementById('tac-vel-val');
-  velValEl.innerText = maxVelSeg!==null ? maxVelSeg.toFixed(1) : '—';
+  const velValEl = document.getElementById('tac-vel-val');
+  velValEl.innerText = maxVelSeg !== null ? maxVelSeg.toFixed(1) : '—';
   velValEl.style.color = dotColor(velCls);
-  document.getElementById('tac-vel-ms').innerText = maxVelSeg!==null ? '('+(maxVelSeg*0.3048).toFixed(2)+' m/s)' : '(— m/s)';
-  // Needle: range 0–20 ft/s → 0–100%
-  const needlePct = maxVelSeg!==null ? Math.min(100,(maxVelSeg/20)*100).toFixed(1) : 0;
-  document.getElementById('tac-vel-needle').style.left=needlePct+'%';
-  // Per-segment velocity rows
-  const velSegs=document.getElementById('tac-vel-segs');
-  if(hasCalt){
-    velSegs.innerHTML=segmentos.map((s,i)=>{
-      const sc=tacVelClass(s.maxVel);
+  document.getElementById('tac-vel-ms').innerText = maxVelSeg !== null ? '(' + (maxVelSeg * 0.3048).toFixed(2) + ' m/s)' : '(— m/s)';
+  const needlePct = maxVelSeg !== null ? Math.min(100, (maxVelSeg / 20) * 100).toFixed(1) : 0;
+  document.getElementById('tac-vel-needle').style.left = needlePct + '%';
+  const velSegs = document.getElementById('tac-vel-segs');
+  if (hasCalt) {
+    velSegs.innerHTML = segmentos.map((s, i) => {
+      const sc = tacVelClass(s.maxVel);
       return `<div class="tac-seg-row">
         <span class="tac-seg-row-dot" style="background:${dotColor(sc)}"></span>
-        <span class="tac-seg-row-label">Seg.${i+1}${s.isCrit?' ★':''} · ${s.velDiam}"</span>
+        <span class="tac-seg-row-label">Seg.${i+1}${s.isCrit ? ' ★' : ''} · ${s.velDiam}"</span>
         <span class="tac-seg-row-val" style="color:${dotColor(sc)}">${s.maxVel.toFixed(1)} ft/s</span>
-        <span style="color:var(--text-muted);font-size:8px;margin-left:auto">${(s.maxVel*0.3048).toFixed(2)} m/s</span>
+        <span style="color:var(--text-muted);font-size:8px;margin-left:auto">${(s.maxVel * 0.3048).toFixed(2)} m/s</span>
       </div>`;
     }).join('');
-  } else { velSegs.innerHTML=''; }
+  } else { velSegs.innerHTML = ''; }
 }
-
-// ── Hook into existing engine ──────────────────────────────────────────
-// Override updateUI to also fire the tactic indicators
-const _origUpdateUI = updateUI;
-window.updateUI = function(pdp, caudal_nom, caudal_real, segCrit){
-  _origUpdateUI(pdp, caudal_nom, caudal_real, segCrit);
-  updateTacticIndicators(null);
-};
-// Override onPumpMonitor to also update tactic indicators with slider NP
-const _origOnPumpMonitor = onPumpMonitor;
-window.onPumpMonitor = function(){
-  _origOnPumpMonitor();
-  const psi=parseFloat(document.getElementById('pm-slider').value)||0;
-  updateTacticIndicators(psi>0&&_lastPDP>0 ? psi : null);
-};
 
 </script>
 </body>
