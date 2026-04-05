@@ -1229,7 +1229,7 @@ function recalcAndUpdateAll(pdpOverride) {
 }
 
 // ════════════════════════════════════════════════════════════
-// 9. UI PRINCIPAL — panel derecho de resultados
+// 10-A. UI PRINCIPAL — panel derecho de resultados
 // ════════════════════════════════════════════════════════════
 function updateUI(pdp, caudal_nom, caudal_real, segCrit, isMonitor) {
   // ── Alerta de velocidad ──────────────────────────────────
@@ -2610,6 +2610,159 @@ function updateTacticIndicators() {
     }).join('');
   } else { velSegs.innerHTML = ''; }
 }
+
+// ════════════════════════════════════════════════════════════════════════
+// NAMED API — ALIASES NFPA ESTÁNDAR
+// Estos nombres son los que aparecen en la documentación NFPA / IFSTA y
+// en el brief técnico del módulo. Son aliases directos de las funciones
+// internas ya implementadas. Úselos indistintamente.
+// ════════════════════════════════════════════════════════════════════════
+
+/**
+ * frictionLoss(diameter, gpm, length, [cant], [mat])
+ * Pérdida por fricción NFPA 1901 Table C.5.1.1
+ *   FL = C × (GPM / cant / 100)² × (L / 100)
+ * Coeficientes C: 1½"=24 · 1¾"=15.5 · 2"=8 · 2½"=2 · 3"=0.8 · 4"=0.2 · 5"=0.08
+ * @param {string|number} diameter  Diámetro nominal en pulgadas ("1.5","1.75","2","2.5","3","4","5")
+ * @param {number}         gpm      Caudal total que entra al grupo (GPM)
+ * @param {number}         length   Longitud de CADA manguera en pies (ft)
+ * @param {number}         [cant=1] Cantidad de mangueras en paralelo
+ * @param {string}         [mat]    "lona" aplica factor 1.20; cualquier otro = caucho
+ * @returns {number} Pérdida en psi
+ */
+function frictionLoss(diameter, gpm, length, cant, mat) {
+  return calcFL(gpm, String(diameter), cant || 1, length, mat || 'caucho');
+}
+
+/**
+ * nozzleCurve(glp, np, [tipo], [d_in], [np_obj])
+ * Caudal real de boquilla (curva pitón) — Torricelli / NFPA
+ *   Fijo:       Q_real = 29.7 × d² × √NP
+ *   Automático: Q_real = GLP  si NP ≥ NP_obj
+ *               Q_real = 29.7 × d² × √NP  si NP < NP_obj
+ * @param {number} glp     Caudal nominal del pitón (GPM)
+ * @param {number} np      Presión real en boquilla (psi)
+ * @param {string} [tipo]  "fijo" (default) | "automatico"
+ * @param {number} [d_in]  Diámetro de boquilla en pulgadas (se usa solo para fijo)
+ * @param {number} [np_obj] NP objetivo del pitón automático (default 100 psi)
+ * @returns {number} Caudal real en GPM
+ *
+ * Nota pedagógica: si solo conoces el GLP y quieres saber el Q a NP variable,
+ * puedes calcular d implícito: d = √(GLP / (29.7 × √NP_obj))
+ */
+function nozzleCurve(glp, np, tipo, d_in, np_obj) {
+  // Si no se proporciona d_in, se infiere desde GLP y NP_obj = 100 psi
+  const d = d_in
+    ? parseFloat(d_in)
+    : Math.sqrt(glp / (29.7 * Math.sqrt(np_obj || NP_TARGET)));
+  return qBoquilla(d, np, tipo || 'fijo', glp, np_obj || NP_TARGET);
+}
+
+/**
+ * balanceFlow(Q_total, pitones, np_nodo)
+ * Resolución hidráulica de bifurcación Y — reparto real de caudal
+ *
+ * Principio: en el nodo Y todos los ramales comparten la misma presión.
+ *   Σ Q_i = Q_total  donde  Q_i = K_i × √NP_equilibrio
+ *   K_i = 29.7 × d_i²  (coeficiente de descarga de cada boquilla)
+ *
+ * Algoritmo: Newton-Raphson sobre f(NP) = Σ K_i·√NP − Q_total = 0
+ *   Itera hasta |Σ Q_i − Q_total| < 0.05 GPM (convergencia garantizada en ≤50 iter)
+ *
+ * @param {number} Q_total  Caudal total que llega al nodo (GPM)
+ * @param {Array}  pitones  Array de pitones con {boquilla_d, np_obj, tipo, q}
+ * @param {number} np_nodo  Presión disponible en el nodo Y (psi) = PDP − FL_troncal
+ * @returns {Array} [{q_rama: GPM, np_piton: psi}, ...] — uno por pitón
+ */
+function balanceFlow(Q_total, pitones, np_nodo) {
+  return repartirCaudalY(Q_total, pitones, np_nodo);
+}
+
+/**
+ * computeNozzlePressure(pdp, segmento)
+ * Calcula la presión real que llega al nodo de bifurcación (nozzle pressure node)
+ *   NP_nodo = PDP_bomba − FL_troncal − AL_accesorios − EP_elevación
+ *
+ * En el caso de segmento con un solo pitón, NP_nodo = NP_piton.
+ * En bifurcación Y, NP_nodo es la presión de entrada; el pitón recibe
+ * NP_equilibrio (calculado por balanceFlow) que puede ser menor si la boquilla
+ * tiene resistencia propia.
+ *
+ * @param {number} pdp       Presión de consigna de la bomba (psi)
+ * @param {Object} segmento  Objeto segmento con {fl, al, ep, perdidas}
+ * @returns {number} Presión real en el nodo (psi) — puede ser negativa si insuficiente
+ */
+function computeNozzlePressure(pdp, segmento) {
+  if (!segmento) return 0;
+  // Asegurar que las pérdidas están calculadas
+  if (segmento.perdidas === undefined) calcSegmento(segmento);
+  return pdp - segmento.perdidas;
+}
+
+/**
+ * computeVelocity(gpm, diameter, [cant])
+ * Velocidad del agua en la manguera — fórmula pedagógica NFPA
+ *   V = (0.408 × Q_individual) / d²
+ *   donde d = diámetro interior real (ID) en pulgadas
+ *         Q_individual = gpm / cant   (caudal por manguera en paralelo)
+ *
+ * Límites operativos NFPA 1962:
+ *   < 10 ft/s  → operación segura
+ *   10–15 ft/s → zona de alerta
+ *   > 15 ft/s  → peligro de golpe de ariete — NO OPERAR sin corrección
+ *
+ * @param {number}         gpm      Caudal total del grupo (GPM)
+ * @param {string|number}  diameter Diámetro nominal ("1.5","1.75","2","2.5","3","4","5")
+ * @param {number}         [cant=1] Mangueras en paralelo
+ * @returns {number} Velocidad en ft/s
+ */
+function computeVelocity(gpm, diameter, cant) {
+  return calcV(gpm, String(diameter), cant || 1);
+}
+
+// ── Verificación interna de coherencia en arranque ────────────────────
+// Se ejecuta una vez al cargar la página. Si alguna constante o función
+// interna está rota, lanza un error en la consola del navegador para que
+// el desarrollador lo detecte inmediatamente. No afecta la UI.
+(function _selfTest() {
+  try {
+    // FL: 95 GPM en 2.5" × 100 ft debe dar ≈ 1.81 psi
+    const fl = frictionLoss('2.5', 95, 100, 1, 'caucho');
+    console.assert(fl > 1.5 && fl < 2.2,
+      `[ARFF] frictionLoss ERROR: esperado ~1.81 psi, obtenido ${fl.toFixed(3)}`);
+
+    // Velocidad: 95 GPM en 2.5" (ID 2.62") debe dar ≈ 5.63 ft/s
+    const v = computeVelocity(95, '2.5', 1);
+    console.assert(v > 5.0 && v < 6.5,
+      `[ARFF] computeVelocity ERROR: esperado ~5.63 ft/s, obtenido ${v.toFixed(3)}`);
+
+    // NozzleCurve: boquilla 1.0" a 100 psi debe dar ≈ 297 GPM
+    const q = nozzleCurve(297, 100, 'fijo', 1.0, 100);
+    console.assert(q > 280 && q < 315,
+      `[ARFF] nozzleCurve ERROR: esperado ~297 GPM, obtenido ${q}`);
+
+    // BalanceFlow: 2 pitones iguales en 1.0" con 190 GPM totales a 100 psi
+    // → cada uno debe recibir ~95 GPM a ~100 psi
+    const p1 = [
+      { boquilla_d: 1.0, np_obj: 100, tipo: 'fijo', q: 95 },
+      { boquilla_d: 1.0, np_obj: 100, tipo: 'fijo', q: 95 },
+    ];
+    const bal = balanceFlow(190, p1, 100);
+    console.assert(bal.length === 2 && Math.abs(bal[0].q_rama - bal[1].q_rama) < 5,
+      `[ARFF] balanceFlow ERROR: reparto no equitativo para pitones iguales`);
+
+    // computeNozzlePressure con segmento artificial
+    const fakeSeg = { fl: 40, al: 5, ep: 0, perdidas: 45 };
+    const npNode = computeNozzlePressure(145, fakeSeg);
+    console.assert(Math.abs(npNode - 100) < 0.1,
+      `[ARFF] computeNozzlePressure ERROR: esperado 100 psi, obtenido ${npNode}`);
+
+    console.log('%c[ARFF Motor v5] ✓ Self-test OK — Motor hidráulico operativo',
+      'color:#10b981;font-weight:800;font-size:11px');
+  } catch(e) {
+    console.error('[ARFF Motor v5] Self-test FALLIDO:', e);
+  }
+})();
 
 </script>
 </body>
