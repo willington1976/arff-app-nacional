@@ -873,105 +873,115 @@ var _sliderPDP = 0;        // psi — lo que el maquinista puso en el manómetro
 // ════════════════════════════════════════════════════════════
 
 /**
- * Pérdida por fricción en manguera (NFPA 1901 Table C.5.1.1)
- * FL = C × (Q_por_manguera/100)² × (L/100)
- * Para mangueras en paralelo: cada una lleva Q/cant → FL = C×(Q/cant/100)²×(L/100)
- * @param {number} Q       caudal total que entra al grupo (GPM)
- * @param {string} diam    diámetro nominal ("1.5","1.75","2","2.5","3","4","5")
- * @param {number} cant    cantidad de mangueras EN PARALELO
- * @param {number} longFt  longitud de CADA manguera (ft)
- * @param {string} mat     "caucho" o "lona"
- * @returns {number} pérdida por fricción en psi
+ * Pérdida por fricción — NFPA 1901 Table C.5.1.1
+ * FL = C × (Q_por_manguera / 100)² × (L / 100)
+ * Paralelo: cada manguera lleva Q/cant → misma pérdida que si fuera una sola con Q/cant
  */
 function calcFL(Q, diam, cant, longFt, mat) {
   const C = C_NFPA[String(diam)];
   if (!C || !Q || !longFt) return 0;
   const n  = Math.max(1, cant);
-  const Qm = Q / n;                           // caudal por manguera individual
+  const Qm = Q / n;
   const fl = C * Math.pow(Qm / 100, 2) * (longFt / 100);
-  return fl * (mat === 'lona' ? LONA_F : 1);  // corrección lona
+  return fl * (mat === 'lona' ? LONA_F : 1);
 }
 
 /**
- * Velocidad del agua en ft/s
- * V = Q[m³/s] / A[m²]  × 3.28084 ft/m
- * @param {number} Q      caudal total (GPM) — se divide si cant > 1
- * @param {string} diam   diámetro nominal
- * @param {number} cant   mangueras en paralelo (default 1)
- * @returns {number} velocidad en ft/s de la manguera individual
+ * Velocidad del agua — dos métodos:
+ *   A) NFPA simplificada (pedagógica): V = 0.408 × Q / d²   [ft/s, d=ID en pulgadas]
+ *   B) Física exacta:  V = Q[m³/s] / A[m²] × 3.28084
+ * Ambas dan resultados idénticos; usamos A para la alarma y B internamente.
+ * @param {number} Q    caudal por manguera individual (GPM) — ya dividido si paralelo
+ * @param {string} diam diámetro nominal
+ * @param {number} cant mangueras en paralelo
  */
 function calcV(Q, diam, cant) {
   const Dr_in = D_REAL_IN[String(diam)];
   if (!Dr_in || !Q) return 0;
-  const n     = Math.max(1, cant || 1);
-  const Qm    = Q / n;                            // caudal por manguera individual
-  const r_m   = (Dr_in * 0.0254) / 2;            // radio en metros
-  const A_m2  = Math.PI * r_m * r_m;             // área transversal m²
-  const Q_m3s = Qm * GPM_TO_M3S;
-  return (Q_m3s / A_m2) * FT_PER_M;             // ft/s
+  const n  = Math.max(1, cant || 1);
+  const Qm = Q / n;
+  // Método A — NFPA simplificada (idéntico resultado a método B para d=ID)
+  return 0.408 * Qm / (Dr_in * Dr_in);   // ft/s
 }
 
 /**
- * Pérdida en accesorios por K-factor
+ * Pérdida en accesorios — K-factor hidráulico
  * AL = K × (V²/2g) [m] × PSI_PER_M
- * @param {number} Q      caudal (GPM)
- * @param {string} diam   diámetro de referencia
- * @param {number} K      coeficiente de pérdida menor
- * @returns {number} pérdida en psi
  */
 function calcAL(Q, diam, K) {
   const Dr_in = D_REAL_IN[String(diam)] || parseFloat(diam);
   if (!Q || !K || !Dr_in) return 0;
-  const r_m   = (Dr_in * 0.0254) / 2;
-  const A_m2  = Math.PI * r_m * r_m;
-  const V_ms  = (Q * GPM_TO_M3S) / A_m2;        // m/s
-  const hv_m  = (V_ms * V_ms) / (2 * G_MS2);    // altura velocidad en metros
-  return K * hv_m * PSI_PER_M;                   // psi
+  const r_m  = (Dr_in * 0.0254) / 2;
+  const A_m2 = Math.PI * r_m * r_m;
+  const V_ms = (Q * GPM_TO_M3S) / A_m2;
+  const hv_m = (V_ms * V_ms) / (2 * G_MS2);
+  return K * hv_m * PSI_PER_M;
 }
 
 /**
- * Pérdida o ganancia por elevación
- * EP = h_m × 1.4223 psi/m
- * Positivo = sube (pierde presión), Negativo = baja (gana presión)
- * @param {number} elev   valor numérico
- * @param {string} unit   "m" | "ft" | "pisos"
- * @returns {number} psi (+sube, −baja)
+ * Pérdida/ganancia por elevación
+ * EP = h_m × 1.4223 psi/m  (positivo = sube, negativo = baja)
  */
 function calcEP(elev, unit) {
   let m = parseFloat(elev) || 0;
   if (unit === 'ft')    m *= 0.3048;
-  if (unit === 'pisos') m *= 3.0;    // 3 m por piso (promedio estructural)
+  if (unit === 'pisos') m *= 3.0;
   return m * PSI_PER_M;
 }
 
 /**
- * Caudal real de boquilla fija (Torricelli / NFPA)
- * Q = 29.7 × d² × √NP    (d en pulgadas, Q en GPM, NP en psi)
- * Fuente: NFPA 1962 / IFSTA Fire Hydraulics eq. 4.2
- * @param {number} d_in   diámetro de boquilla en pulgadas
- * @param {number} np     presión real en pitón (psi)
- * @param {string} tipo   "fijo" | "automatico"
- * @param {number} q_nom  caudal nominal (GPM) — usado solo para pitón automático
- * @param {number} np_obj NP objetivo del pitón — umbral pitón automático
- * @returns {number} caudal en GPM (entero)
+ * Caudal real de boquilla — Ecuación de Torricelli / NFPA
+ *   Q = 29.7 × d² × √NP    (d en pulgadas, NP en psi → Q en GPM)
+ * Pitón fijo:      siempre sigue la presión real
+ * Pitón automático: mantiene GLP mientras NP ≥ NP_obj; cae con √NP si está por debajo
  */
 function qBoquilla(d_in, np, tipo, q_nom, np_obj) {
   if (!d_in || !np || np <= 0) return 0;
   if (tipo === 'automatico') {
-    // Pitón automático: mantiene Q_nom mientras NP ≥ NP_obj
-    // Si NP baja del objetivo, cae con raíz cuadrada (comportamiento real)
-    if (np >= (np_obj || NP_TARGET)) return Math.round(q_nom || 0);
-    return Math.round(29.7 * d_in * d_in * Math.sqrt(np));
+    return np >= (np_obj || NP_TARGET)
+      ? Math.round(q_nom || 0)
+      : Math.round(29.7 * d_in * d_in * Math.sqrt(np));
   }
-  // Pitón fijo (default): siempre sigue la presión
   return Math.round(29.7 * d_in * d_in * Math.sqrt(np));
 }
 
 /**
- * Interpola la curva de bomba → GPM disponibles a X psi
- * Tramo < 150 psi: extrapolación lineal hacia atrás
- * Tramo 150–250 psi: interpolación lineal entre tres puntos
- * Tramo > 250 psi: extrapolación conservadora (pendiente negativa)
+ * Coeficiente K de boquilla — inverso de Torricelli
+ * K = Q / √NP   (calibrado desde el GLP nominal a NP_obj)
+ * Permite calcular NP_real dado un Q_real (no se usa en cálculo directo pero
+ * sirve para verificar coherencia boquilla/GLP).
+ */
+function kBoquilla(d_in, np_obj) {
+  return 29.7 * d_in * d_in;   // K ya embebido en la fórmula; d²×29.7
+}
+
+/**
+ * Resistencia hidráulica de un tramo de manguera
+ * R = FL / Q²  →  FL = R × Q²
+ * Útil para resolver reparto de caudal en bifurcaciones tipo Y.
+ * Para mangueras en paralelo: R_efectiva = R_individual / cant²
+ */
+function resistenciaTramo(diam, cant, longFt, mat) {
+  const C = C_NFPA[String(diam)];
+  if (!C || !longFt) return Infinity;
+  const n        = Math.max(1, cant);
+  // FL = C × (Q/n/100)² × (L/100)  →  R = FL/Q² = C / (n² × 100² × 100/L)
+  const R_unit   = C * (longFt / 100) / (n * n * 10000);
+  return R_unit * (mat === 'lona' ? LONA_F : 1);
+}
+
+/**
+ * Resistencia total de un segmento (tramos en serie)
+ * R_total = Σ R_i  (en serie las resistencias suman)
+ */
+function resistenciaSegmento(seg) {
+  return seg.hoses.reduce((sum, h) => {
+    return sum + resistenciaTramo(h.diam, h.cant, parseFloat(h.longFt || 0), h.material);
+  }, 0);
+}
+
+/**
+ * Curva de bomba — GPM disponibles a X psi
  */
 function qDisp(psi) {
   if (psi <= 0) return _bomba.q150;
@@ -992,44 +1002,107 @@ function qDisp(psi) {
 }
 
 // ════════════════════════════════════════════════════════════
-// 6. MOTOR DE CÁLCULO DE SEGMENTO
-//    Calcula pérdidas y NP requerida para un segmento dado su Q nominal
-//    NO depende de la PDP de la bomba → solo geometría del tendido
+// 6. RESOLUCIÓN DE BIFURCACIÓN Y — REPARTO REAL DE CAUDAL
+//    Cuando un segmento tiene ≥ 2 pitones, el caudal se divide
+//    según la resistencia de cada rama, no 50/50.
+//
+//    Principio (análogo a la ley de corrientes de Kirchhoff):
+//      • La presión en el nodo Y es la misma para todas las ramas.
+//      • Q_rama = √(ΔP / R_rama)  → en equilibrio Σ Q_rama = Q_total
+//      • Se itera Newton-Raphson simple hasta convergencia < 0.1 GPM.
+//
+//    Cada "rama" = una sub-línea de manguera hacia un pitón individual.
+//    Si el pitón no tiene sub-manguera propia, se asume R=0 en esa rama
+//    (todos comparten la troncal) y el reparto se hace proporcional a K.
+// ════════════════════════════════════════════════════════════
+
+/**
+ * Reparte Q_total entre N pitones usando resistencia hidráulica real.
+ * @param {number}   Q_total  caudal total que llega al nodo Y (GPM)
+ * @param {Array}    pitones  array de objetos pitón con {boquilla_d, np_obj, tipo, q}
+ * @param {number}   np_nodo  presión disponible en el nodo de bifurcación (psi)
+ * @returns {Array}  array de {q_rama, np_piton} por pitón
+ */
+function repartirCaudalY(Q_total, pitones, np_nodo) {
+  const N = pitones.length;
+  if (N === 0) return [];
+  if (N === 1) {
+    // Un solo pitón: recibe todo
+    const p   = pitones[0];
+    const d   = parseFloat(p.boquilla_d || 1.0);
+    const qR  = qBoquilla(d, np_nodo, p.tipo || 'fijo', p.q, parseFloat(p.np_obj || NP_TARGET));
+    return [{ q_rama: qR, np_piton: np_nodo }];
+  }
+
+  // Coeficientes K de cada boquilla: Q = K × √NP → Q² = K² × NP
+  const Ks = pitones.map(p => 29.7 * Math.pow(parseFloat(p.boquilla_d || 1.0), 2));
+
+  // Iteración: dado un NP_nodo compartido, Q_i = K_i × √NP_nodo
+  // Ajustamos NP_nodo para que Σ Q_i = Q_total
+  // f(NP) = Σ K_i × √NP − Q_total = 0
+  // f'(NP) = (1/2) × Σ K_i / √NP
+  let NP = np_nodo; // semilla = NP disponible en el nodo
+  const MAX_ITER = 50;
+  const TOL      = 0.05; // GPM
+
+  for (let iter = 0; iter < MAX_ITER; iter++) {
+    if (NP <= 0) { NP = 0; break; }
+    const sqrtNP = Math.sqrt(NP);
+    const Qsum   = Ks.reduce((s, k) => s + k * sqrtNP, 0);
+    const f      = Qsum - Q_total;
+    if (Math.abs(f) < TOL) break;
+    const df     = Ks.reduce((s, k) => s + k / (2 * sqrtNP), 0);
+    NP = NP - f / df;
+    NP = Math.max(0, NP);
+  }
+
+  // Con NP_equilibrio calculado, obtener Q real de cada pitón
+  return pitones.map((p, i) => {
+    const d     = parseFloat(p.boquilla_d || 1.0);
+    const npPit = Math.max(0, NP);
+    const qR    = qBoquilla(d, npPit, p.tipo || 'fijo', p.q, parseFloat(p.np_obj || NP_TARGET));
+    return { q_rama: qR, np_piton: npPit };
+  });
+}
+
+// ════════════════════════════════════════════════════════════
+// 7. CÁLCULO DE SEGMENTO — versión con NP individual por pitón
+//    Fase 1: calcula pérdidas de la troncal con Q nominal total
+//    Fase 2: reparte caudal en el nodo Y según resistencias reales
+//    Fase 3: calcula NP y Q_real individuales por pitón
 // ════════════════════════════════════════════════════════════
 function calcSegmento(seg) {
-  // Caudal nominal del segmento = suma de GLP de todos sus pitones
+  // ── Q nominal total (GLP suma de pitones) ────────────────
   const Q = seg.pitones.reduce((s, p) => s + parseFloat(p.q || 0), 0);
   seg.totalQ = Q;
 
-  // ── Fricción FL (tramos en serie, cada tramo puede tener paralelo interno) ──
-  // Cada fila de la tabla UI es un "tramo en serie" con cant mangueras en paralelo.
-  // La FL del tramo es la misma para cada manguera del grupo paralelo.
+  // ── Fricción de la TRONCAL (con Q total) ─────────────────
+  // La troncal lleva todo el caudal hasta el nodo de bifurcación.
   seg.fl = seg.hoses.reduce((sum, h) => {
     return sum + calcFL(Q, h.diam, h.cant, parseFloat(h.longFt || 0), h.material);
   }, 0);
 
-  // ── Accesorios AL ──
-  // Se aplican con el diámetro del primer tramo (más conservador para ARFF).
-  // Si hay accesorios mezclados con diferentes tramos, el operador debe
-  // dividirlos en segmentos separados.
+  // ── Accesorios AL (en troncal, con diámetro del primer tramo) ──
   const dRef = seg.hoses[0] ? String(seg.hoses[0].diam) : '2.5';
   seg.al = ACCESORIOS.reduce((sum, a) => {
     if (!seg.accs[a.id]) return sum;
     return sum + calcAL(Q, dRef, a.k);
   }, 0);
 
-  // ── Elevación EP ──
+  // ── Elevación EP ──────────────────────────────────────────
   seg.ep = calcEP(seg.elev, seg.elevUnit);
 
-  // ── NP objetivo del segmento (máximo de los NP objetivo de sus pitones) ──
-  // Esto permite configurar pitones con diferentes NP objetivo.
-  seg.np_obj = seg.pitones.reduce((mx, p) => Math.max(mx, parseFloat(p.np_obj || NP_TARGET)), NP_TARGET);
+  // ── NP objetivo del segmento (máximo de sus pitones) ─────
+  seg.np_obj = seg.pitones.reduce(
+    (mx, p) => Math.max(mx, parseFloat(p.np_obj || NP_TARGET)),
+    NP_TARGET
+  );
 
-  // ── Pérdidas totales y PDP requerida ──
+  // ── Pérdidas totales y PDP requerida ─────────────────────
   seg.perdidas = seg.fl + seg.al + seg.ep;
-  seg.pdp      = seg.np_obj + seg.perdidas;  // PDP mínima que necesita este segmento
+  seg.pdp      = seg.np_obj + seg.perdidas;
 
-  // ── Velocidad máxima del segmento (peor tramo) ──
+  // ── Velocidad máxima en troncal ──────────────────────────
   seg.maxVel  = 0;
   seg.velDiam = dRef;
   seg.hoses.forEach(h => {
@@ -1037,99 +1110,116 @@ function calcSegmento(seg) {
     if (v > seg.maxVel) { seg.maxVel = v; seg.velDiam = h.diam; }
   });
 
-  // ── Velocidades individuales por tramo (para diagnóstico detallado) ──
+  // ── Velocidades y FL por tramo (detalle diagnóstico) ─────
   seg.hoseVels = seg.hoses.map(h => ({
-    diam: h.diam, cant: h.cant, longFt: h.longFt,
-    v: calcV(Q, h.diam, h.cant),
-    fl: calcFL(Q, h.diam, h.cant, parseFloat(h.longFt || 0), h.material),
+    diam:   h.diam,
+    cant:   h.cant,
+    longFt: h.longFt,
+    v:      calcV(Q, h.diam, h.cant),
+    fl:     calcFL(Q, h.diam, h.cant, parseFloat(h.longFt || 0), h.material),
   }));
+
+  // Inicializar np_real / q_real por pitón con valores nominales
+  // (se actualizarán en recalcAll con la PDP real de la bomba)
+  seg.np_real = 0;
+  seg.pitones.forEach(p => { p.np_real = 0; p.q_real = 0; p.eficiencia = 0; });
+  seg.totalQ_real = 0;
+  seg.eficiencia  = 0;
 }
 
 // ════════════════════════════════════════════════════════════
-// 7. MOTOR PRINCIPAL — recalcAll(pdpOverride)
-//    pdpOverride = undefined → MODO CONSIGNA (calcula PDP óptima)
-//    pdpOverride = number    → MODO MONITOR (usa PDP dada por slider)
+// 8. MOTOR PRINCIPAL — recalcAll(pdpOverride)
+//
+//   pdpOverride = undefined → MODO CONSIGNA
+//     Calcula la PDP mínima para que el segmento crítico reciba NP_obj.
+//
+//   pdpOverride = number   → MODO MONITOR (slider)
+//     Usa la PDP dada y muestra lo que llega REALMENTE a cada pitón.
+//
+//   En ambos modos:
+//     1. Calcula pérdidas de troncal por segmento.
+//     2. Calcula NP disponible en el nodo Y = PDP − perdidas_troncal.
+//     3. Resuelve reparto de caudal en el Y (iteración hidráulica).
+//     4. Obtiene NP real y Q real individual por pitón.
+//     5. Detecta alarmas (velocidad, NP, caudal).
 // ════════════════════════════════════════════════════════════
 function recalcAll(pdpOverride) {
   _velWarnings = [];
 
-  // Calcular geometría de todos los segmentos (independiente de PDP)
+  // ── Fase 1: geometría de troncales (independiente de PDP) ──
   segmentos.forEach(s => calcSegmento(s));
 
-  // Identificar segmento crítico (mayor PDP requerida)
+  // ── Fase 2: segmento crítico y PDP de la bomba ───────────
   let segCrit = null;
   segmentos.forEach(s => {
     if (!segCrit || s.pdp > segCrit.pdp) segCrit = s;
     if (s.maxVel > V_MAX_FTPS) _velWarnings.push(s);
   });
 
-  // Determinar PDP de la bomba según el modo activo
-  let pdpBomba;
-  if (pdpOverride !== undefined) {
-    // MODO MONITOR: el operador está probando con una PDP real
-    pdpBomba = pdpOverride;
-  } else {
-    // MODO CONSIGNA: PDP óptima = la que necesita el segmento crítico
-    pdpBomba = segCrit ? segCrit.pdp : 0;
-  }
+  const pdpBomba = pdpOverride !== undefined
+    ? pdpOverride
+    : (segCrit ? segCrit.pdp : 0);
 
-  // Calcular NP real y caudal real para cada segmento con la PDP definida
-  let caudalNomTotal = 0;
+  // ── Fase 3: NP real en nodo Y y reparto por pitón ────────
+  let caudalNomTotal  = 0;
   let caudalRealTotal = 0;
 
   segmentos.forEach(s => {
     caudalNomTotal += s.totalQ;
 
-    // NP real en pitón: lo que sobra después de las pérdidas del tendido
-    const npCalc  = pdpBomba - s.perdidas;
-    s.np_real     = Math.max(0, npCalc);
-    s.np_insuf    = npCalc < 0;             // las pérdidas superan la PDP
-    s.exceso      = s.np_real - s.np_obj;  // exceso sobre el objetivo
-    s.isCrit      = (s === segCrit && pdpOverride === undefined);
-
-    // Porcentaje de pérdidas sobre la PDP
+    // Presión disponible en el nodo de bifurcación
+    const npNodo = pdpBomba - s.perdidas;  // puede ser negativo → insuficiente
+    s.np_real  = Math.max(0, npNodo);
+    s.np_insuf = npNodo < 0;
+    s.exceso   = s.np_real - s.np_obj;
+    s.isCrit   = (s === segCrit && pdpOverride === undefined);
     s.pct_perdidas = pdpBomba > 0 ? (s.perdidas / pdpBomba) * 100 : 0;
 
-    // Caudal real por pitón según NP real
-    s.pitones.forEach(p => {
-      p.np_real = s.np_real;
-      p.q_real  = qBoquilla(
-        parseFloat(p.boquilla_d || 1.0),
-        s.np_real,
-        p.tipo || 'fijo',
-        p.q,
-        parseFloat(p.np_obj || NP_TARGET)
-      );
-      // Eficiencia de cada pitón: q_real / q_nom × 100
-      p.eficiencia = p.q > 0 ? Math.round((p.q_real / p.q) * 100) : 0;
-    });
+    if (s.np_insuf || s.np_real <= 0 || s.pitones.length === 0) {
+      // Sin presión suficiente: todos los pitones a cero
+      s.pitones.forEach(p => { p.np_real = 0; p.q_real = 0; p.eficiencia = 0; p.np_piton_equil = 0; });
+      s.totalQ_real = 0;
+      s.eficiencia  = 0;
+    } else {
+      // Resolver reparto hidráulico real en el nodo Y
+      const reparto = repartirCaudalY(s.totalQ, s.pitones, s.np_real);
 
-    // Caudal real del segmento = suma de q_real de sus pitones
-    s.totalQ_real = s.pitones.reduce((sum, p) => sum + p.q_real, 0);
+      s.pitones.forEach((p, pi) => {
+        const r       = reparto[pi] || { q_rama: 0, np_piton: 0 };
+        p.np_real     = r.np_piton;
+        p.q_real      = r.q_rama;
+        p.eficiencia  = p.q > 0 ? Math.round((p.q_real / p.q) * 100) : 0;
+        p.np_piton_equil = r.np_piton; // NP de equilibrio en ese pitón
+        // Velocidad individual en la línea de cada pitón (usa Q real del pitón)
+        p.vel_piton   = calcV(p.q_real, s.velDiam, 1);
+      });
 
-    // Eficiencia hidráulica del segmento
-    s.eficiencia = s.totalQ > 0 ? Math.round((s.totalQ_real / s.totalQ) * 100) : 0;
+      s.totalQ_real = s.pitones.reduce((sum, p) => sum + p.q_real, 0);
+      s.eficiencia  = s.totalQ > 0
+        ? Math.round((s.totalQ_real / s.totalQ) * 100)
+        : 0;
+    }
 
     caudalRealTotal += s.totalQ_real;
   });
 
-  // Guardar estado global
+  // ── Guardar estado en modo consigna ──────────────────────
   if (pdpOverride === undefined) {
-    // Solo actualizamos _lastPDP en modo consigna
     _lastPDP   = pdpBomba;
     _lastFlow  = caudalRealTotal;
-    _lastStats = segCrit ? { fl: segCrit.fl, al: segCrit.al, ep: segCrit.ep } : { fl:0, al:0, ep:0 };
+    _lastStats = segCrit
+      ? { fl: segCrit.fl, al: segCrit.al, ep: segCrit.ep }
+      : { fl: 0, al: 0, ep: 0 };
   }
 
   return { pdpBomba, caudalNomTotal, caudalRealTotal, segCrit };
 }
 
 // ════════════════════════════════════════════════════════════
-// 8. FUNCIÓN MAESTRA: recalcula y actualiza toda la UI
+// 9. FUNCIÓN MAESTRA — recalcula y actualiza TODA la UI
 // ════════════════════════════════════════════════════════════
 function recalcAndUpdateAll(pdpOverride) {
   const r = recalcAll(pdpOverride);
-
   updateUI(r.pdpBomba, r.caudalNomTotal, r.caudalRealTotal, r.segCrit, pdpOverride !== undefined);
   updateTank();
   buildRecommendations(r.pdpBomba, r.caudalNomTotal, r.caudalRealTotal);
@@ -1445,7 +1535,10 @@ function updateTank(){
 }
 
 // ════════════════════════════════════════════════════════════
-// 13. RECOMENDACIONES PEDAGÓGICAS
+// 13. MENSAJES PEDAGÓGICOS INTELIGENTES
+//     Se activan según el estado real del sistema.
+//     Cada bloque: prioridad (p), ícono, título, sub-norma, descripción educativa.
+//     Se ordenan por prioridad (menor = más urgente) antes de renderizar.
 // ════════════════════════════════════════════════════════════
 function diamMin(Q) {
   for (const d of [1.5, 1.75, 2.0, 2.5, 3.0, 4.0, 5.0])
@@ -1453,122 +1546,268 @@ function diamMin(Q) {
   return 5.0;
 }
 
-function buildRecommendations(pdp, caudal_nom, caudal_real){
-  const panel=document.getElementById('recs-panel'), body=document.getElementById('recs-body');
-  body.innerHTML=''; let bloques=[];
+function buildRecommendations(pdp, caudal_nom, caudal_real) {
+  const panel = document.getElementById('recs-panel');
+  const body  = document.getElementById('recs-body');
+  body.innerHTML = '';
+  const bloques = [];
 
-  // 1. Límite NFPA 1962 — manguera
-  if(pdp>PDP_MAX_PSI){
-    bloques.push({p:-2,icon:'🚨',
-      title:`PELIGRO — PDP = ${pdp.toFixed(1)} psi excede límite NFPA 1962 (${PDP_MAX_PSI} psi)`,
-      sub:'NFPA 1962 §4.3 · Límite estructural de manguera',
-      desc:`La presión requerida supera el límite máximo de trabajo de la manguera. <strong>RIESGO DE FALLA ESTRUCTURAL — NO OPERAR</strong>.<br>
-      Soluciones inmediatas: subir diámetro en los tramos con más pérdida, reducir longitud de tendido o reducir el número de pitones activos.`
+  // ── R-1: PELIGRO — PDP excede límite estructural NFPA 1962 ──────────
+  if (pdp > PDP_MAX_PSI) {
+    bloques.push({ p: -10, icon: '🚨',
+      title: `PELIGRO ESTRUCTURAL — PDP ${pdp.toFixed(0)} psi supera límite NFPA 1962 (${PDP_MAX_PSI} psi)`,
+      sub:   'NFPA 1962 §4.3 · Límite de presión de trabajo de manguera',
+      desc:  `La presión supera el máximo admisible por la manguera. <strong>NO OPERAR.</strong><br>
+              Riesgo real: rotura de manguera, golpe de presión, lesiones graves al pitonero.<br>
+              <strong>Correctivos inmediatos:</strong> aumentar diámetro en tramos con mayor pérdida · 
+              reducir longitud · eliminar pitones activos hasta bajar la consigna a ≤ ${PDP_MAX_PSI} psi.`
     });
   }
 
-  // 2. Capacidad bomba
-  const qD=qDisp(pdp), deficit=caudal_nom-qD;
-  if(deficit>0){
-    bloques.push({p:-1,icon:'🔴',
-      title:`Bomba no puede sostener ${caudal_nom} GPM a ${pdp.toFixed(0)} psi`,
-      sub:`${_bomba.nombre} · disponible: ${qD} GPM · déficit: ${deficit} GPM`,
-      desc:`A ${pdp.toFixed(0)} psi esta bomba solo puede dar <strong>${qD} GPM</strong>.<br>
-      El tendido demanda ${caudal_nom} GPM — déficit de <strong>${deficit} GPM</strong>.<br>
-      Reducir caudal en uno o más segmentos, o cambiar a diámetros mayores para bajar la PDP requerida.`
+  // ── R-2: Bomba no puede suministrar el caudal demandado ─────────────
+  const qD = qDisp(pdp);
+  const deficit = caudal_nom - qD;
+  if (deficit > 0) {
+    bloques.push({ p: -9, icon: '🔴',
+      title: `Bomba insuficiente — demanda ${caudal_nom} GPM, disponible ${qD} GPM (déficit ${deficit} GPM)`,
+      sub:   `${_bomba.nombre} · curva NFPA 1901 interpolada`,
+      desc:  `A ${pdp.toFixed(0)} psi la ${_bomba.nombre} solo entrega <strong>${qD} GPM</strong>.<br>
+              El tendido exige ${caudal_nom} GPM → déficit de <strong>${deficit} GPM</strong>.<br>
+              Consecuencia real: la presión en todos los pitones bajará progresivamente hasta que la bomba se estabilice en su curva.<br>
+              <strong>Correctivos:</strong> reducir pitones activos · aumentar diámetro (baja PDP requerida) · usar bomba de mayor capacidad.`
     });
   }
 
-  // 3. Velocidad excesiva — por tramo
-  segmentos.forEach((seg,si)=>{
-    if(!seg.totalQ) return;
-    seg.hoses.forEach((h,hi)=>{
-      const v=calcV(seg.totalQ,h.diam);
-      if(v<=V_MAX_FTPS) return;
-      const dMin=diamMin(seg.totalQ);
-      const flAct=calcFL(seg.totalQ,h.diam,h.cant,parseFloat(h.longFt||0),h.material);
-      const flRec=calcFL(seg.totalQ,String(dMin),h.cant,parseFloat(h.longFt||0),h.material);
-      const ahorro=flAct-flRec;
-      const tabla=[1.5,1.75,2.0,2.5,3.0].map(d=>{
-        const vd=calcV(seg.totalQ,String(d)),fld=calcFL(seg.totalQ,String(d),h.cant,parseFloat(h.longFt||0),h.material),ok=vd<=V_MAX_FTPS;
-        const bg=d===parseFloat(h.diam)?'rgba(244,63,94,.1)':d===dMin?'rgba(16,185,129,.06)':'transparent';
+  // ── R-3: Velocidad excesiva por tramo ───────────────────────────────
+  segmentos.forEach((seg, si) => {
+    if (!seg.totalQ) return;
+    seg.hoses.forEach((h, hi) => {
+      const v = calcV(seg.totalQ, h.diam, h.cant);
+      if (v <= V_MAX_FTPS) return;
+      const dMin   = diamMin(seg.totalQ);
+      const flAct  = calcFL(seg.totalQ, h.diam, h.cant, parseFloat(h.longFt || 0), h.material);
+      const flRec  = calcFL(seg.totalQ, String(dMin), h.cant, parseFloat(h.longFt || 0), h.material);
+      const ahorro = (flAct - flRec).toFixed(0);
+      const vNFPA  = (0.408 * (seg.totalQ / Math.max(1, h.cant)) / Math.pow(D_REAL_IN[String(h.diam)] || 2.62, 2)).toFixed(1);
+      const tabla  = [1.5, 1.75, 2.0, 2.5, 3.0].map(d => {
+        const vd  = calcV(seg.totalQ, String(d), h.cant);
+        const fld = calcFL(seg.totalQ, String(d), h.cant, parseFloat(h.longFt || 0), h.material);
+        const ok  = vd <= V_MAX_FTPS;
+        const bg  = d === parseFloat(h.diam) ? 'rgba(244,63,94,.1)' : d === dMin ? 'rgba(16,185,129,.06)' : 'transparent';
         return `<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;padding:4px 9px;background:${bg};font-family:var(--ff-m);font-size:10px;">
-          <span>${d}"${d===parseFloat(h.diam)?' ←':d===dMin?' ✓':''}</span>
-          <span style="color:${ok?'var(--green)':'var(--red)'};text-align:right">${vd.toFixed(1)} ft/s</span>
+          <span>${d}"${d === parseFloat(h.diam) ? ' ←actual' : d === dMin ? ' ✓recom.' : ''}</span>
+          <span style="color:${ok ? 'var(--green)' : 'var(--red)'};text-align:right">${vd.toFixed(1)} ft/s</span>
           <span style="color:var(--text-dim);text-align:right">${fld.toFixed(1)} psi</span>
-          <span style="text-align:right">${ok?'✓':'⚠'}</span></div>`;
+          <span style="text-align:right">${ok ? '✓' : '⚠'}</span></div>`;
       }).join('');
-      bloques.push({p:v>20?0:1,icon:v>20?'🚨':'⚠️',
-        title:`Seg.${si+1} Tramo ${hi+1}: ${v.toFixed(1)} ft/s — Riesgo golpe de ariete`,
-        sub:`NFPA 1962 §4.2 · ${seg.totalQ} GPM en ${h.diam}" (ID ${D_REAL_IN[h.diam]||h.diam}")`,
-        desc:`Velocidad es <strong>${(v/15).toFixed(1)}× el límite</strong> de 15 ft/s. Pérdida actual: ${flAct.toFixed(1)} psi en este tramo.<br>
-        <strong>Cambiar a ${dMin}" → ahorro ~${ahorro.toFixed(0)} psi en PDP requerida</strong>`,
-        extra:`<div style="margin-top:8px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:5px;overflow:hidden;">
+      bloques.push({ p: v > 22 ? -8 : -5, icon: v > 22 ? '🚨' : '⚠️',
+        title: `Seg.${si + 1} Tramo ${hi + 1}: ${v.toFixed(1)} ft/s — Riesgo LATIGAZO / golpe de ariete`,
+        sub:   `NFPA 1962 §4.2 · V = 0.408 × Q/d² = ${vNFPA} ft/s · Límite: 15 ft/s`,
+        desc:  `Velocidad ${(v / V_MAX_FTPS).toFixed(1)}× el límite NFPA. 
+                A velocidades &gt;15 ft/s la manguera vibra, se fatiga y puede causar <strong>golpe de ariete</strong> al cierre del pitón.<br>
+                V &gt;20 ft/s → riesgo de pérdida de control físico del tendido.<br>
+                Pérdida actual en este tramo: ${flAct.toFixed(1)} psi.
+                <strong>Cambiar a ${dMin}" ahorra ~${ahorro} psi en consigna.</strong>`,
+        extra: `<div style="margin-top:8px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:5px;overflow:hidden;">
           <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;padding:4px 9px;font-size:9px;font-weight:800;color:var(--text-muted);border-bottom:1px solid rgba(255,255,255,.05)">
-            <span>Diámetro</span><span style="text-align:right">Velocidad</span><span style="text-align:right">FL tramo</span><span style="text-align:right">Estado</span></div>
-          ${tabla}</div>`
+            <span>Diámetro</span><span style="text-align:right">Velocidad</span><span style="text-align:right">FL tramo</span><span style="text-align:right">Estado</span>
+          </div>${tabla}</div>`
       });
     });
   });
 
-  // 4. Exceso de presión en líneas no críticas
-  segmentos.forEach((s,si)=>{
-    if(s.isCrit||!s.totalQ) return;
-    if(s.exceso>20){
-      const gravedad=s.exceso>50?'CRÍTICO':'ELEVADO';
-      const icon=s.exceso>50?'🔴':'🟡';
-      // Sugerir diámetro óptimo que igualaría las pérdidas al segmento crítico
-      const perdCrit=_lastPDP-NP_TARGET;
-      bloques.push({p:s.exceso>50?2:3,icon,
-        title:`Seg.${si+1}: Exceso ${gravedad} de presión en pitón (+${s.exceso.toFixed(0)} psi)`,
-        sub:'Efecto de bomba sin regulación individual por salida · IFSTA Fire Hydraulics §6.4',
-        desc:`La bomba está a <strong>${_lastPDP.toFixed(0)} psi</strong> pero este segmento solo tiene <strong>${s.perdidas.toFixed(1)} psi</strong> de pérdidas.<br>
-        El pitón recibirá <strong>${s.np_real.toFixed(0)} psi</strong> en lugar de ${s.np_obj||NP_TARGET} psi.<br>
-        • Caudal real estimado: <strong>${s.totalQ_real} GPM</strong> (en lugar de ${s.totalQ} GPM nominal)<br>
-        • Mayor esfuerzo físico para el pitonero${s.exceso>50?' — RIESGO DE PÉRDIDA DE CONTROL':''}<br>
-        • Autonomía real del tanque se reduce${s.exceso>50?' significativamente':''}<br><br>
-        <strong>Solución:</strong> Agregar longitud o reducir diámetro en Seg.${si+1} para equilibrar las pérdidas (~${perdCrit.toFixed(0)} psi objetivo).`
+  // ── R-4: NP individual por pitón — presión baja ──────────────────────
+  segmentos.forEach((s, si) => {
+    s.pitones.forEach((p, pi) => {
+      const npR = p.np_real !== undefined ? p.np_real : s.np_real;
+      if (npR <= 0 && s.np_insuf) return; // ya cubierto por R-9
+      if (npR > 0 && npR < 85) {
+        const eff = p.eficiencia || 0;
+        bloques.push({ p: -7, icon: '🔴',
+          title: `Seg.${si+1} P${pi+1}: NP real ${npR.toFixed(0)} psi — Pitón subalimentado (objetivo ${p.np_obj || NP_TARGET} psi)`,
+          sub:   `Boquilla ${p.boquilla_d || 1.0}" · GLP ${p.q} GPM · Eficiencia: ${eff}%`,
+          desc:  `La presión real en la boquilla es <strong>${npR.toFixed(0)} psi</strong>, ${((p.np_obj||NP_TARGET) - npR).toFixed(0)} psi por debajo del objetivo.<br>
+                  Caudal real: <strong>${p.q_real || 0} GPM</strong> de ${p.q} GPM nominales — <strong>solo ${eff}% de efectividad</strong>.<br>
+                  El pitonero está trabajando con un pitón que no alcanza su curva de diseño → menor alcance y menor caudal de extinción.<br>
+                  <strong>Correctivo:</strong> subir presión de bomba · acortar troncal · aumentar diámetro de manguera.`
+        });
+      }
+    });
+  });
+
+  // ── R-5: NP individual por pitón — exceso peligroso ─────────────────
+  segmentos.forEach((s, si) => {
+    s.pitones.forEach((p, pi) => {
+      const npR = p.np_real !== undefined ? p.np_real : s.np_real;
+      if (npR > 120) {
+        bloques.push({ p: -6, icon: '🔴',
+          title: `Seg.${si+1} P${pi+1}: NP real ${npR.toFixed(0)} psi — EXCESO CRÍTICO (objetivo ${p.np_obj || NP_TARGET} psi)`,
+          sub:   `Boquilla ${p.boquilla_d || 1.0}" · Q real estimado: ${p.q_real || 0} GPM`,
+          desc:  `La presión en este pitón supera los <strong>${npR.toFixed(0)} psi</strong>, 
+                  ${(npR - (p.np_obj||NP_TARGET)).toFixed(0)} psi sobre el objetivo.<br>
+                  Consecuencia: reacción hidráulica excesiva → el pitonero puede <strong>perder el control físico de la línea</strong>.<br>
+                  Caudal real entregado: ${p.q_real || 0} GPM (${p.eficiencia || 0}% del GLP — exceso de caudal).<br>
+                  <strong>Correctivo:</strong> agregar longitud o reducir diámetro en este segmento para aumentar pérdidas y bajar NP.`
+        });
+      }
+    });
+  });
+
+  // ── R-6: Caudal real < 75% del GLP — pitón ineficiente ──────────────
+  segmentos.forEach((s, si) => {
+    s.pitones.forEach((p, pi) => {
+      const eff = p.eficiencia !== undefined ? p.eficiencia : 0;
+      if (eff > 0 && eff < 75) {
+        bloques.push({ p: -4, icon: '🟡',
+          title: `Seg.${si+1} P${pi+1}: Solo el ${eff}% del GLP — caudal de extinción insuficiente`,
+          sub:   `Q real: ${p.q_real || 0} GPM / GLP: ${p.q} GPM · NP real: ${(p.np_real||0).toFixed(0)} psi`,
+          desc:  `Este pitón entrega solo <strong>${p.q_real || 0} de ${p.q} GPM</strong> (${eff}% del GLP).<br>
+                  Con menos del 75% de caudal nominal, el pitón no alcanza su curva de extinción de diseño.<br>
+                  Riesgo operativo: menor cobertura de chorro, menor caudal de enfriamiento → riesgo para el pitonero.<br>
+                  <strong>Causa probable:</strong> NP insuficiente (${(p.np_real||0).toFixed(0)} psi) por exceso de pérdidas en la troncal.<br>
+                  <strong>Correctivo:</strong> aumentar PDP de bomba o reducir pérdidas del segmento.`
+        });
+      }
+    });
+  });
+
+  // ── R-7: Troncal subdimensionada — FL > 40% de la PDP ───────────────
+  segmentos.forEach((s, si) => {
+    if (!s.totalQ || !pdp) return;
+    const pctFL = (s.fl / pdp) * 100;
+    if (pctFL > 40) {
+      const dMin = diamMin(s.totalQ);
+      bloques.push({ p: -3, icon: '🟡',
+        title: `Seg.${si+1}: Fricción excesiva — ${pctFL.toFixed(0)}% de la PDP se pierde en manguera`,
+        sub:   `FL = ${s.fl.toFixed(1)} psi de ${pdp.toFixed(0)} psi total · Troncal ${s.hoses.map(h=>h.diam+'"').join('+')}`,
+        desc:  `La pérdida por fricción consume el <strong>${pctFL.toFixed(0)}% de la presión de la bomba</strong>, 
+                lo que deja poco margen para la NP del pitón y reduce la eficiencia global.<br>
+                Una troncal correctamente dimensionada no debería consumir más del 30–35% de la PDP.<br>
+                <strong>Diagnóstico:</strong> diámetro insuficiente para el caudal demandado (${s.totalQ} GPM).<br>
+                <strong>Correctivo:</strong> cambiar troncal a ${dMin}" o reducir longitud del tendido.`
       });
     }
   });
 
-  // 5. Presión elevada (>200 psi, dentro del límite)
-  if(pdp>200&&pdp<=PDP_MAX_PSI&&!bloques.find(b=>b.p===-2)){
-    bloques.push({p:4,icon:'⚡',
-      title:`PDP = ${pdp.toFixed(1)} psi — Presión elevada para operación ARFF`,
-      sub:`Rango típico ARFF: 100–200 psi · Capacidad bomba: ${qDisp(pdp)} GPM disponibles`,
-      desc:`Operación posible pero en la parte alta de la curva de la bomba.<br>
-      La bomba pierde capacidad de caudal: a ${pdp.toFixed(0)} psi disponibles ${qDisp(pdp)} GPM vs ${_bomba.q150} GPM nominales.<br>
-      Evaluar si se puede optimizar el tendido para bajar a &lt;200 psi.`
+  // ── R-8: Mal reparto de caudal en bifurcación (pitones muy desiguales) ──
+  segmentos.forEach((s, si) => {
+    if (s.pitones.length < 2) return;
+    const qsReales = s.pitones.map(p => p.q_real || 0);
+    const qMax     = Math.max(...qsReales);
+    const qMin     = Math.min(...qsReales);
+    if (qMax > 0 && qMin / qMax < 0.60) {
+      const pMax = s.pitones.findIndex(p => (p.q_real||0) === qMax) + 1;
+      const pMin = s.pitones.findIndex(p => (p.q_real||0) === qMin) + 1;
+      bloques.push({ p: -2, icon: '⚠️',
+        title: `Seg.${si+1}: Reparto desequilibrado — P${pMax} recibe ${qMax} GPM y P${pMin} solo ${qMin} GPM`,
+        sub:   'Equilibrio hidráulico · boquillas con GLP muy diferentes generan desequilibrio en bifurcación Y',
+        desc:  `En una bifurcación Y, el caudal se divide según la resistencia de cada boquilla.<br>
+                Pitones con GLP muy diferente generan desequilibrio: la boquilla de menor resistencia acapara caudal.<br>
+                <strong>P${pMax}:</strong> ${qMax} GPM / NP ${((s.pitones[pMax-1]||{}).np_real||0).toFixed(0)} psi<br>
+                <strong>P${pMin}:</strong> ${qMin} GPM / NP ${((s.pitones[pMin-1]||{}).np_real||0).toFixed(0)} psi<br>
+                <strong>Correctivo:</strong> usar pitones del mismo GLP en el mismo segmento · o separar en segmentos independientes.`
+      });
+    }
+  });
+
+  // ── R-9: Presión insuficiente — pérdidas superan PDP ────────────────
+  segmentos.forEach((s, si) => {
+    if (!s.np_insuf) return;
+    bloques.push({ p: -1, icon: '🔴',
+      title: `Seg.${si+1}: PRESIÓN INSUFICIENTE — pérdidas ${s.perdidas.toFixed(1)} psi > PDP ${pdp.toFixed(0)} psi`,
+      sub:   'Tendido no puede ser alimentado con la presión actual de la bomba',
+      desc:  `Las pérdidas del tendido (${s.perdidas.toFixed(1)} psi) superan la presión disponible.<br>
+              <strong>Resultado: el pitón no recibe agua.</strong><br>
+              • FL (fricción): ${s.fl.toFixed(1)} psi<br>
+              • AL (accesorios): ${s.al.toFixed(1)} psi<br>
+              • EP (elevación): ${s.ep.toFixed(1)} psi<br>
+              <strong>Correctivos:</strong> aumentar PDP de bomba a mínimo ${s.pdp.toFixed(0)} psi · 
+              reducir longitud · aumentar diámetro · eliminar accesorios innecesarios.`
+    });
+  });
+
+  // ── R-10: Exceso de presión en segmento no crítico ──────────────────
+  segmentos.forEach((s, si) => {
+    if (s.isCrit || !s.totalQ) return;
+    if (s.exceso > 20) {
+      const perdCrit = _lastPDP - NP_TARGET;
+      const gravedad = s.exceso > 50 ? 'CRÍTICO' : 'MODERADO';
+      const icon2    = s.exceso > 50 ? '🔴' : '🟡';
+      bloques.push({ p: s.exceso > 50 ? 2 : 3, icon: icon2,
+        title: `Seg.${si+1}: Exceso de presión ${gravedad} en pitón (+${s.exceso.toFixed(0)} psi sobre objetivo)`,
+        sub:   'IFSTA Fire Hydraulics §6.4 · Bomba sin regulación individual por salida',
+        desc:  `La bomba está a ${pdp.toFixed(0)} psi pero este segmento solo necesita ${s.pdp.toFixed(0)} psi.<br>
+                <strong>Exceso de ${s.exceso.toFixed(0)} psi</strong> llega al pitón → NP real: ${s.np_real.toFixed(0)} psi.<br>
+                Consecuencia: el pitonero recibe más caudal del esperado (${s.totalQ_real} GPM vs ${s.totalQ} GLP) 
+                → mayor reacción física${s.exceso > 50 ? ' — RIESGO DE PÉRDIDA DE CONTROL' : ''}.<br>
+                Autonomía del tanque se reduce por mayor caudal real.<br>
+                <strong>Correctivo:</strong> agregar longitud al tendido o reducir diámetro en Seg.${si+1} hasta alcanzar ~${perdCrit.toFixed(0)} psi de pérdidas.`
+      });
+    }
+  });
+
+  // ── R-11: Presión elevada (>200 psi, dentro del límite) ─────────────
+  if (pdp > 200 && pdp <= PDP_MAX_PSI && !bloques.find(b => b.p === -10)) {
+    bloques.push({ p: 4, icon: '⚡',
+      title: `PDP = ${pdp.toFixed(1)} psi — Zona de alta presión (rango típico ARFF: 100–200 psi)`,
+      sub:   `${_bomba.nombre} · disponible: ${qDisp(pdp)} GPM @ ${pdp.toFixed(0)} psi`,
+      desc:  `Operable, pero la bomba trabaja en la zona de alta presión / bajo caudal de su curva.<br>
+              A ${pdp.toFixed(0)} psi disponibles <strong>${qDisp(pdp)} GPM</strong> vs ${_bomba.q150} GPM nominales.<br>
+              Vigilar temperatura del motor y la bomba en operación prolongada.<br>
+              <strong>Recomendación:</strong> evaluar si un diámetro mayor en troncal permite bajar a &lt; 200 psi.`
     });
   }
 
-  if(!bloques.length&&pdp>0){
-    panel.style.display='block';
-    const vMax=segmentos.reduce((mx,s)=>Math.max(mx,s.maxVel||0),0);
-    body.innerHTML=`<div style="background:rgba(16,185,129,.06);border:1px solid rgba(16,185,129,.3);border-radius:var(--rs);padding:14px 16px;display:flex;gap:12px;align-items:flex-start;">
-      <div style="font-size:19px">✅</div>
+  // ── R-12: Velocidad en zona de alerta temprana (10–15 ft/s) ─────────
+  segmentos.forEach((s, si) => {
+    if (!s.totalQ) return;
+    s.hoses.forEach((h, hi) => {
+      const v = calcV(s.totalQ, h.diam, h.cant);
+      if (v >= V_WARN_FTPS && v <= V_MAX_FTPS) {
+        bloques.push({ p: 5, icon: '⚠️',
+          title: `Seg.${si+1} Tramo ${hi+1}: ${v.toFixed(1)} ft/s — Zona de alerta de velocidad`,
+          sub:   `V = 0.408 × ${Math.round(s.totalQ / Math.max(1, h.cant))} / ${(D_REAL_IN[String(h.diam)] || 2.62)}² = ${v.toFixed(1)} ft/s · Límite: 15 ft/s`,
+          desc:  `La velocidad está entre ${V_WARN_FTPS} y ${V_MAX_FTPS} ft/s — zona de atención.<br>
+                  No incumple NFPA 1962, pero aumenta las pérdidas por fricción y produce vibración perceptible en la manguera.<br>
+                  Vigilar comportamiento del tendido durante la operación.`
+        });
+      }
+    });
+  });
+
+  // ── SISTEMA CORRECTO ─────────────────────────────────────────────────
+  if (!bloques.length && pdp > 0) {
+    panel.style.display = 'block';
+    const vMax = segmentos.reduce((mx, s) => Math.max(mx, s.maxVel || 0), 0);
+    const effMin = segmentos.length
+      ? Math.min(...segmentos.flatMap(s => s.pitones.map(p => p.eficiencia || 100)))
+      : 100;
+    body.innerHTML = `<div style="background:rgba(16,185,129,.06);border:1px solid rgba(16,185,129,.3);border-radius:var(--rs);padding:14px 16px;display:flex;gap:12px;align-items:flex-start;">
+      <div style="font-size:20px">✅</div>
       <div>
-        <div style="font-size:13px;font-weight:800;color:var(--green);margin-bottom:4px;">Sistema correcto — Listo para operar</div>
-        <div style="font-size:11px;color:var(--text-dim);line-height:1.7;">
-          • Consigna bomba: <strong>${pdp.toFixed(1)} psi</strong> — dentro de capacidad ✓<br>
-          • Velocidad máxima: <strong>${vMax.toFixed(1)} ft/s</strong> ≤ 15 ft/s ✓<br>
-          • Caudal disponible @ ${pdp.toFixed(0)} psi: <strong>${qDisp(pdp)} GPM</strong> vs ${caudal_nom} GPM demandados ✓<br>
-          • Caudal real (con excesos): <strong>${caudal_real} GPM</strong>
+        <div style="font-size:13px;font-weight:800;color:var(--green);margin-bottom:6px;">Sistema correcto — Listo para operar</div>
+        <div style="font-size:11px;color:var(--text-dim);line-height:1.9;">
+          • Consigna bomba: <strong>${pdp.toFixed(1)} psi</strong> dentro de capacidad ✓<br>
+          • Velocidad máxima en manguera: <strong>${vMax.toFixed(1)} ft/s</strong> ≤ ${V_MAX_FTPS} ft/s ✓<br>
+          • Caudal bomba disponible @ ${pdp.toFixed(0)} psi: <strong>${qDisp(pdp)} GPM</strong> vs ${caudal_nom} GPM demandados ✓<br>
+          • Caudal real entregado por pitones: <strong>${caudal_real} GPM</strong><br>
+          • Eficiencia mínima de pitón: <strong>${effMin}%</strong> ${effMin >= 90 ? '✓' : '— revisar'}<br>
+          • Todos los pitones dentro del rango de NP operativo ✓
         </div>
-      </div></div>`; return;
+      </div></div>`;
+    return;
   }
 
-  panel.style.display=bloques.length?'block':'none';
-  bloques.sort((a,b)=>a.p-b.p);
-  bloques.forEach(b=>{
-    body.innerHTML+=`<div class="rec-item">
+  panel.style.display = bloques.length ? 'block' : 'none';
+  bloques.sort((a, b) => a.p - b.p);
+  bloques.forEach(b => {
+    body.innerHTML += `<div class="rec-item">
       <div class="rec-icon">${b.icon}</div>
       <div style="flex:1">
         <div class="rec-title">${b.title}</div>
         <div class="rec-sub">${b.sub}</div>
         <div class="rec-desc">${b.desc}</div>
-        ${b.extra||''}
+        ${b.extra || ''}
       </div></div>`;
   });
 }
