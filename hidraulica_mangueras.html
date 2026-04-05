@@ -94,6 +94,15 @@
     .piton-fields{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;}
     .piton-field-label{font-size:9px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:3px;}
 
+    /* MANGUERA DE RAMA — tramos propios de cada pitón desde el nodo Y */
+    .rama-section{margin-top:9px;padding:8px 10px;background:rgba(167,139,250,.04);border:1px solid rgba(167,139,250,.2);border-radius:6px;}
+    .rama-section-title{font-size:9px;font-weight:800;color:var(--purple);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;display:flex;align-items:center;gap:6px;}
+    .rama-hose-row{background:rgba(255,255,255,.02);border:1px solid rgba(167,139,250,.15);padding:5px;border-radius:5px;margin-bottom:4px;display:grid;grid-template-columns:1.6fr 0.5fr 0.9fr 0.9fr 26px;gap:5px;align-items:center;}
+    .rama-stats{font-family:var(--ff-m);font-size:9px;color:var(--text-muted);margin-top:4px;display:flex;gap:10px;flex-wrap:wrap;}
+    .rama-stats span{padding:2px 6px;border-radius:3px;background:rgba(255,255,255,.03);border:1px solid var(--border);}
+    .btn-add-rama{width:100%;padding:5px;background:rgba(167,139,250,.04);border:1px dashed rgba(167,139,250,.4);border-radius:5px;color:var(--purple);font-family:var(--ff-m);font-size:9px;font-weight:700;cursor:pointer;margin-top:4px;transition:.15s;}
+    .btn-add-rama:hover{background:rgba(167,139,250,.1);border-style:solid;}
+
     /* piton real-time feedback */
     .piton-feedback{margin-top:8px;padding:7px 10px;border-radius:5px;font-family:var(--ff-m);font-size:10px;line-height:1.5;}
     .pf-ok{background:rgba(16,185,129,.07);border:1px solid rgba(16,185,129,.2);color:var(--green);}
@@ -1002,122 +1011,174 @@ function qDisp(psi) {
 }
 
 // ════════════════════════════════════════════════════════════
-// 6. RESOLUCIÓN DE BIFURCACIÓN Y — REPARTO REAL DE CAUDAL
-//    Cuando un segmento tiene ≥ 2 pitones, el caudal se divide
-//    según la resistencia de cada rama, no 50/50.
+// 6. RESOLUCIÓN DE BIFURCACIÓN Y — REPARTO REAL CON RAMAS
 //
-//    Principio (análogo a la ley de corrientes de Kirchhoff):
-//      • La presión en el nodo Y es la misma para todas las ramas.
-//      • Q_rama = √(ΔP / R_rama)  → en equilibrio Σ Q_rama = Q_total
-//      • Se itera Newton-Raphson simple hasta convergencia < 0.1 GPM.
+//  TOPOLOGÍA SOPORTADA (cualquier combinación):
 //
-//    Cada "rama" = una sub-línea de manguera hacia un pitón individual.
-//    Si el pitón no tiene sub-manguera propia, se asume R=0 en esa rama
-//    (todos comparten la troncal) y el reparto se hace proporcional a K.
+//    BOMBA ──[TRONCAL: N tramos en serie, cada uno con M en paralelo]──► NODO Y
+//                                                                          │
+//                        ┌─────────────────────────────────────────────── ┤ ── ... ── RAMA_N
+//                    RAMA_1                                            RAMA_2
+//                [K tramos propios]                              [J tramos propios]
+//                        │                                                │
+//                    PITÓN 1                                          PITÓN 2
+//                    GLP, NP_obj                                   GLP, NP_obj
+//
+//  ECUACIONES por pitón i:
+//    FL_rama_i(Q_i) = R_i × Q_i²        (fricción acumulada de su rama)
+//    NP_piton_i     = NP_nodo − R_i × Q_i²
+//    Q_i            = K_i × √NP_piton_i  (Torricelli con K calibrado desde GLP)
+//
+//  Solución analítica exacta dado NP_nodo:
+//    Q_i = K_i × √NP_nodo / √(1 + K_i² × R_i)   ← sin iteración interna
+//
+//  Algoritmo externo: bisección sobre NP_nodo hasta Σ Q_i = Q_total_nom
+//
+//  Backward compatible: rama_hoses=[] → R_i=0 → Q_i=K_i×√NP_nodo
+//  (comportamiento idéntico al modelo anterior cuando no hay rama propia)
 // ════════════════════════════════════════════════════════════
 
 /**
- * Reparte Q_total entre N pitones usando resistencia hidráulica real.
- * @param {number}   Q_total  caudal total que llega al nodo Y (GPM)
- * @param {Array}    pitones  array de objetos pitón con {boquilla_d, np_obj, tipo, q}
- * @param {number}   np_nodo  presión disponible en el nodo de bifurcación (psi)
- * @returns {Array}  array de {q_rama, np_piton} por pitón
+ * Resistencia hidráulica acumulada de los tramos de una rama.
+ * FL_rama(Q) = R_total × Q²
+ * Tramos en SERIE → R suman.  Tramos en PARALELO → R ÷ cant²
+ * @param {Array} rama_hoses  [{diam, cant, longFt, material}, ...]
+ * @returns {number} R en psi/GPM²
+ */
+function calcR_rama(rama_hoses) {
+  if (!rama_hoses || !rama_hoses.length) return 0;
+  return rama_hoses.reduce((R, h) => {
+    const C  = C_NFPA[String(h.diam)];
+    if (!C || !h.longFt) return R;
+    const n  = Math.max(1, h.cant || 1);
+    const lon = h.material === 'lona' ? LONA_F : 1;
+    return R + C * parseFloat(h.longFt) * lon / (n * n * 1e6);
+  }, 0);
+}
+
+/**
+ * Q analítico de un pitón dado NP_nodo y resistencia de su rama.
+ * Derivado de: Q = K×√(NP_nodo − R×Q²) → Q = K×√NP_nodo / √(1+K²×R)
+ */
+function calcQ_rama(K, R, NP_nodo) {
+  if (NP_nodo <= 0 || K <= 0) return 0;
+  const denom = 1 + K * K * R;
+  return K * Math.sqrt(NP_nodo) / Math.sqrt(denom > 0 ? denom : 1);
+}
+
+/**
+ * Reparte Q_total entre N pitones con sus propias mangueras de rama.
+ * @param {number} Q_total   Caudal nominal total (suma de GLP)
+ * @param {Array}  pitones   [{q, np_obj, rama_hoses:[...]}, ...]
+ * @param {number} np_nodo   Presión disponible en el nodo Y (psi)
+ * @returns {Array} [{q_rama, np_piton, fl_rama, R_rama}, ...]
  */
 function repartirCaudalY(Q_total, pitones, np_nodo) {
   const N = pitones.length;
   if (N === 0) return [];
 
-  // ── Coeficiente de descarga K por pitón ─────────────────────────
-  // K se deriva del GLP nominal a NP_obj: Q = K × √NP  →  K = GLP / √NP_obj
-  // Esto es correcto porque la boquilla_d es el diámetro físico del orificio,
-  // pero el GLP YA incorpora el coeficiente de descarga real del pitón.
-  // Usar boquilla_d directamente (K = 29.7 × d²) sobreestima el flujo porque
-  // la boquilla real tiene su propio Cd < 1.0.
+  // Precalcular K y R de cada pitón
   const Ks = pitones.map(p => {
-    const glp    = parseFloat(p.q) || 95;
+    const glp    = parseFloat(p.q)      || 95;
     const np_obj = parseFloat(p.np_obj) || NP_TARGET;
-    // K = GLP / √NP_obj  (coeficiente de descarga del pitón calibrado desde GLP)
-    return glp / Math.sqrt(np_obj);
+    return glp / Math.sqrt(np_obj);     // K = GLP / √NP_obj
   });
+  const Rs = pitones.map(p => calcR_rama(p.rama_hoses || []));
 
+  // ── Un solo pitón: recibe toda la presión del nodo ──────────────
   if (N === 1) {
-    // Un solo pitón: recibe toda la presión disponible en el nodo
-    const p   = pitones[0];
-    const K   = Ks[0];
-    // Q_real = K × √NP_nodo  (directamente de Torricelli con K calibrado)
-    const qR  = Math.round(K * Math.sqrt(Math.max(0, np_nodo)));
-    return [{ q_rama: qR, np_piton: np_nodo }];
+    const K = Ks[0], R = Rs[0];
+    const q    = calcQ_rama(K, R, np_nodo);
+    const fl_r = R * q * q;
+    const np_p = Math.max(0, np_nodo - fl_r);
+    return [{ q_rama: Math.round(q), np_piton: np_p, fl_rama: fl_r, R_rama: R }];
   }
 
-  // ── Newton-Raphson: resolver NP_equil tal que Σ K_i × √NP_equil = Q_total ──
-  // En el nodo Y todos los ramales comparten la misma presión de equilibrio.
-  // Semilla inicial: NP proporcional a Q_total² / (ΣK)²
-  const sumK = Ks.reduce((s, k) => s + k, 0);
-  let NP = Math.pow(Q_total / sumK, 2);   // semilla hidráulicamente correcta
-  NP = Math.min(NP, np_nodo);              // no puede superar la presión del nodo
-
-  const MAX_ITER = 60;
-  const TOL      = 0.02; // GPM — tolerancia estricta
+  // ── N >= 2: bisección sobre NP_nodo ─────────────────────────────
+  // f(NP_nodo) = Σ Q_i(NP_nodo) − Q_total
+  // Q_i es monótonamente creciente con NP_nodo → f es monótona → bisección garantiza convergencia
+  let lo = 0, hi = np_nodo;
+  const MAX_ITER = 300, TOL = 0.05;
 
   for (let iter = 0; iter < MAX_ITER; iter++) {
-    if (NP <= 0) { NP = 0; break; }
-    const sqrtNP = Math.sqrt(NP);
-    const Qsum   = Ks.reduce((s, k) => s + k * sqrtNP, 0);
-    const f      = Qsum - Q_total;
-    if (Math.abs(f) < TOL) break;
-    const df = Ks.reduce((s, k) => s + k / (2 * sqrtNP), 0);
-    if (Math.abs(df) < 1e-10) break;   // evitar división por cero
-    NP = NP - f / df;
-    NP = Math.max(0, Math.min(NP, np_nodo));  // acotar entre 0 y np_nodo
+    const mid  = (lo + hi) / 2;
+    const Qsum = Ks.reduce((s, K, i) => s + calcQ_rama(K, Rs[i], mid), 0);
+    const diff = Qsum - Q_total;
+    if (Math.abs(diff) < TOL) break;
+    if (diff > 0) hi = mid; else lo = mid;
   }
 
-  // ── Resultado: Q real y NP real de cada pitón ────────────────────
+  const NP_eq = (lo + hi) / 2;
+
+  // ── Calcular resultado individual por pitón ──────────────────────
   return pitones.map((p, i) => {
-    const K    = Ks[i];
-    const npPit = Math.max(0, NP);
-    const qR   = Math.round(K * Math.sqrt(npPit));
-    return { q_rama: qR, np_piton: npPit };
+    const K = Ks[i], R = Rs[i];
+    const q    = calcQ_rama(K, R, NP_eq);
+    const fl_r = R * q * q;
+    const np_p = Math.max(0, NP_eq - fl_r);
+    return { q_rama: Math.round(q), np_piton: np_p, fl_rama: fl_r, R_rama: R };
   });
 }
 
 // ════════════════════════════════════════════════════════════
-// 7. CÁLCULO DE SEGMENTO — versión con NP individual por pitón
-//    Fase 1: calcula pérdidas de la troncal con Q nominal total
-//    Fase 2: reparte caudal en el nodo Y según resistencias reales
-//    Fase 3: calcula NP y Q_real individuales por pitón
+// 7. CÁLCULO DE SEGMENTO — con mangueras de rama por pitón
+//
+//  Fase 1: pérdidas de la TRONCAL (con Q_total nominal)
+//  Fase 2: pérdida de RAMA de cada pitón en equilibrio inicial
+//  Fase 3: PDP requerida = NP_obj + FL_troncal + AL + EP + FL_rama_crítica
+//           donde FL_rama_crítica = la rama que más presión consume
+//           (el segmento necesita la presión suficiente para alimentar
+//            incluso al pitón más difícil de alcanzar)
 // ════════════════════════════════════════════════════════════
 function calcSegmento(seg) {
-  // ── Q nominal total (GLP suma de pitones) ────────────────
+  // ── Q nominal total ──────────────────────────────────────
   const Q = seg.pitones.reduce((s, p) => s + parseFloat(p.q || 0), 0);
   seg.totalQ = Q;
 
-  // ── Fricción de la TRONCAL (con Q total) ─────────────────
-  // La troncal lleva todo el caudal hasta el nodo de bifurcación.
+  // ── Fricción TRONCAL (Q total lleva hasta el nodo Y) ─────
   seg.fl = seg.hoses.reduce((sum, h) => {
     return sum + calcFL(Q, h.diam, h.cant, parseFloat(h.longFt || 0), h.material);
   }, 0);
 
-  // ── Accesorios AL (en troncal, con diámetro del primer tramo) ──
+  // ── Accesorios AL (troncal, diámetro del primer tramo) ───
   const dRef = seg.hoses[0] ? String(seg.hoses[0].diam) : '2.5';
   seg.al = ACCESORIOS.reduce((sum, a) => {
     if (!seg.accs[a.id]) return sum;
     return sum + calcAL(Q, dRef, a.k);
   }, 0);
 
-  // ── Elevación EP ──────────────────────────────────────────
+  // ── Elevación EP ─────────────────────────────────────────
   seg.ep = calcEP(seg.elev, seg.elevUnit);
 
   // ── NP objetivo del segmento (máximo de sus pitones) ─────
   seg.np_obj = seg.pitones.reduce(
-    (mx, p) => Math.max(mx, parseFloat(p.np_obj || NP_TARGET)),
-    NP_TARGET
+    (mx, p) => Math.max(mx, parseFloat(p.np_obj || NP_TARGET)), NP_TARGET
   );
 
-  // ── Pérdidas totales y PDP requerida ─────────────────────
-  seg.perdidas = seg.fl + seg.al + seg.ep;
-  seg.pdp      = seg.np_obj + seg.perdidas;
+  // ── Pérdida de RAMA por pitón con Q nominal ───────────────
+  // Estimación inicial para calcular PDP: usamos Q_nominal de cada pitón
+  // como aproximación al Q real (suficiente para dimensionar).
+  // El Q real de equilibrio se calcula en recalcAll con la PDP definitiva.
+  seg.pitones.forEach(p => {
+    const R = calcR_rama(p.rama_hoses || []);
+    const qNom = parseFloat(p.q || 0);
+    p.fl_rama_nom = R * qNom * qNom;   // pérdida de rama con Q nominal
+    p.R_rama      = R;
+  });
 
-  // ── Velocidad máxima en troncal ──────────────────────────
+  // ── PDP requerida ─────────────────────────────────────────
+  // La bomba debe suministrar suficiente presión para que:
+  //   NP_piton_i = PDP − FL_troncal − AL − EP − FL_rama_i ≥ NP_obj_i
+  // → PDP ≥ NP_obj_i + perdidas_troncal + FL_rama_i  ∀ i
+  // Tomamos el máximo sobre todos los pitones:
+  const perdidas_troncal = seg.fl + seg.al + seg.ep;
+  const PDP_por_piton = seg.pitones.map(p =>
+    parseFloat(p.np_obj || NP_TARGET) + perdidas_troncal + p.fl_rama_nom
+  );
+  seg.perdidas = perdidas_troncal;            // pérdidas de troncal (para display)
+  seg.pdp      = Math.max(...PDP_por_piton, seg.np_obj + perdidas_troncal);
+
+  // ── Velocidad máxima en TRONCAL ─────────────────────────
   seg.maxVel  = 0;
   seg.velDiam = dRef;
   seg.hoses.forEach(h => {
@@ -1125,17 +1186,27 @@ function calcSegmento(seg) {
     if (v > seg.maxVel) { seg.maxVel = v; seg.velDiam = h.diam; }
   });
 
-  // ── Velocidades y FL por tramo (detalle diagnóstico) ─────
+  // ── Velocidades y FL por tramo de troncal ────────────────
   seg.hoseVels = seg.hoses.map(h => ({
-    diam:   h.diam,
-    cant:   h.cant,
-    longFt: h.longFt,
-    v:      calcV(Q, h.diam, h.cant),
-    fl:     calcFL(Q, h.diam, h.cant, parseFloat(h.longFt || 0), h.material),
+    diam: h.diam, cant: h.cant, longFt: h.longFt,
+    v:    calcV(Q, h.diam, h.cant),
+    fl:   calcFL(Q, h.diam, h.cant, parseFloat(h.longFt || 0), h.material),
   }));
 
-  // Inicializar np_real / q_real por pitón con valores nominales
-  // (se actualizarán en recalcAll con la PDP real de la bomba)
+  // ── Velocidad máxima en ramas ─────────────────────────────
+  // Cada rama lleva solo el Q de su pitón (estimado con Q nominal aquí)
+  seg.pitones.forEach(p => {
+    const rh = p.rama_hoses || [];
+    if (!rh.length) { p.maxVelRama = 0; return; }
+    const qNom = parseFloat(p.q || 0);
+    p.maxVelRama = Math.max(0, ...rh.map(h => calcV(qNom, h.diam, h.cant)));
+    // El diámetro más restrictivo de la rama
+    p.velDiamRama = rh.reduce((worst, h) => {
+      return calcV(qNom, h.diam, h.cant) > calcV(qNom, worst, 1) ? h.diam : worst;
+    }, rh[0].diam);
+  });
+
+  // Inicializar calculados (se sobreescribirán en recalcAll)
   seg.np_real = 0;
   seg.pitones.forEach(p => { p.np_real = 0; p.q_real = 0; p.eficiencia = 0; });
   seg.totalQ_real = 0;
@@ -1191,28 +1262,42 @@ function recalcAll(pdpOverride) {
     s.pct_perdidas = pdpBomba > 0 ? (s.perdidas / pdpBomba) * 100 : 0;
 
     if (s.np_insuf || s.np_real <= 0 || s.pitones.length === 0) {
-      // Sin presión suficiente: todos los pitones a cero
-      s.pitones.forEach(p => { p.np_real = 0; p.q_real = 0; p.eficiencia = 0; p.np_piton_equil = 0; });
+      s.pitones.forEach(p => {
+        p.np_real = 0; p.q_real = 0; p.eficiencia = 0;
+        p.np_piton_equil = 0; p.fl_rama_real = 0; p.vel_rama_real = 0;
+      });
       s.totalQ_real = 0;
       s.eficiencia  = 0;
     } else {
-      // Resolver reparto hidráulico real en el nodo Y
+      // Resolver reparto hidráulico real en el nodo Y (con ramas propias)
       const reparto = repartirCaudalY(s.totalQ, s.pitones, s.np_real);
 
       s.pitones.forEach((p, pi) => {
-        const r       = reparto[pi] || { q_rama: 0, np_piton: 0 };
-        p.np_real     = r.np_piton;
-        p.q_real      = r.q_rama;
-        p.eficiencia  = p.q > 0 ? Math.round((p.q_real / p.q) * 100) : 0;
-        p.np_piton_equil = r.np_piton; // NP de equilibrio en ese pitón
-        // Velocidad individual en la línea de cada pitón (usa Q real del pitón)
-        p.vel_piton   = calcV(p.q_real, s.velDiam, 1);
+        const r          = reparto[pi] || { q_rama: 0, np_piton: 0, fl_rama: 0, R_rama: 0 };
+        p.np_real        = r.np_piton;
+        p.q_real         = r.q_rama;
+        p.fl_rama_real   = r.fl_rama;      // pérdida real de la rama con Q real
+        p.eficiencia     = p.q > 0 ? Math.round((p.q_real / p.q) * 100) : 0;
+        p.np_piton_equil = r.np_piton;
+
+        // Velocidad en la rama con Q real
+        const rh = p.rama_hoses || [];
+        p.vel_rama_real  = rh.length && p.q_real > 0
+          ? Math.max(...rh.map(h => calcV(p.q_real, h.diam, h.cant)))
+          : 0;
+        p.velDiamRama    = rh.length
+          ? rh.reduce((w, h) => calcV(p.q_real, h.diam, h.cant) > calcV(p.q_real, w, 1) ? h.diam : w, rh[0].diam)
+          : s.velDiam;
       });
 
       s.totalQ_real = s.pitones.reduce((sum, p) => sum + p.q_real, 0);
-      s.eficiencia  = s.totalQ > 0
-        ? Math.round((s.totalQ_real / s.totalQ) * 100)
-        : 0;
+      s.eficiencia  = s.totalQ > 0 ? Math.round((s.totalQ_real / s.totalQ) * 100) : 0;
+
+      // Velocidad máxima incluyendo ramas
+      const vRamasMax = s.pitones.reduce((mx, p) => Math.max(mx, p.vel_rama_real || 0), 0);
+      if (vRamasMax > s.maxVel) {
+        s.maxVelRamaGlobal = vRamasMax;  // para alarmas
+      }
     }
 
     caudalRealTotal += s.totalQ_real;
@@ -2270,36 +2355,52 @@ function renderSegmentos(){
           const npR  = p.np_real !== undefined ? p.np_real : null;
           const qR   = p.q_real  !== undefined ? p.q_real  : null;
           const eff  = p.eficiencia !== undefined ? p.eficiencia : null;
+          const flR  = p.fl_rama_real !== undefined ? p.fl_rama_real : null;
+          const vRama = p.vel_rama_real !== undefined ? p.vel_rama_real : 0;
+          const rh   = p.rama_hoses || [];
+          const hasCalc = (npR !== null) && (_lastPDP > 0 || _sliderPDP > 0);
+
           let pfCls='piton-feedback pf-idle', pfHtml='Calcule o mueva el slider para ver presión y caudal real';
-          if(npR !== null && (_lastPDP>0 || _sliderPDP>0)){
-            if(npR<0||s.np_insuf){
+          if(hasCalc){
+            if(npR < 0 || s.np_insuf){
               pfCls='piton-feedback pf-bad';
-              pfHtml=`🔴 <strong>SIN PRESIÓN</strong> — Las pérdidas del tendido superan la PDP. Reducir longitud o aumentar diámetro.`;
-            } else if(npR<50){
+              pfHtml=`🔴 <strong>SIN PRESIÓN</strong> — Las pérdidas superan la PDP. Revisar tendido.`;
+            } else if(npR < 50){
               pfCls='piton-feedback pf-bad';
-              pfHtml=`🔴 <strong>CRÍTICO</strong> — NP real: <strong>${npR.toFixed(0)} psi</strong> (obj: ${p.np_obj||NP_TARGET} psi) · Q real: <strong>${qR||0} GPM</strong> · Eficiencia: ${eff||0}% — Sistema inoperable`;
-            } else if(npR<85){
+              pfHtml=`🔴 <strong>CRÍTICO</strong> — NP real: <strong>${npR.toFixed(0)} psi</strong> · Q: <strong>${qR} GPM</strong> · Eff: ${eff}%${flR?` · FL_rama: ${flR.toFixed(1)} psi`:''}`;
+            } else if(npR < 85){
               pfCls='piton-feedback pf-bad';
-              pfHtml=`🔴 <strong>INSUFICIENTE</strong> — NP real: <strong>${npR.toFixed(0)} psi</strong> · Q real: <strong>${qR||0} GPM</strong> (nom: ${p.q} GPM) · Eff: ${eff||0}% — Pitón muy por debajo del GLP`;
-            } else if(npR<95){
+              pfHtml=`🔴 <strong>INSUFICIENTE</strong> — NP: <strong>${npR.toFixed(0)} psi</strong> · Q: <strong>${qR} GPM</strong> (nom: ${p.q}) · Eff: ${eff}%${flR?` · FL_rama: ${flR.toFixed(1)} psi`:''}${vRama>V_MAX_FTPS?` · ⚠ V_rama: ${vRama.toFixed(1)} ft/s`:''}`; 
+            } else if(npR < 95){
               pfCls='piton-feedback pf-warn';
-              pfHtml=`🟡 <strong>BAJA</strong> — NP real: <strong>${npR.toFixed(0)} psi</strong> · Q real: <strong>${qR||0} GPM</strong> (nom: ${p.q} GPM) · Eff: ${eff||0}% — Por debajo del rango óptimo`;
-            } else if(npR<=105){
+              pfHtml=`🟡 <strong>BAJA</strong> — NP: <strong>${npR.toFixed(0)} psi</strong> · Q: <strong>${qR} GPM</strong> (nom: ${p.q}) · Eff: ${eff}%${flR?` · FL_rama: ${flR.toFixed(1)} psi`:''}`;
+            } else if(npR <= 105){
               pfCls='piton-feedback pf-ok';
-              pfHtml=`✅ <strong>ÓPTIMO</strong> — NP real: <strong>${npR.toFixed(0)} psi</strong> ≈ ${p.np_obj||NP_TARGET} psi · Q real: <strong>${qR||0} GPM</strong> (nom: ${p.q} GPM) · Eff: ${eff||0}%`;
-            } else if(npR<=115){
+              pfHtml=`✅ <strong>ÓPTIMO</strong> — NP: <strong>${npR.toFixed(0)} psi</strong> · Q: <strong>${qR} GPM</strong> (nom: ${p.q}) · Eff: ${eff}%${flR?` · FL_rama: ${flR.toFixed(1)} psi`:''}${vRama>0?` · V_rama: ${vRama.toFixed(1)} ft/s ${vRama>V_MAX_FTPS?'⚠':'✓'}`:''}`;
+            } else if(npR <= 115){
               pfCls='piton-feedback pf-warn';
-              pfHtml=`🟡 <strong>EXCESO +${(npR-(p.np_obj||NP_TARGET)).toFixed(0)} psi</strong> — NP real: <strong>${npR.toFixed(0)} psi</strong> · Q real: <strong>${qR||0} GPM</strong> · Mayor esfuerzo para el pitonero`;
+              pfHtml=`🟡 <strong>EXCESO +${(npR-(p.np_obj||NP_TARGET)).toFixed(0)} psi</strong> — NP: <strong>${npR.toFixed(0)} psi</strong> · Q: <strong>${qR} GPM</strong> · Eff: ${eff}%${flR?` · FL_rama: ${flR.toFixed(1)} psi`:''}`;
             } else {
               pfCls='piton-feedback pf-bad';
-              pfHtml=`🔴 <strong>EXCESO CRÍTICO +${(npR-(p.np_obj||NP_TARGET)).toFixed(0)} psi</strong> — NP real: <strong>${npR.toFixed(0)} psi</strong> · Q real: <strong>${qR||0} GPM</strong> · PELIGRO — Riesgo de pérdida de control`;
+              pfHtml=`🔴 <strong>EXCESO CRÍTICO +${(npR-(p.np_obj||NP_TARGET)).toFixed(0)} psi</strong> — NP: <strong>${npR.toFixed(0)} psi</strong> · Q: <strong>${qR} GPM</strong> · PELIGRO${flR?` · FL_rama: ${flR.toFixed(1)} psi`:''}`;
             }
           }
+
+          // Estadísticas de rama (calculadas)
+          const R_total = calcR_rama(rh);
+          const ramaStatsHtml = (hasCalc && rh.length > 0) ? `
+            <div class="rama-stats">
+              <span>R_rama=${R_total.toExponential(2)} psi/GPM²</span>
+              <span>FL_rama=${(flR||0).toFixed(2)} psi</span>
+              ${vRama > 0 ? `<span style="color:${vRama>V_MAX_FTPS?'var(--red)':vRama>V_WARN_FTPS?'var(--amber)':'var(--green)'}">V_rama=${vRama.toFixed(1)} ft/s ${vRama>V_MAX_FTPS?'⚠':'✓'}</span>` : ''}
+            </div>` : '';
+
           return `
           <div class="piton-row">
             <div class="piton-row-head">
               <span class="piton-badge">PITÓN ${pi+1}</span>
               ${p.tipo==='automatico'?'<span style="font-family:var(--ff-m);font-size:9px;color:var(--purple);margin-left:4px">⚙ AUTO</span>':'<span style="font-family:var(--ff-m);font-size:9px;color:var(--sky);margin-left:4px">🔧 FIJO</span>'}
+              ${rh.length > 0 ? `<span style="font-family:var(--ff-m);font-size:8px;background:rgba(167,139,250,.12);border:1px solid rgba(167,139,250,.3);border-radius:3px;padding:1px 5px;color:var(--purple);margin-left:2px">🔗 ${rh.length} tramo${rh.length>1?'s':''} de rama</span>` : ''}
               <button class="btn-del" style="margin-left:auto" onclick="eliminarPiton(${s.id},${p.id})">&times;</button>
             </div>
             <div class="piton-fields" style="grid-template-columns:1fr 1fr 1fr 1fr">
@@ -2332,6 +2433,33 @@ function renderSegmentos(){
                 </select>
               </div>
             </div>
+
+            <!-- MANGUERA DE RAMA — tramos propios de este pitón desde el nodo Y -->
+            <div class="rama-section">
+              <div class="rama-section-title">
+                <span>🔗</span>
+                <span>Manguera de Rama (desde nodo Y hasta este pitón)</span>
+                ${rh.length === 0 ? '<span style="font-size:8px;font-weight:400;color:var(--text-muted)">&nbsp;— sin rama propia (comparte NP del nodo)</span>' : ''}
+              </div>
+              ${rh.map((rHose, ri) => `
+                <div class="rama-hose-row">
+                  <select class="field-input" style="padding:4px;font-size:11px" onchange="onRamaHose(${s.id},${p.id},${ri},'diam',this.value)">
+                    ${['1.5','1.75','2','2.5','3','4','5'].map(d=>`<option value="${d}" ${d==rHose.diam?'selected':''}>${d}" (ID ${D_REAL_IN[d]}")</option>`).join('')}
+                  </select>
+                  <input class="field-input" type="number" style="padding:4px" value="${rHose.cant}" min="1" max="10" title="Cantidad paralelas" oninput="onRamaHose(${s.id},${p.id},${ri},'cant',this.value)">
+                  <select class="field-input" style="padding:4px" onchange="onRamaHose(${s.id},${p.id},${ri},'longFt',this.value)">
+                    ${[25,50,75,100,150,200,250,300].map(l=>`<option value="${l}" ${l==rHose.longFt?'selected':''}>${l} ft</option>`).join('')}
+                  </select>
+                  <select class="field-input" style="padding:4px;font-size:11px" onchange="onRamaHose(${s.id},${p.id},${ri},'material',this.value)">
+                    <option value="caucho" ${(rHose.material||'caucho')==='caucho'?'selected':''}>Caucho</option>
+                    <option value="lona"   ${rHose.material==='lona'?'selected':''}>Lona +20%</option>
+                  </select>
+                  <button class="btn-del" onclick="eliminarRamaHose(${s.id},${p.id},${ri})">&times;</button>
+                </div>`).join('')}
+              ${ramaStatsHtml}
+              <button class="btn-add-rama" onclick="agregarRamaHose(${s.id},${p.id})">+ Agregar tramo de rama</button>
+            </div>
+
             <div class="${pfCls}" id="pf-${s.id}-${p.id}">${pfHtml}</div>
           </div>`;
         }).join('')}
@@ -2412,9 +2540,9 @@ function agregarSegmento() {
   segmentos.push({
     id: ++segUID,
     hoses:   [{ diam:'2.5', cant:1, longFt:100, material:'caucho' }],
-    pitones: [{ id:pid, q:95, np_obj:NP_TARGET, boquilla_d:1.0, tipo:'fijo' }],
+    pitones: [{ id:pid, q:95, np_obj:NP_TARGET, boquilla_d:1.0, tipo:'fijo',
+                rama_hoses:[] }],     // ← rama vacía = sin manguera propia
     accs: {}, elev:0, elevUnit:'m',
-    // campos calculados (se rellenan en calcSegmento)
     pdp:0, fl:0, al:0, ep:0, perdidas:0, np_obj:NP_TARGET,
     np_real:0, exceso:0, maxVel:0, velDiam:'2.5',
     totalQ:0, totalQ_real:0, eficiencia:0, isCrit:false,
@@ -2453,7 +2581,8 @@ function onHose(sid, hi, f, v) {
 
 function agregarPiton(sid) {
   const s = segmentos.find(x => x.id === sid);
-  if (s) s.pitones.push({ id:++pitonUID, q:95, np_obj:NP_TARGET, boquilla_d:1.0, tipo:'fijo' });
+  if (s) s.pitones.push({ id:++pitonUID, q:95, np_obj:NP_TARGET, boquilla_d:1.0,
+                           tipo:'fijo', rama_hoses:[] });
   recalcAndUpdateAll();
 }
 
@@ -2471,6 +2600,38 @@ function onPiton(sid, pid, f, v) {
   if (f === 'tipo') p[f] = v;
   else if (f === 'boquilla_d') p[f] = parseFloat(v);
   else p[f] = parseFloat(v);
+  recalcAndUpdateAll();
+}
+
+// ── CRUD para mangueras de RAMA (propias de cada pitón) ──────────────
+function agregarRamaHose(sid, pid) {
+  const s = segmentos.find(x => x.id === sid);
+  if (!s) return;
+  const p = s.pitones.find(x => x.id === pid);
+  if (p) {
+    if (!p.rama_hoses) p.rama_hoses = [];
+    p.rama_hoses.push({ diam:'1.5', cant:1, longFt:100, material:'caucho' });
+  }
+  recalcAndUpdateAll();
+}
+
+function eliminarRamaHose(sid, pid, ri) {
+  const s = segmentos.find(x => x.id === sid);
+  if (!s) return;
+  const p = s.pitones.find(x => x.id === pid);
+  if (p && p.rama_hoses && p.rama_hoses.length > 1) p.rama_hoses.splice(ri, 1);
+  else if (p && p.rama_hoses && p.rama_hoses.length === 1) p.rama_hoses = [];
+  recalcAndUpdateAll();
+}
+
+function onRamaHose(sid, pid, ri, f, v) {
+  const s = segmentos.find(x => x.id === sid);
+  if (!s) return;
+  const p = s.pitones.find(x => x.id === pid);
+  if (!p || !p.rama_hoses || !p.rama_hoses[ri]) return;
+  if (f === 'material') p.rama_hoses[ri][f] = v;
+  else if (f === 'diam') p.rama_hoses[ri][f] = String(v);
+  else p.rama_hoses[ri][f] = parseFloat(v);
   recalcAndUpdateAll();
 }
 
