@@ -184,6 +184,107 @@
     .norma-title{color:var(--sky);font-weight:800;text-transform:uppercase;margin-bottom:7px;font-size:10px;letter-spacing:.08em;}
 
     @keyframes pulse-red{0%,100%{box-shadow:0 0 0 0 rgba(244,63,94,0)}50%{box-shadow:0 0 0 3px rgba(244,63,94,.2)}}
+
+    /* ═══════════════════════════════════════════════════════
+       INDICADORES TÁCTICOS — NP / GPM / VELOCIDAD
+    ═══════════════════════════════════════════════════════ */
+
+    /* Panel contenedor */
+    .tac-panel{background:var(--surface);border:1px solid rgba(56,189,248,.2);border-radius:var(--r);margin-bottom:18px;overflow:hidden;}
+    .tac-panel-header{padding:11px 16px;background:rgba(56,189,248,.05);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;}
+    .tac-panel-title{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--sky);}
+    .tac-panel-sub{font-size:9px;font-family:var(--ff-m);color:var(--text-muted);margin-left:auto;}
+    .tac-indicators-grid{display:flex;flex-direction:column;gap:0;}
+
+    /* Cada indicador */
+    .tac-ind{padding:14px 16px;border-bottom:1px solid var(--border);transition:.25s;}
+    .tac-ind:last-child{border-bottom:none;}
+    .tac-ind-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:9px;}
+    .tac-ind-label{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.07em;color:var(--text-muted);display:flex;align-items:center;gap:6px;}
+    .tac-ind-label-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;transition:background .3s;}
+    .tac-ind-value{font-family:var(--ff-m);font-size:20px;font-weight:700;transition:color .3s;}
+    .tac-ind-unit{font-size:11px;font-weight:400;color:var(--text-muted);margin-left:3px;}
+    .tac-ind-status-badge{font-family:var(--ff-m);font-size:9px;font-weight:800;padding:3px 8px;border-radius:4px;text-transform:uppercase;letter-spacing:.06em;transition:all .3s;}
+
+    /* STATUS COLORS */
+    .tac-green .tac-ind-value{color:#10b981;}
+    .tac-green .tac-ind-label-dot{background:#10b981;box-shadow:0 0 6px rgba(16,185,129,.5);}
+    .tac-green .tac-ind-status-badge{background:rgba(16,185,129,.12);border:1px solid rgba(16,185,129,.3);color:#10b981;}
+    .tac-green .tac-bar-fill{background:linear-gradient(90deg,#059669,#10b981);}
+    .tac-green .tac-arc-path{stroke:#10b981;}
+    .tac-green .tac-arc-glow{filter:drop-shadow(0 0 6px rgba(16,185,129,.6));}
+
+    .tac-yellow .tac-ind-value{color:#f59f00;}
+    .tac-yellow .tac-ind-label-dot{background:#f59f00;box-shadow:0 0 6px rgba(245,159,0,.5);}
+    .tac-yellow .tac-ind-status-badge{background:rgba(245,159,0,.12);border:1px solid rgba(245,159,0,.3);color:#f59f00;}
+    .tac-yellow .tac-bar-fill{background:linear-gradient(90deg,#d97706,#f59f00);}
+    .tac-yellow .tac-arc-path{stroke:#f59f00;}
+    .tac-yellow .tac-arc-glow{filter:drop-shadow(0 0 6px rgba(245,159,0,.6));}
+
+    .tac-red .tac-ind-value{color:#f43f5e;}
+    .tac-red .tac-ind-label-dot{background:#f43f5e;box-shadow:0 0 6px rgba(244,63,94,.6);animation:pulse-red 1.2s infinite;}
+    .tac-red .tac-ind-status-badge{background:rgba(244,63,94,.12);border:1px solid rgba(244,63,94,.35);color:#f43f5e;animation:pulse-red 1.2s infinite;}
+    .tac-red .tac-bar-fill{background:linear-gradient(90deg,#be123c,#f43f5e);}
+    .tac-red .tac-arc-path{stroke:#f43f5e;}
+    .tac-red .tac-arc-glow{filter:drop-shadow(0 0 6px rgba(244,63,94,.6));}
+
+    .tac-idle .tac-ind-value{color:var(--text-muted);}
+    .tac-idle .tac-ind-label-dot{background:var(--s3);}
+    .tac-idle .tac-ind-status-badge{background:rgba(255,255,255,.04);border:1px solid var(--border);color:var(--text-muted);}
+    .tac-idle .tac-bar-fill{background:var(--s3);}
+    .tac-idle .tac-arc-path{stroke:var(--s3);}
+
+    /* CIRCULAR GAUGE — NP */
+    .tac-gauge-wrap{display:flex;align-items:center;gap:14px;}
+    .tac-gauge-svg{flex-shrink:0;}
+    .tac-gauge-arc-bg{stroke:var(--s3);stroke-width:7;fill:none;}
+    .tac-arc-path{stroke-width:7;fill:none;stroke-linecap:round;transition:stroke-dashoffset .45s ease,stroke .3s;}
+    .tac-gauge-center{font-family:var(--ff-m);}
+    .tac-gauge-aside{flex:1;min-width:0;}
+    .tac-gauge-aside-row{display:flex;justify-content:space-between;font-size:10px;padding:2px 0;}
+    .tac-gauge-zones{display:flex;gap:4px;margin-top:7px;flex-wrap:wrap;}
+    .tac-zone{font-family:var(--ff-m);font-size:8.5px;padding:2px 6px;border-radius:3px;}
+    .tac-zone-g{background:rgba(16,185,129,.1);color:#10b981;border:1px solid rgba(16,185,129,.2);}
+    .tac-zone-y{background:rgba(245,159,0,.1);color:#f59f00;border:1px solid rgba(245,159,0,.2);}
+    .tac-zone-r{background:rgba(244,63,94,.1);color:#f43f5e;border:1px solid rgba(244,63,94,.2);}
+
+    /* PROGRESS BAR — GPM */
+    .tac-bar-wrap{width:100%;}
+    .tac-bar-track{height:10px;background:var(--s3);border-radius:5px;overflow:hidden;position:relative;margin:6px 0;}
+    .tac-bar-fill{height:100%;border-radius:5px;transition:width .45s ease,background .3s;}
+    .tac-bar-markers{display:flex;justify-content:space-between;font-size:8px;color:var(--text-muted);font-family:var(--ff-m);margin-top:2px;}
+    .tac-bar-labels{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;}
+    .tac-bar-main{font-family:var(--ff-m);font-size:18px;font-weight:700;transition:color .3s;}
+    .tac-bar-sub{font-family:var(--ff-m);font-size:9px;color:var(--text-muted);}
+    .tac-eff-badge{font-family:var(--ff-m);font-size:11px;font-weight:800;padding:2px 8px;border-radius:4px;transition:all .3s;}
+
+    /* LINEAR GAUGE — VELOCIDAD */
+    .tac-linear-wrap{width:100%;}
+    .tac-linear-track{height:12px;border-radius:6px;background:linear-gradient(90deg,
+      rgba(16,185,129,.7) 0%,rgba(16,185,129,.7) 52%,
+      rgba(245,159,0,.7) 52%,rgba(245,159,0,.7) 78%,
+      rgba(244,63,94,.7) 78%,rgba(244,63,94,.7) 100%);
+      position:relative;margin:6px 0;}
+    .tac-linear-needle{position:absolute;top:-4px;width:3px;height:20px;background:#fff;border-radius:2px;box-shadow:0 0 6px rgba(255,255,255,.5);transition:left .4s ease;transform:translateX(-50%);}
+    .tac-linear-zones{display:flex;font-family:var(--ff-m);font-size:8px;color:var(--text-muted);justify-content:space-between;margin-top:3px;}
+    .tac-vel-row{display:flex;align-items:baseline;gap:6px;margin-bottom:4px;}
+    .tac-vel-value{font-family:var(--ff-m);font-size:18px;font-weight:700;transition:color .3s;}
+
+    /* TOOLTIP */
+    .tac-tooltip-btn{width:16px;height:16px;border-radius:50%;background:rgba(255,255,255,.07);border:1px solid var(--border2);color:var(--text-muted);font-size:9px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;position:relative;flex-shrink:0;transition:.15s;}
+    .tac-tooltip-btn:hover{background:rgba(56,189,248,.15);border-color:var(--sky);color:var(--sky);}
+    .tac-tooltip-box{position:absolute;left:22px;top:-4px;background:#1a2540;border:1px solid rgba(56,189,248,.25);border-radius:8px;padding:9px 12px;width:220px;font-size:10px;line-height:1.6;color:var(--text-dim);z-index:100;opacity:0;pointer-events:none;transition:opacity .18s;box-shadow:0 8px 24px rgba(0,0,0,.4);}
+    .tac-tooltip-btn:hover .tac-tooltip-box{opacity:1;pointer-events:auto;}
+    .tac-tooltip-box strong{color:var(--sky);display:block;margin-bottom:4px;font-size:9px;text-transform:uppercase;letter-spacing:.05em;}
+
+    /* SEGMENT DETAIL ROWS for NP/GPM per segment */
+    .tac-seg-rows{margin-top:8px;display:flex;flex-direction:column;gap:3px;}
+    .tac-seg-row{display:flex;align-items:center;gap:7px;font-size:9px;font-family:var(--ff-m);padding:4px 8px;border-radius:4px;background:rgba(255,255,255,.02);border:1px solid var(--border);}
+    .tac-seg-row-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+    .tac-seg-row-label{color:var(--text-muted);flex:1;}
+    .tac-seg-row-val{font-weight:700;}
+
+    @media print{.tac-panel{display:none!important;}}
     @keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
     .fadeIn{animation:fadeIn .3s ease}
 
@@ -414,6 +515,134 @@
               <div class="consigna-num fadeIn" id="res-pdp" style="color:var(--sky)">0<span class="consigna-unit">psi</span></div>
               <div class="consigna-status" id="result-status">—</div>
             </div>
+
+            <!-- ══════════════════════════════════════════════
+                 INDICADORES TÁCTICOS — NP / GPM / VELOCIDAD
+                 ══════════════════════════════════════════════ -->
+            <div class="tac-panel">
+              <div class="tac-panel-header">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sky)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                <span class="tac-panel-title">Indicadores Tácticos en Tiempo Real</span>
+                <span class="tac-panel-sub">NFPA 1962 · Segmento Crítico</span>
+              </div>
+              <div class="tac-indicators-grid">
+
+                <!-- ── INDICADOR 1: NP en pitón ── -->
+                <div class="tac-ind tac-idle" id="tac-np-ind">
+                  <div class="tac-ind-header">
+                    <div class="tac-ind-label">
+                      <span class="tac-ind-label-dot"></span>
+                      Presión en Pitón (NP)
+                      <div class="tac-tooltip-btn">?
+                        <div class="tac-tooltip-box">
+                          <strong>📌 Presión en Pitón (NP)</strong>
+                          <span id="tac-np-tooltip-text">Mueva el slider del monitor de bomba o calcule para activar este indicador.</span>
+                        </div>
+                      </div>
+                    </div>
+                    <span class="tac-ind-status-badge" id="tac-np-badge">—</span>
+                  </div>
+                  <div class="tac-gauge-wrap">
+                    <svg class="tac-gauge-svg" width="80" height="80" viewBox="0 0 80 80">
+                      <circle class="tac-gauge-arc-bg" cx="40" cy="40" r="30" stroke-dasharray="157" stroke-dashoffset="0" transform="rotate(135 40 40)"/>
+                      <circle class="tac-arc-path tac-arc-glow" id="tac-np-arc" cx="40" cy="40" r="30"
+                        stroke-dasharray="157" stroke-dashoffset="157" transform="rotate(135 40 40)"/>
+                      <text class="tac-gauge-center" id="tac-np-num" x="40" y="37" text-anchor="middle" dominant-baseline="middle" font-size="13" font-weight="700" fill="var(--text)">—</text>
+                      <text x="40" y="52" text-anchor="middle" font-size="7" fill="var(--text-muted)" font-family="JetBrains Mono,monospace">psi</text>
+                    </svg>
+                    <div class="tac-gauge-aside">
+                      <div class="tac-gauge-aside-row"><span style="color:var(--text-muted)">Objetivo</span><span style="font-family:var(--ff-m);font-weight:700;color:var(--purple)">100 psi</span></div>
+                      <div class="tac-gauge-aside-row"><span style="color:var(--text-muted)">NP real</span><span style="font-family:var(--ff-m);font-weight:700" id="tac-np-real-lbl">— psi</span></div>
+                      <div class="tac-gauge-aside-row"><span style="color:var(--text-muted)">Δ desviación</span><span style="font-family:var(--ff-m);font-weight:700" id="tac-np-delta">—</span></div>
+                      <div class="tac-gauge-zones">
+                        <span class="tac-zone tac-zone-g">85–105</span>
+                        <span class="tac-zone tac-zone-y">105–115</span>
+                        <span class="tac-zone tac-zone-r">&gt;120 / &lt;85</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="tac-seg-rows" id="tac-np-segs"></div>
+                </div>
+
+                <!-- ── INDICADOR 2: GPM reales ── -->
+                <div class="tac-ind tac-idle" id="tac-gpm-ind">
+                  <div class="tac-ind-header">
+                    <div class="tac-ind-label">
+                      <span class="tac-ind-label-dot"></span>
+                      Caudal Real en Punta (GPM)
+                      <div class="tac-tooltip-btn">?
+                        <div class="tac-tooltip-box">
+                          <strong>💧 Caudal Real (GPM)</strong>
+                          <span id="tac-gpm-tooltip-text">El caudal real depende del armado del segmento y la presión de la bomba. Pérdidas excesivas por fricción reducen el rendimiento hidráulico.</span>
+                        </div>
+                      </div>
+                    </div>
+                    <span class="tac-ind-status-badge" id="tac-gpm-badge">—</span>
+                  </div>
+                  <div class="tac-bar-labels">
+                    <div>
+                      <span class="tac-bar-main" id="tac-gpm-val">—</span>
+                      <span class="tac-bar-sub"> GPM real</span>
+                    </div>
+                    <div style="text-align:right">
+                      <div style="font-family:var(--ff-m);font-size:9px;color:var(--text-muted)">GLP nominal</div>
+                      <div style="font-family:var(--ff-m);font-size:11px;font-weight:700" id="tac-gpm-nom">—</div>
+                    </div>
+                  </div>
+                  <div class="tac-bar-wrap">
+                    <div class="tac-bar-track">
+                      <div class="tac-bar-fill" id="tac-gpm-bar" style="width:0%"></div>
+                    </div>
+                    <div class="tac-bar-markers">
+                      <span>0%</span><span>75%</span><span>90%</span><span>100%</span>
+                    </div>
+                  </div>
+                  <div style="display:flex;align-items:center;justify-content:space-between;margin-top:6px;">
+                    <span style="font-size:10px;color:var(--text-muted)">Eficiencia hidráulica:</span>
+                    <span class="tac-eff-badge" id="tac-gpm-eff" style="background:rgba(255,255,255,.04);border:1px solid var(--border);color:var(--text-muted)">—</span>
+                  </div>
+                  <div class="tac-seg-rows" id="tac-gpm-segs"></div>
+                </div>
+
+                <!-- ── INDICADOR 3: VELOCIDAD ── -->
+                <div class="tac-ind tac-idle" id="tac-vel-ind">
+                  <div class="tac-ind-header">
+                    <div class="tac-ind-label">
+                      <span class="tac-ind-label-dot"></span>
+                      Velocidad Máx. en Manguera
+                      <div class="tac-tooltip-btn">?
+                        <div class="tac-tooltip-box" style="left:auto;right:22px;top:-4px;">
+                          <strong>💨 Velocidad del Agua (ft/s)</strong>
+                          A mayor velocidad, mayor reacción hidráulica y desgaste. Velocidad excesiva puede causar pérdida de control en la línea (efecto latigazo). Límite NFPA 1962: 15 ft/s.
+                        </div>
+                      </div>
+                    </div>
+                    <span class="tac-ind-status-badge" id="tac-vel-badge">—</span>
+                  </div>
+                  <div class="tac-vel-row">
+                    <span class="tac-vel-value" id="tac-vel-val">—</span>
+                    <span style="font-family:var(--ff-m);font-size:11px;color:var(--text-muted)">ft/s</span>
+                    <span style="font-family:var(--ff-m);font-size:10px;color:var(--text-muted)" id="tac-vel-ms">(— m/s)</span>
+                  </div>
+                  <div class="tac-linear-wrap">
+                    <div class="tac-linear-track">
+                      <div class="tac-linear-needle" id="tac-vel-needle" style="left:0%"></div>
+                    </div>
+                    <div class="tac-linear-zones">
+                      <span style="color:#10b981">0</span>
+                      <span style="color:#10b981">SEGURO</span>
+                      <span style="color:#f59f00">10</span>
+                      <span style="color:#f59f00">ALERTA</span>
+                      <span style="color:#f43f5e">15</span>
+                      <span style="color:#f43f5e">PELIGRO →</span>
+                    </div>
+                  </div>
+                  <div class="tac-seg-rows" id="tac-vel-segs"></div>
+                </div>
+
+              </div>
+            </div>
+            <!-- ════════════════════════════════════════════ -->
 
             <div class="result-body-inner">
 
@@ -1414,6 +1643,206 @@ function resetAll(){
 
 setInterval(()=>{const t=new Date().toLocaleTimeString('es-CO');document.getElementById('tb-clock').innerText=t;const ft=document.getElementById('footer-ts');if(ft)ft.innerText=new Date().toLocaleDateString('es-CO')+' '+t;},1000);
 window.onload=resetAll;
+
+// ═══════════════════════════════════════════════════════════════════════
+//  INDICADORES TÁCTICOS — NP / GPM / VELOCIDAD
+//  Módulo autónomo. Se llama desde updateUI() y onPumpMonitor().
+//  Entradas: segmentos[], _lastPDP, datos calculados por calcSegmento().
+// ═══════════════════════════════════════════════════════════════════════
+
+/* ── Helpers de color ──────────────────────────────────────────────── */
+function tacNPClass(np){
+  if(np===null||np===undefined) return 'tac-idle';
+  if(np>=95&&np<=105) return 'tac-green';
+  if((np>=85&&np<95)||(np>105&&np<=115)) return 'tac-yellow';
+  return 'tac-red';
+}
+function tacNPStatusText(np){
+  if(np===null||np===undefined) return '—';
+  if(np>=95&&np<=105) return '✓ Óptimo';
+  if(np>=85&&np<95)   return '⚠ Subpresión';
+  if(np>105&&np<=115) return '⚠ Exceso leve';
+  if(np>115&&np<=120) return '⚠ Alta';
+  return np<85 ? '🔴 Subpresurizado' : '🔴 Sobrepresurizado';
+}
+function tacNPTooltip(np){
+  if(np===null||np===undefined) return 'Calcule o use el slider para activar.';
+  if(np>=95&&np<=105) return 'Presión óptima para el GLP del pitón. La línea opera correctamente.';
+  if(np<85)           return 'Presión baja: el segmento está subalimentado. Aumentar presión de bomba.';
+  if(np>120)          return 'Presión alta: riesgo de sobrepresión en manguera. Verificar tendido.';
+  if(np>=85&&np<95)   return 'Presión ligeramente baja. El pitonero recibe menos caudal del nominal.';
+  return 'Presión ligeramente alta. Mayor esfuerzo físico para el pitonero.';
+}
+
+function tacGPMClass(qReal, qNom){
+  if(!qNom||qNom===0) return 'tac-idle';
+  const pct = qReal/qNom;
+  if(pct>=0.90) return 'tac-green';
+  if(pct>=0.75) return 'tac-yellow';
+  return 'tac-red';
+}
+function tacGPMStatusText(pct){
+  if(pct===null) return '—';
+  if(pct>=0.90) return '✓ Nominal';
+  if(pct>=0.75) return '⚠ Reducido';
+  return '🔴 Crítico';
+}
+
+function tacVelClass(v){
+  if(v===null||v===undefined) return 'tac-idle';
+  if(v<10) return 'tac-green';
+  if(v<=15) return 'tac-yellow';
+  return 'tac-red';
+}
+function tacVelStatusText(v){
+  if(v===null||v===undefined) return '—';
+  if(v<10)  return '✓ Seguro';
+  if(v<=15) return '⚠ Inestable';
+  return '🔴 Latigazo';
+}
+
+/* ── Dot color helper ──────────────────────────────────────────────── */
+function dotColor(cls){
+  if(cls==='tac-green')  return '#10b981';
+  if(cls==='tac-yellow') return '#f59f00';
+  if(cls==='tac-red')    return '#f43f5e';
+  return 'var(--s3)';
+}
+
+/* ── Circular arc for NP gauge ──────────────────────────────────────
+   Arc covers 270° (stroke-dasharray=157 for r=30, circumference=188.5,
+   we use 270/360 * 188.5 ≈ 157). Range: 0–200 psi.
+*/
+function arcOffset(np, maxPsi=200){
+  const TOTAL=157;
+  const pct=Math.min(1,Math.max(0,np/maxPsi));
+  return (TOTAL-(TOTAL*pct)).toFixed(2);
+}
+
+/* ── Main update function ──────────────────────────────────────────── */
+function updateTacticIndicators(sourceNP){
+  // sourceNP: override for the NP reading (used by pump monitor slider).
+  // When null, we read from segmentos[] post-recalc.
+
+  if(!segmentos||segmentos.length===0) return;
+
+  const hasCalt = _lastPDP>0;
+
+  // ── NP indicator ──────────────────────────────────────────────────
+  // Use critical segment NP or pump monitor NP
+  let critSeg = segmentos.reduce((m,s)=>(!m||s.pdp>m.pdp)?s:m, null);
+  let np = sourceNP!==undefined&&sourceNP!==null
+    ? (critSeg ? sourceNP - critSeg.perdidas : null)
+    : (hasCalt&&critSeg ? critSeg.np_real : null);
+  if(np!==null) np=Math.max(0,np);
+
+  const npCls = hasCalt||sourceNP!==null ? tacNPClass(np) : 'tac-idle';
+  const npEl  = document.getElementById('tac-np-ind');
+  npEl.className='tac-ind '+npCls;
+  document.getElementById('tac-np-badge').innerText = hasCalt||sourceNP!==null ? tacNPStatusText(np) : '—';
+  document.getElementById('tac-np-num').innerText = np!==null ? Math.round(np) : '—';
+  document.getElementById('tac-np-real-lbl').innerText = np!==null ? Math.round(np)+' psi' : '—';
+  const delta = np!==null ? (np-100) : null;
+  const deltaEl=document.getElementById('tac-np-delta');
+  deltaEl.innerText = delta!==null ? (delta>=0?'+':'')+delta.toFixed(1)+' psi' : '—';
+  deltaEl.style.color = delta!==null ? dotColor(npCls) : 'var(--text-muted)';
+  document.getElementById('tac-np-arc').setAttribute('stroke-dashoffset', np!==null?arcOffset(np):157);
+  document.getElementById('tac-np-arc').setAttribute('stroke', dotColor(npCls));
+  document.getElementById('tac-np-tooltip-text').innerText = tacNPTooltip(np);
+  // Per-segment NP rows
+  const npSegs=document.getElementById('tac-np-segs');
+  if(hasCalt&&segmentos.length>1){
+    npSegs.innerHTML=segmentos.map((s,i)=>{
+      const snp = sourceNP!==undefined&&sourceNP!==null ? Math.max(0,sourceNP-s.perdidas) : s.np_real;
+      const sc=tacNPClass(snp);
+      return `<div class="tac-seg-row">
+        <span class="tac-seg-row-dot" style="background:${dotColor(sc)}"></span>
+        <span class="tac-seg-row-label">Seg.${i+1}${s.isCrit?' ★':''}</span>
+        <span class="tac-seg-row-val" style="color:${dotColor(sc)}">${Math.round(snp)} psi</span>
+        <span style="color:var(--text-muted);font-size:8px;margin-left:auto">${tacNPStatusText(snp)}</span>
+      </div>`;
+    }).join('');
+  } else { npSegs.innerHTML=''; }
+
+  // ── GPM indicator ────────────────────────────────────────────────
+  const qNom  = hasCalt ? segmentos.reduce((s,x)=>s+x.totalQ,0)      : null;
+  const qReal = hasCalt ? segmentos.reduce((s,x)=>s+x.totalQ_real,0) : null;
+  const pct   = qNom>0 ? qReal/qNom : null;
+  const pctPct= pct!==null ? Math.round(pct*100) : null;
+  const gpmCls= hasCalt ? tacGPMClass(qReal,qNom) : 'tac-idle';
+  document.getElementById('tac-gpm-ind').className='tac-ind '+gpmCls;
+  document.getElementById('tac-gpm-badge').innerText  = hasCalt ? tacGPMStatusText(pct) : '—';
+  const gpmValEl=document.getElementById('tac-gpm-val');
+  gpmValEl.innerText = hasCalt ? qReal : '—';
+  gpmValEl.style.color = dotColor(gpmCls);
+  document.getElementById('tac-gpm-nom').innerText = hasCalt ? qNom+' GPM' : '—';
+  document.getElementById('tac-gpm-bar').style.width  = pct!==null ? Math.min(100,pct*100).toFixed(1)+'%' : '0%';
+  const effEl=document.getElementById('tac-gpm-eff');
+  if(pctPct!==null){
+    effEl.innerText=pctPct+'%';
+    effEl.style.background=gpmCls==='tac-green'?'rgba(16,185,129,.12)':gpmCls==='tac-yellow'?'rgba(245,159,0,.12)':'rgba(244,63,94,.12)';
+    effEl.style.border=`1px solid ${dotColor(gpmCls)}44`;
+    effEl.style.color=dotColor(gpmCls);
+  } else {
+    effEl.innerText='—'; effEl.style.background='rgba(255,255,255,.04)';
+    effEl.style.border='1px solid var(--border)'; effEl.style.color='var(--text-muted)';
+  }
+  // Per-segment GPM rows
+  const gpmSegs=document.getElementById('tac-gpm-segs');
+  if(hasCalt&&segmentos.length>1){
+    gpmSegs.innerHTML=segmentos.map((s,i)=>{
+      const sp=s.totalQ>0?s.totalQ_real/s.totalQ:null;
+      const sc=tacGPMClass(s.totalQ_real,s.totalQ);
+      return `<div class="tac-seg-row">
+        <span class="tac-seg-row-dot" style="background:${dotColor(sc)}"></span>
+        <span class="tac-seg-row-label">Seg.${i+1}${s.isCrit?' ★':''}</span>
+        <span class="tac-seg-row-val" style="color:${dotColor(sc)}">${s.totalQ_real} GPM</span>
+        <span style="color:var(--text-muted);font-size:8px;margin-left:auto">/ ${s.totalQ} nom · ${sp?Math.round(sp*100):0}%</span>
+      </div>`;
+    }).join('');
+  } else { gpmSegs.innerHTML=''; }
+
+  // ── VELOCITY indicator ────────────────────────────────────────────
+  const maxVelSeg = hasCalt ? segmentos.reduce((m,s)=>s.maxVel>m?s.maxVel:m,0) : null;
+  const velCls = hasCalt ? tacVelClass(maxVelSeg) : 'tac-idle';
+  document.getElementById('tac-vel-ind').className='tac-ind '+velCls;
+  document.getElementById('tac-vel-badge').innerText = hasCalt ? tacVelStatusText(maxVelSeg) : '—';
+  const velValEl=document.getElementById('tac-vel-val');
+  velValEl.innerText = maxVelSeg!==null ? maxVelSeg.toFixed(1) : '—';
+  velValEl.style.color = dotColor(velCls);
+  document.getElementById('tac-vel-ms').innerText = maxVelSeg!==null ? '('+(maxVelSeg*0.3048).toFixed(2)+' m/s)' : '(— m/s)';
+  // Needle: range 0–20 ft/s → 0–100%
+  const needlePct = maxVelSeg!==null ? Math.min(100,(maxVelSeg/20)*100).toFixed(1) : 0;
+  document.getElementById('tac-vel-needle').style.left=needlePct+'%';
+  // Per-segment velocity rows
+  const velSegs=document.getElementById('tac-vel-segs');
+  if(hasCalt){
+    velSegs.innerHTML=segmentos.map((s,i)=>{
+      const sc=tacVelClass(s.maxVel);
+      return `<div class="tac-seg-row">
+        <span class="tac-seg-row-dot" style="background:${dotColor(sc)}"></span>
+        <span class="tac-seg-row-label">Seg.${i+1}${s.isCrit?' ★':''} · ${s.velDiam}"</span>
+        <span class="tac-seg-row-val" style="color:${dotColor(sc)}">${s.maxVel.toFixed(1)} ft/s</span>
+        <span style="color:var(--text-muted);font-size:8px;margin-left:auto">${(s.maxVel*0.3048).toFixed(2)} m/s</span>
+      </div>`;
+    }).join('');
+  } else { velSegs.innerHTML=''; }
+}
+
+// ── Hook into existing engine ──────────────────────────────────────────
+// Override updateUI to also fire the tactic indicators
+const _origUpdateUI = updateUI;
+window.updateUI = function(pdp, caudal_nom, caudal_real, segCrit){
+  _origUpdateUI(pdp, caudal_nom, caudal_real, segCrit);
+  updateTacticIndicators(null);
+};
+// Override onPumpMonitor to also update tactic indicators with slider NP
+const _origOnPumpMonitor = onPumpMonitor;
+window.onPumpMonitor = function(){
+  _origOnPumpMonitor();
+  const psi=parseFloat(document.getElementById('pm-slider').value)||0;
+  updateTacticIndicators(psi>0&&_lastPDP>0 ? psi : null);
+};
 
 </script>
 </body>
