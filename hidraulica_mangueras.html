@@ -94,14 +94,37 @@
     .piton-fields{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;}
     .piton-field-label{font-size:9px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:3px;}
 
-    /* MANGUERA DE RAMA — tramos propios de cada pitón desde el nodo Y */
-    .rama-section{margin-top:9px;padding:8px 10px;background:rgba(167,139,250,.04);border:1px solid rgba(167,139,250,.2);border-radius:6px;}
-    .rama-section-title{font-size:9px;font-weight:800;color:var(--purple);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;display:flex;align-items:center;gap:6px;}
-    .rama-hose-row{background:rgba(255,255,255,.02);border:1px solid rgba(167,139,250,.15);padding:5px;border-radius:5px;margin-bottom:4px;display:grid;grid-template-columns:1.6fr 0.5fr 0.9fr 0.9fr 26px;gap:5px;align-items:center;}
-    .rama-stats{font-family:var(--ff-m);font-size:9px;color:var(--text-muted);margin-top:4px;display:flex;gap:10px;flex-wrap:wrap;}
-    .rama-stats span{padding:2px 6px;border-radius:3px;background:rgba(255,255,255,.03);border:1px solid var(--border);}
-    .btn-add-rama{width:100%;padding:5px;background:rgba(167,139,250,.04);border:1px dashed rgba(167,139,250,.4);border-radius:5px;color:var(--purple);font-family:var(--ff-m);font-size:9px;font-weight:700;cursor:pointer;margin-top:4px;transition:.15s;}
-    .btn-add-rama:hover{background:rgba(167,139,250,.1);border-style:solid;}
+    /* ═══ RAMALES — entidad propia desde el nodo Y hasta el pitón ═══ */
+    /* Contenedor de todos los ramales */
+    .ramales-wrap{margin-top:12px;}
+    .ramales-label{font-size:10px;font-weight:800;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;padding-bottom:6px;border-bottom:1px solid var(--border);margin-bottom:8px;display:flex;align-items:center;gap:7px;}
+    /* Card individual de ramal */
+    .ramal-card{background:rgba(167,139,250,.03);border:1px solid rgba(167,139,250,.18);border-radius:8px;margin-bottom:10px;overflow:hidden;}
+    .ramal-card-head{padding:9px 12px;background:rgba(167,139,250,.06);border-bottom:1px solid rgba(167,139,250,.12);display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+    .ramal-badge{background:rgba(167,139,250,.15);border:1px solid rgba(167,139,250,.35);border-radius:4px;padding:2px 8px;font-family:var(--ff-m);font-size:10px;color:var(--purple);font-weight:800;}
+    .ramal-body{padding:11px 13px;}
+    /* Sub-sección dentro del ramal */
+    .ramal-section-title{font-size:9px;font-weight:800;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin:9px 0 5px;padding-bottom:3px;border-bottom:1px dashed rgba(255,255,255,.06);}
+    .ramal-section-title:first-child{margin-top:0;}
+    /* Tramos del ramal (mismo grid que hose-row) */
+    .ramal-hose-row{background:rgba(255,255,255,.02);border:1px solid rgba(167,139,250,.12);padding:5px;border-radius:5px;margin-bottom:4px;display:grid;grid-template-columns:1.6fr 0.5fr 0.9fr 0.9fr 26px;gap:5px;align-items:center;}
+    /* Accesorios del ramal */
+    .ramal-acc-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-bottom:6px;}
+    .ramal-acc-btn{padding:5px 7px;background:var(--s3);border:1px solid transparent;border-radius:4px;font-size:9px;color:var(--text-dim);cursor:pointer;display:flex;justify-content:space-between;align-items:center;transition:.15s;}
+    .ramal-acc-btn.active{background:rgba(167,139,250,.1);border-color:rgba(167,139,250,.4);color:var(--purple);font-weight:700;}
+    /* Stats del ramal calculados */
+    .ramal-stats{font-family:var(--ff-m);font-size:9px;color:var(--text-muted);margin:5px 0 4px;display:flex;gap:6px;flex-wrap:wrap;}
+    .ramal-stats span{padding:2px 6px;border-radius:3px;background:rgba(255,255,255,.03);border:1px solid var(--border);}
+    /* Botones */
+    .btn-add-ramal-hose{width:100%;padding:5px;background:rgba(167,139,250,.03);border:1px dashed rgba(167,139,250,.3);border-radius:5px;color:var(--purple);font-family:var(--ff-m);font-size:9px;font-weight:700;cursor:pointer;margin-top:3px;transition:.15s;}
+    .btn-add-ramal-hose:hover{background:rgba(167,139,250,.09);border-style:solid;}
+    .btn-add-ramal{width:100%;padding:9px;background:rgba(167,139,250,.04);border:1px dashed rgba(167,139,250,.35);border-radius:7px;color:var(--purple);font-family:var(--ff-m);font-size:10px;font-weight:700;cursor:pointer;margin-top:6px;transition:.15s;}
+    .btn-add-ramal:hover{background:rgba(167,139,250,.1);border-style:solid;}
+    /* Sección troncal */
+    .troncal-label{font-size:10px;font-weight:800;color:var(--sky);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px;display:flex;align-items:center;gap:6px;}
+    /* Pitón del ramal */
+    .ramal-piton-wrap{background:rgba(56,189,248,.03);border:1px solid rgba(56,189,248,.12);border-radius:6px;padding:9px 11px;margin-top:6px;}
+    .ramal-piton-title{font-size:9px;font-weight:800;color:var(--sky);text-transform:uppercase;letter-spacing:.05em;margin-bottom:7px;display:flex;align-items:center;gap:6px;}
 
     /* piton real-time feedback */
     .piton-feedback{margin-top:8px;padding:7px 10px;border-radius:5px;font-family:var(--ff-m);font-size:10px;line-height:1.5;}
@@ -867,6 +890,7 @@ const ACCESORIOS = [
 var segmentos = [];
 var segUID    = 0;
 var pitonUID  = 0;
+var ramalUID  = 0;
 
 // Últimos resultados del motor (modo Consigna)
 var _lastPDP   = 0;        // psi — presión de consigna calculada
@@ -1011,43 +1035,39 @@ function qDisp(psi) {
 }
 
 // ════════════════════════════════════════════════════════════
-// 6. RESOLUCIÓN DE BIFURCACIÓN Y — REPARTO REAL CON RAMAS
+// 6. MOTOR HIDRÁULICO — BIFURCACIÓN Y CON RAMALES COMPLETOS
 //
-//  TOPOLOGÍA SOPORTADA (cualquier combinación):
+//  TOPOLOGÍA (cualquier combinación):
 //
-//    BOMBA ──[TRONCAL: N tramos en serie, cada uno con M en paralelo]──► NODO Y
-//                                                                          │
-//                        ┌─────────────────────────────────────────────── ┤ ── ... ── RAMA_N
-//                    RAMA_1                                            RAMA_2
-//                [K tramos propios]                              [J tramos propios]
-//                        │                                                │
-//                    PITÓN 1                                          PITÓN 2
-//                    GLP, NP_obj                                   GLP, NP_obj
+//    BOMBA ──[TRONCAL: N tramos + accs + EP_troncal]──► NODO Y
+//                                                         │
+//             ┌───────────────────────────────────────────┤──── RAMAL_N
+//         RAMAL_1                                     RAMAL_2
+//      [tramos + accs + EP_ramal]               [tramos + accs + EP_ramal]
+//             │                                         │
+//          PITÓN 1 (GLP, NP_obj)                   PITÓN 2 (GLP, NP_obj)
 //
-//  ECUACIONES por pitón i:
-//    FL_rama_i(Q_i) = R_i × Q_i²        (fricción acumulada de su rama)
-//    NP_piton_i     = NP_nodo − R_i × Q_i²
-//    Q_i            = K_i × √NP_piton_i  (Torricelli con K calibrado desde GLP)
+//  ECUACIONES por ramal i:
+//    FL_i(Q_i) = Σ calcFL(Q_i, tramo)          ← fricción mangueras del ramal
+//    AL_i(Q_i) = Σ calcAL(Q_i, dRef, k_acc)    ← accesorios del ramal
+//    EP_i       = calcEP(ramal.elev)             ← elevación FIJA del ramal
 //
-//  Solución analítica exacta dado NP_nodo:
-//    Q_i = K_i × √NP_nodo / √(1 + K_i² × R_i)   ← sin iteración interna
+//    R_efectiva_i = [FL_i + AL_i] / Q_i²        ← resistencia combinada
+//    NP_nodo_ef_i = NP_nodo − EP_i              ← NP disponible corregido por elev
+//    NP_piton_i   = NP_nodo_ef_i − R_ef_i × Q_i²
 //
-//  Algoritmo externo: bisección sobre NP_nodo hasta Σ Q_i = Q_total_nom
+//  Solución analítica dado NP_nodo:
+//    Q_i = K_i × √NP_nodo_ef_i / √(1 + K_i² × R_ef_i)
+//    K_i = GLP_i / √NP_obj_i
 //
-//  Backward compatible: rama_hoses=[] → R_i=0 → Q_i=K_i×√NP_nodo
-//  (comportamiento idéntico al modelo anterior cuando no hay rama propia)
+//  Bisección sobre NP_nodo para que Σ Q_i = Q_total_nominal.
+//  R_accs depende de Q → bucle de punto fijo (converge en 2-3 iter).
 // ════════════════════════════════════════════════════════════
 
-/**
- * Resistencia hidráulica acumulada de los tramos de una rama.
- * FL_rama(Q) = R_total × Q²
- * Tramos en SERIE → R suman.  Tramos en PARALELO → R ÷ cant²
- * @param {Array} rama_hoses  [{diam, cant, longFt, material}, ...]
- * @returns {number} R en psi/GPM²
- */
-function calcR_rama(rama_hoses) {
-  if (!rama_hoses || !rama_hoses.length) return 0;
-  return rama_hoses.reduce((R, h) => {
+/** Resistencia hidráulica de los tramos de un ramal (solo fricción mangueras) */
+function calcR_ramal_hoses(hoses) {
+  if (!hoses || !hoses.length) return 0;
+  return hoses.reduce((R, h) => {
     const C  = C_NFPA[String(h.diam)];
     if (!C || !h.longFt) return R;
     const n  = Math.max(1, h.cant || 1);
@@ -1056,129 +1076,149 @@ function calcR_rama(rama_hoses) {
   }, 0);
 }
 
-/**
- * Q analítico de un pitón dado NP_nodo y resistencia de su rama.
- * Derivado de: Q = K×√(NP_nodo − R×Q²) → Q = K×√NP_nodo / √(1+K²×R)
- */
-function calcQ_rama(K, R, NP_nodo) {
-  if (NP_nodo <= 0 || K <= 0) return 0;
-  const denom = 1 + K * K * R;
-  return K * Math.sqrt(NP_nodo) / Math.sqrt(denom > 0 ? denom : 1);
+/** Resistencia de accesorios de un ramal: R_AL = AL(Q_ref) / Q_ref² */
+function calcR_ramal_accs(accs, dRef, Q_ref) {
+  if (!Q_ref || Q_ref <= 0) return 0;
+  let al = 0;
+  ACCESORIOS.forEach(a => { if (accs && accs[a.id]) al += calcAL(Q_ref, dRef, a.k); });
+  return al / (Q_ref * Q_ref);
+}
+
+/** R efectiva total del ramal (hoses + accs) dado Q de referencia */
+function calcR_efectiva_ramal(ramal, Q_ref) {
+  const dRef = ramal.hoses && ramal.hoses[0] ? String(ramal.hoses[0].diam) : '2.5';
+  return calcR_ramal_hoses(ramal.hoses || [])
+       + calcR_ramal_accs(ramal.accs || {}, dRef, Q_ref || 1);
+}
+
+/** Q analítico por ramal dado NP_nodo (con NP efectivo corregido por EP) */
+function calcQ_ramal(K, R_ef, NP_nodo_ef) {
+  if (NP_nodo_ef <= 0 || K <= 0) return 0;
+  const denom = 1 + K * K * R_ef;
+  return K * Math.sqrt(NP_nodo_ef) / Math.sqrt(denom > 0 ? denom : 1);
 }
 
 /**
- * Reparte Q_total entre N pitones con sus propias mangueras de rama.
- * @param {number} Q_total   Caudal nominal total (suma de GLP)
- * @param {Array}  pitones   [{q, np_obj, rama_hoses:[...]}, ...]
- * @param {number} np_nodo   Presión disponible en el nodo Y (psi)
- * @returns {Array} [{q_rama, np_piton, fl_rama, R_rama}, ...]
+ * Reparte Q_total entre los ramales del segmento.
+ * @param {number} Q_total  Caudal nominal total (suma GLP de todos los pitones)
+ * @param {Array}  ramales  Array de objetos ramal con {hoses, accs, elev, elevUnit, piton}
+ * @param {number} np_nodo  Presión disponible en el nodo Y (psi) = PDP − perdidas_troncal
+ * @returns {Array} [{q_ramal, np_piton, fl_ramal, al_ramal, ep_ramal, eficiencia}, ...]
  */
-function repartirCaudalY(Q_total, pitones, np_nodo) {
-  const N = pitones.length;
+function repartirCaudalY(Q_total, ramales, np_nodo) {
+  const N = ramales.length;
   if (N === 0) return [];
 
-  // Precalcular K y R de cada pitón
-  const Ks = pitones.map(p => {
+  const pitons = ramales.map(r => r.piton || {});
+  const Ks = pitons.map(p => {
     const glp    = parseFloat(p.q)      || 95;
     const np_obj = parseFloat(p.np_obj) || NP_TARGET;
-    return glp / Math.sqrt(np_obj);     // K = GLP / √NP_obj
+    return glp / Math.sqrt(np_obj);
   });
-  const Rs = pitones.map(p => calcR_rama(p.rama_hoses || []));
 
-  // ── Un solo pitón: recibe toda la presión del nodo ──────────────
-  if (N === 1) {
-    const K = Ks[0], R = Rs[0];
-    const q    = calcQ_rama(K, R, np_nodo);
-    const fl_r = R * q * q;
-    const np_p = Math.max(0, np_nodo - fl_r);
-    return [{ q_rama: Math.round(q), np_piton: np_p, fl_rama: fl_r, R_rama: R }];
+  // EP por ramal (fijo, no depende de Q)
+  const EPs = ramales.map(r => calcEP(r.elev || 0, r.elevUnit || 'm'));
+
+  // Inicializar Q con GLP nominal
+  let Qs = pitons.map(p => parseFloat(p.q) || 95);
+
+  // Punto fijo: actualizar R_ef (que depende de Q) y re-biseccionar
+  for (let outer = 0; outer < 8; outer++) {
+    const Rs_ef     = ramales.map((r, i) => calcR_efectiva_ramal(r, Math.max(Qs[i], 1)));
+    const NP_ef     = EPs.map(ep => Math.max(0, np_nodo - ep));
+
+    // Un solo ramal: recibe todo NP_nodo_ef
+    if (N === 1) {
+      const q    = calcQ_ramal(Ks[0], Rs_ef[0], NP_ef[0]);
+      const fl_r = calcR_ramal_hoses(ramales[0].hoses || []) * q * q;
+      const dRef = ramales[0].hoses && ramales[0].hoses[0] ? String(ramales[0].hoses[0].diam) : '2.5';
+      const al_r = calcR_ramal_accs(ramales[0].accs || {}, dRef, q) * q * q;
+      const np_p = Math.max(0, NP_ef[0] - fl_r - al_r);
+      const glp  = parseFloat(pitons[0].q) || 95;
+      Qs = [q];
+      return [{ q_ramal: Math.round(q), np_piton: np_p,
+                fl_ramal: fl_r, al_ramal: al_r, ep_ramal: EPs[0],
+                eficiencia: Math.round(q / glp * 100) }];
+    }
+
+    // N >= 2: bisección sobre NP_nodo
+    let lo = 0, hi = np_nodo;
+    for (let iter = 0; iter < 300; iter++) {
+      const mid  = (lo + hi) / 2;
+      const Qsum = Ks.reduce((s, K, i) => s + calcQ_ramal(K, Rs_ef[i], Math.max(0, mid - EPs[i])), 0);
+      if (Math.abs(Qsum - Q_total) < 0.05) break;
+      if (Qsum > Q_total) hi = mid; else lo = mid;
+    }
+    const NP_eq  = (lo + hi) / 2;
+    const Qs_new = Ks.map((K, i) => calcQ_ramal(K, Rs_ef[i], Math.max(0, NP_eq - EPs[i])));
+
+    // Convergencia de punto fijo
+    if (Qs_new.every((q, i) => Math.abs(q - Qs[i]) < 0.1)) { Qs = Qs_new; break; }
+    Qs = Qs_new;
   }
 
-  // ── N >= 2: bisección sobre NP_nodo ─────────────────────────────
-  // f(NP_nodo) = Σ Q_i(NP_nodo) − Q_total
-  // Q_i es monótonamente creciente con NP_nodo → f es monótona → bisección garantiza convergencia
-  let lo = 0, hi = np_nodo;
-  const MAX_ITER = 300, TOL = 0.05;
-
-  for (let iter = 0; iter < MAX_ITER; iter++) {
-    const mid  = (lo + hi) / 2;
-    const Qsum = Ks.reduce((s, K, i) => s + calcQ_rama(K, Rs[i], mid), 0);
-    const diff = Qsum - Q_total;
-    if (Math.abs(diff) < TOL) break;
-    if (diff > 0) hi = mid; else lo = mid;
-  }
-
-  const NP_eq = (lo + hi) / 2;
-
-  // ── Calcular resultado individual por pitón ──────────────────────
-  return pitones.map((p, i) => {
-    const K = Ks[i], R = Rs[i];
-    const q    = calcQ_rama(K, R, NP_eq);
-    const fl_r = R * q * q;
-    const np_p = Math.max(0, NP_eq - fl_r);
-    return { q_rama: Math.round(q), np_piton: np_p, fl_rama: fl_r, R_rama: R };
+  // Construir resultado final
+  return ramales.map((r, i) => {
+    const q    = Qs[i];
+    const dRef = r.hoses && r.hoses[0] ? String(r.hoses[0].diam) : '2.5';
+    const R_h  = calcR_ramal_hoses(r.hoses || []);
+    const R_a  = calcR_ramal_accs(r.accs || {}, dRef, Math.max(q, 1));
+    const fl_r = R_h * q * q;
+    const al_r = R_a * q * q;
+    const ep_r = EPs[i];
+    const np_p = Math.max(0, np_nodo - ep_r - fl_r - al_r);
+    const glp  = parseFloat(pitons[i].q) || 95;
+    return { q_ramal: Math.round(q), np_piton: np_p,
+             fl_ramal: fl_r, al_ramal: al_r, ep_ramal: ep_r,
+             eficiencia: Math.round(q / glp * 100) };
   });
 }
 
 // ════════════════════════════════════════════════════════════
-// 7. CÁLCULO DE SEGMENTO — con mangueras de rama por pitón
-//
-//  Fase 1: pérdidas de la TRONCAL (con Q_total nominal)
-//  Fase 2: pérdida de RAMA de cada pitón en equilibrio inicial
-//  Fase 3: PDP requerida = NP_obj + FL_troncal + AL + EP + FL_rama_crítica
-//           donde FL_rama_crítica = la rama que más presión consume
-//           (el segmento necesita la presión suficiente para alimentar
-//            incluso al pitón más difícil de alcanzar)
+// 7. CÁLCULO DE SEGMENTO — Troncal + Ramales
 // ════════════════════════════════════════════════════════════
 function calcSegmento(seg) {
-  // ── Q nominal total ──────────────────────────────────────
-  const Q = seg.pitones.reduce((s, p) => s + parseFloat(p.q || 0), 0);
+  // Asegurar que existe ramales[]
+  if (!seg.ramales) seg.ramales = [];
+
+  // ── Q nominal total = suma de GLP de todos los pitones ──
+  const Q = seg.ramales.reduce((s, r) => s + parseFloat((r.piton||{}).q || 0), 0);
   seg.totalQ = Q;
 
-  // ── Fricción TRONCAL (Q total lleva hasta el nodo Y) ─────
-  seg.fl = seg.hoses.reduce((sum, h) => {
-    return sum + calcFL(Q, h.diam, h.cant, parseFloat(h.longFt || 0), h.material);
-  }, 0);
+  // ── Fricción TRONCAL (Q total hasta el nodo Y) ───────────
+  seg.fl = seg.hoses.reduce((sum, h) =>
+    sum + calcFL(Q, h.diam, h.cant, parseFloat(h.longFt || 0), h.material), 0);
 
-  // ── Accesorios AL (troncal, diámetro del primer tramo) ───
+  // ── Accesorios troncal ────────────────────────────────────
   const dRef = seg.hoses[0] ? String(seg.hoses[0].diam) : '2.5';
-  seg.al = ACCESORIOS.reduce((sum, a) => {
-    if (!seg.accs[a.id]) return sum;
-    return sum + calcAL(Q, dRef, a.k);
-  }, 0);
+  seg.al = ACCESORIOS.reduce((sum, a) =>
+    seg.accs[a.id] ? sum + calcAL(Q, dRef, a.k) : sum, 0);
 
-  // ── Elevación EP ─────────────────────────────────────────
+  // ── Elevación troncal ─────────────────────────────────────
   seg.ep = calcEP(seg.elev, seg.elevUnit);
 
-  // ── NP objetivo del segmento (máximo de sus pitones) ─────
-  seg.np_obj = seg.pitones.reduce(
-    (mx, p) => Math.max(mx, parseFloat(p.np_obj || NP_TARGET)), NP_TARGET
-  );
-
-  // ── Pérdida de RAMA por pitón con Q nominal ───────────────
-  // Estimación inicial para calcular PDP: usamos Q_nominal de cada pitón
-  // como aproximación al Q real (suficiente para dimensionar).
-  // El Q real de equilibrio se calcula en recalcAll con la PDP definitiva.
-  seg.pitones.forEach(p => {
-    const R = calcR_rama(p.rama_hoses || []);
-    const qNom = parseFloat(p.q || 0);
-    p.fl_rama_nom = R * qNom * qNom;   // pérdida de rama con Q nominal
-    p.R_rama      = R;
-  });
-
-  // ── PDP requerida ─────────────────────────────────────────
-  // La bomba debe suministrar suficiente presión para que:
-  //   NP_piton_i = PDP − FL_troncal − AL − EP − FL_rama_i ≥ NP_obj_i
-  // → PDP ≥ NP_obj_i + perdidas_troncal + FL_rama_i  ∀ i
-  // Tomamos el máximo sobre todos los pitones:
+  // ── Pérdidas troncal ──────────────────────────────────────
   const perdidas_troncal = seg.fl + seg.al + seg.ep;
-  const PDP_por_piton = seg.pitones.map(p =>
-    parseFloat(p.np_obj || NP_TARGET) + perdidas_troncal + p.fl_rama_nom
-  );
-  seg.perdidas = perdidas_troncal;            // pérdidas de troncal (para display)
-  seg.pdp      = Math.max(...PDP_por_piton, seg.np_obj + perdidas_troncal);
+  seg.perdidas = perdidas_troncal;
 
-  // ── Velocidad máxima en TRONCAL ─────────────────────────
+  // ── NP objetivo = máximo de todos los pitones ─────────────
+  seg.np_obj = seg.ramales.reduce(
+    (mx, r) => Math.max(mx, parseFloat((r.piton||{}).np_obj || NP_TARGET)), NP_TARGET);
+
+  // ── PDP estimada (con Q nominal por ramal) ────────────────
+  // PDP ≥ NP_obj_i + perdidas_troncal + FL_ramal_i + AL_ramal_i + EP_ramal_i  ∀i
+  const PDP_por_ramal = seg.ramales.map(r => {
+    const qNom   = parseFloat((r.piton||{}).q || 0);
+    const np_obj = parseFloat((r.piton||{}).np_obj || NP_TARGET);
+    const dR     = r.hoses && r.hoses[0] ? String(r.hoses[0].diam) : '2.5';
+    const fl_r   = calcR_ramal_hoses(r.hoses || []) * qNom * qNom;
+    const al_r   = calcR_ramal_accs(r.accs || {}, dR, Math.max(qNom, 1)) * qNom * qNom;
+    const ep_r   = calcEP(r.elev || 0, r.elevUnit || 'm');
+    return np_obj + perdidas_troncal + fl_r + al_r + ep_r;
+  });
+  seg.pdp = Math.max(...PDP_por_ramal, seg.np_obj + perdidas_troncal);
+
+  // ── Velocidad máxima en TRONCAL ──────────────────────────
   seg.maxVel  = 0;
   seg.velDiam = dRef;
   seg.hoses.forEach(h => {
@@ -1186,31 +1226,26 @@ function calcSegmento(seg) {
     if (v > seg.maxVel) { seg.maxVel = v; seg.velDiam = h.diam; }
   });
 
-  // ── Velocidades y FL por tramo de troncal ────────────────
   seg.hoseVels = seg.hoses.map(h => ({
     diam: h.diam, cant: h.cant, longFt: h.longFt,
     v:    calcV(Q, h.diam, h.cant),
     fl:   calcFL(Q, h.diam, h.cant, parseFloat(h.longFt || 0), h.material),
   }));
 
-  // ── Velocidad máxima en ramas ─────────────────────────────
-  // Cada rama lleva solo el Q de su pitón (estimado con Q nominal aquí)
-  seg.pitones.forEach(p => {
-    const rh = p.rama_hoses || [];
-    if (!rh.length) { p.maxVelRama = 0; return; }
-    const qNom = parseFloat(p.q || 0);
-    p.maxVelRama = Math.max(0, ...rh.map(h => calcV(qNom, h.diam, h.cant)));
-    // El diámetro más restrictivo de la rama
-    p.velDiamRama = rh.reduce((worst, h) => {
-      return calcV(qNom, h.diam, h.cant) > calcV(qNom, worst, 1) ? h.diam : worst;
-    }, rh[0].diam);
-  });
-
-  // Inicializar calculados (se sobreescribirán en recalcAll)
-  seg.np_real = 0;
-  seg.pitones.forEach(p => { p.np_real = 0; p.q_real = 0; p.eficiencia = 0; });
+  // ── Inicializar calculados de cada ramal ─────────────────
+  seg.np_real     = 0;
   seg.totalQ_real = 0;
   seg.eficiencia  = 0;
+  seg.ramales.forEach(r => {
+    if (!r.piton) r.piton = {};
+    r.piton.np_real     = 0;
+    r.piton.q_real      = 0;
+    r.piton.eficiencia  = 0;
+    r.piton.fl_ramal_real = 0;
+    r.piton.al_ramal_real = 0;
+    r.piton.ep_ramal_real = 0;
+    r.piton.vel_ramal_real = 0;
+  });
 }
 
 // ════════════════════════════════════════════════════════════
@@ -1261,43 +1296,40 @@ function recalcAll(pdpOverride) {
     s.isCrit   = (s === segCrit && pdpOverride === undefined);
     s.pct_perdidas = pdpBomba > 0 ? (s.perdidas / pdpBomba) * 100 : 0;
 
-    if (s.np_insuf || s.np_real <= 0 || s.pitones.length === 0) {
-      s.pitones.forEach(p => {
-        p.np_real = 0; p.q_real = 0; p.eficiencia = 0;
-        p.np_piton_equil = 0; p.fl_rama_real = 0; p.vel_rama_real = 0;
+    if (s.np_insuf || s.np_real <= 0 || s.ramales.length === 0) {
+      s.ramales.forEach(r => {
+        if (!r.piton) r.piton = {};
+        r.piton.np_real = 0; r.piton.q_real = 0; r.piton.eficiencia = 0;
+        r.piton.fl_ramal_real = 0; r.piton.al_ramal_real = 0;
+        r.piton.ep_ramal_real = 0; r.piton.vel_ramal_real = 0;
       });
       s.totalQ_real = 0;
       s.eficiencia  = 0;
     } else {
-      // Resolver reparto hidráulico real en el nodo Y (con ramas propias)
-      const reparto = repartirCaudalY(s.totalQ, s.pitones, s.np_real);
+      const reparto = repartirCaudalY(s.totalQ, s.ramales, s.np_real);
 
-      s.pitones.forEach((p, pi) => {
-        const r          = reparto[pi] || { q_rama: 0, np_piton: 0, fl_rama: 0, R_rama: 0 };
-        p.np_real        = r.np_piton;
-        p.q_real         = r.q_rama;
-        p.fl_rama_real   = r.fl_rama;      // pérdida real de la rama con Q real
-        p.eficiencia     = p.q > 0 ? Math.round((p.q_real / p.q) * 100) : 0;
-        p.np_piton_equil = r.np_piton;
-
-        // Velocidad en la rama con Q real
-        const rh = p.rama_hoses || [];
-        p.vel_rama_real  = rh.length && p.q_real > 0
-          ? Math.max(...rh.map(h => calcV(p.q_real, h.diam, h.cant)))
+      s.ramales.forEach((r, ri) => {
+        const res = reparto[ri] || { q_ramal:0, np_piton:0, fl_ramal:0, al_ramal:0, ep_ramal:0, eficiencia:0 };
+        if (!r.piton) r.piton = {};
+        r.piton.np_real       = res.np_piton;
+        r.piton.q_real        = res.q_ramal;
+        r.piton.eficiencia    = res.eficiencia;
+        r.piton.fl_ramal_real = res.fl_ramal;
+        r.piton.al_ramal_real = res.al_ramal;
+        r.piton.ep_ramal_real = res.ep_ramal;
+        // Velocidad máxima en las mangueras del ramal con Q real
+        const rh = r.hoses || [];
+        r.piton.vel_ramal_real = rh.length && res.q_ramal > 0
+          ? Math.max(...rh.map(h => calcV(res.q_ramal, h.diam, h.cant)))
           : 0;
-        p.velDiamRama    = rh.length
-          ? rh.reduce((w, h) => calcV(p.q_real, h.diam, h.cant) > calcV(p.q_real, w, 1) ? h.diam : w, rh[0].diam)
-          : s.velDiam;
       });
 
-      s.totalQ_real = s.pitones.reduce((sum, p) => sum + p.q_real, 0);
+      s.totalQ_real = s.ramales.reduce((sum, r) => sum + (r.piton.q_real || 0), 0);
       s.eficiencia  = s.totalQ > 0 ? Math.round((s.totalQ_real / s.totalQ) * 100) : 0;
 
-      // Velocidad máxima incluyendo ramas
-      const vRamasMax = s.pitones.reduce((mx, p) => Math.max(mx, p.vel_rama_real || 0), 0);
-      if (vRamasMax > s.maxVel) {
-        s.maxVelRamaGlobal = vRamasMax;  // para alarmas
-      }
+      // Velocidad máxima incluyendo todos los ramales
+      const vRamax = s.ramales.reduce((mx, r) => Math.max(mx, r.piton.vel_ramal_real || 0), 0);
+      s.maxVelRamalGlobal = vRamax;
     }
 
     caudalRealTotal += s.totalQ_real;
@@ -1470,19 +1502,23 @@ function updateUI(pdp, caudal_nom, caudal_real, segCrit, isMonitor) {
         ? `★ Segmento crítico — NP objetivo ${s.np_obj} psi exacto`
         : `NP real: ${s.np_real.toFixed(1)} psi (+${s.exceso.toFixed(1)} psi sobre objetivo)`;
 
-    // Detalle por pitón
-    const pitonRows = s.pitones.map((p, pi) => {
-      const pc = p.np_real < 85 ? 'var(--red)'
-               : p.np_real > 115 ? 'var(--red)'
-               : p.np_real < 95 || p.np_real > 105 ? 'var(--amber)'
-               : 'var(--green)';
+    // Detalle por ramal (con pitón)
+    const pitonRows = (s.ramales || []).map((r, ri) => {
+      const p  = r.piton || {};
+      const np = p.np_real || 0;
+      const pc = np < 85 ? 'var(--red)' : np > 115 ? 'var(--red)'
+               : np < 95 || np > 105 ? 'var(--amber)' : 'var(--green)';
       const tipo = p.tipo === 'automatico' ? '⚙ Auto' : '🔧 Fijo';
-      return `<div style="display:flex;gap:6px;font-size:9px;font-family:var(--ff-m);padding:2px 4px;background:rgba(255,255,255,.02);border-radius:3px;margin-top:2px;">
-        <span style="color:var(--text-muted)">P${pi+1} ${tipo}</span>
-        <span style="color:${pc};font-weight:700">${p.np_real ? p.np_real.toFixed(0) : '—'} psi</span>
-        <span style="color:var(--amber)">${p.q_real || '—'} GPM</span>
-        <span style="color:var(--text-muted)">(nom: ${p.q} GPM)</span>
-        <span style="color:${p.eficiencia >= 90 ? 'var(--green)' : p.eficiencia >= 75 ? 'var(--amber)' : 'var(--red)'}">${p.eficiencia}%</span>
+      const flR  = (p.fl_ramal_real || 0).toFixed(1);
+      const alR  = (p.al_ramal_real || 0).toFixed(1);
+      const epR  = (p.ep_ramal_real || 0).toFixed(1);
+      const vR   = p.vel_ramal_real || 0;
+      return `<div style="display:grid;grid-template-columns:auto 1fr 1fr 1fr 1fr;gap:5px;font-size:9px;font-family:var(--ff-m);padding:3px 5px;background:rgba(167,139,250,.03);border:1px solid rgba(167,139,250,.1);border-radius:3px;margin-top:2px;align-items:center;">
+        <span style="color:var(--purple);font-weight:800">R${ri+1} ${tipo}</span>
+        <span style="color:${pc};font-weight:700">${np ? np.toFixed(0) : '—'} psi</span>
+        <span style="color:var(--amber)">${p.q_real || '—'} GPM <span style="color:var(--text-muted)">(nom:${p.q})</span></span>
+        <span style="color:var(--text-muted)">FL+AL+EP: ${flR}+${alR}+${epR}</span>
+        <span style="color:${(p.eficiencia||0)>=90?'var(--green)':(p.eficiencia||0)>=75?'var(--amber)':'var(--red)'}">${p.eficiencia||0}% ${vR>V_MAX_FTPS?'⚠V':'✓'}</span>
       </div>`;
     }).join('');
 
@@ -1623,7 +1659,7 @@ function updateTank(){
   let flow = _lastFlow;
   if (flow <= 0) {
     flow = segmentos.reduce((s, seg) =>
-      s + seg.pitones.reduce((ps, p) => ps + (p.q_real || 0), 0), 0);
+      s + (seg.ramales||[]).reduce((rs, r) => rs + ((r.piton||{}).q_real || 0), 0), 0);
   }
 
   if (!capRaw || flow <= 0) {
@@ -1739,18 +1775,19 @@ function buildRecommendations(pdp, caudal_nom, caudal_real) {
 
   // ── R-4: NP individual por pitón — presión baja ──────────────────────
   segmentos.forEach((s, si) => {
-    s.pitones.forEach((p, pi) => {
+    (s.ramales || []).forEach((r, ri) => {
+      const p   = r.piton || {};
       const npR = p.np_real !== undefined ? p.np_real : s.np_real;
-      if (npR <= 0 && s.np_insuf) return; // ya cubierto por R-9
+      if (npR <= 0 && s.np_insuf) return;
       if (npR > 0 && npR < 85) {
         const eff = p.eficiencia || 0;
         bloques.push({ p: -7, icon: '🔴',
-          title: `Seg.${si+1} P${pi+1}: NP real ${npR.toFixed(0)} psi — Pitón subalimentado (objetivo ${p.np_obj || NP_TARGET} psi)`,
-          sub:   `Boquilla ${p.boquilla_d || 1.0}" · GLP ${p.q} GPM · Eficiencia: ${eff}%`,
-          desc:  `La presión real en la boquilla es <strong>${npR.toFixed(0)} psi</strong>, ${((p.np_obj||NP_TARGET) - npR).toFixed(0)} psi por debajo del objetivo.<br>
-                  Caudal real: <strong>${p.q_real || 0} GPM</strong> de ${p.q} GPM nominales — <strong>solo ${eff}% de efectividad</strong>.<br>
-                  El pitonero está trabajando con un pitón que no alcanza su curva de diseño → menor alcance y menor caudal de extinción.<br>
-                  <strong>Correctivo:</strong> subir presión de bomba · acortar troncal · aumentar diámetro de manguera.`
+          title: `Seg.${si+1} R${ri+1}: NP real ${npR.toFixed(0)} psi — Pitón subalimentado (obj. ${p.np_obj || NP_TARGET} psi)`,
+          sub:   `Ramal: ${(r.hoses||[]).map(h=>`${h.cant||1}×${h.diam}"/${h.longFt}ft`).join('+')||'sin rama'} · GLP ${p.q} GPM · Eff: ${eff}%`,
+          desc:  `NP real en boquilla: <strong>${npR.toFixed(0)} psi</strong>, ${((p.np_obj||NP_TARGET)-npR).toFixed(0)} psi por debajo del objetivo.<br>
+                  Caudal real: <strong>${p.q_real||0} GPM</strong> de ${p.q} GPM nominales — <strong>${eff}% de efectividad</strong>.<br>
+                  FL_ramal: ${(p.fl_ramal_real||0).toFixed(1)} psi · AL_ramal: ${(p.al_ramal_real||0).toFixed(1)} psi · EP_ramal: ${(p.ep_ramal_real||0).toFixed(1)} psi<br>
+                  <strong>Correctivo:</strong> subir PDP · acortar ramal · aumentar diámetro de ramal.`
         });
       }
     });
@@ -1758,17 +1795,16 @@ function buildRecommendations(pdp, caudal_nom, caudal_real) {
 
   // ── R-5: NP individual por pitón — exceso peligroso ─────────────────
   segmentos.forEach((s, si) => {
-    s.pitones.forEach((p, pi) => {
+    (s.ramales || []).forEach((r, ri) => {
+      const p   = r.piton || {};
       const npR = p.np_real !== undefined ? p.np_real : s.np_real;
       if (npR > 120) {
         bloques.push({ p: -6, icon: '🔴',
-          title: `Seg.${si+1} P${pi+1}: NP real ${npR.toFixed(0)} psi — EXCESO CRÍTICO (objetivo ${p.np_obj || NP_TARGET} psi)`,
-          sub:   `Boquilla ${p.boquilla_d || 1.0}" · Q real estimado: ${p.q_real || 0} GPM`,
-          desc:  `La presión en este pitón supera los <strong>${npR.toFixed(0)} psi</strong>, 
-                  ${(npR - (p.np_obj||NP_TARGET)).toFixed(0)} psi sobre el objetivo.<br>
+          title: `Seg.${si+1} R${ri+1}: NP real ${npR.toFixed(0)} psi — EXCESO CRÍTICO (obj. ${p.np_obj||NP_TARGET} psi)`,
+          sub:   `Q real estimado: ${p.q_real||0} GPM · Eff: ${p.eficiencia||0}%`,
+          desc:  `La presión real supera <strong>${npR.toFixed(0)} psi</strong> — ${(npR-(p.np_obj||NP_TARGET)).toFixed(0)} psi sobre el objetivo.<br>
                   Consecuencia: reacción hidráulica excesiva → el pitonero puede <strong>perder el control físico de la línea</strong>.<br>
-                  Caudal real entregado: ${p.q_real || 0} GPM (${p.eficiencia || 0}% del GLP — exceso de caudal).<br>
-                  <strong>Correctivo:</strong> agregar longitud o reducir diámetro en este segmento para aumentar pérdidas y bajar NP.`
+                  <strong>Correctivo:</strong> agregar manguera en ramal · reducir diámetro · o separar en segmento propio.`
         });
       }
     });
@@ -1776,17 +1812,18 @@ function buildRecommendations(pdp, caudal_nom, caudal_real) {
 
   // ── R-6: Caudal real < 75% del GLP — pitón ineficiente ──────────────
   segmentos.forEach((s, si) => {
-    s.pitones.forEach((p, pi) => {
+    (s.ramales || []).forEach((r, ri) => {
+      const p   = r.piton || {};
       const eff = p.eficiencia !== undefined ? p.eficiencia : 0;
       if (eff > 0 && eff < 75) {
         bloques.push({ p: -4, icon: '🟡',
-          title: `Seg.${si+1} P${pi+1}: Solo el ${eff}% del GLP — caudal de extinción insuficiente`,
-          sub:   `Q real: ${p.q_real || 0} GPM / GLP: ${p.q} GPM · NP real: ${(p.np_real||0).toFixed(0)} psi`,
-          desc:  `Este pitón entrega solo <strong>${p.q_real || 0} de ${p.q} GPM</strong> (${eff}% del GLP).<br>
-                  Con menos del 75% de caudal nominal, el pitón no alcanza su curva de extinción de diseño.<br>
-                  Riesgo operativo: menor cobertura de chorro, menor caudal de enfriamiento → riesgo para el pitonero.<br>
-                  <strong>Causa probable:</strong> NP insuficiente (${(p.np_real||0).toFixed(0)} psi) por exceso de pérdidas en la troncal.<br>
-                  <strong>Correctivo:</strong> aumentar PDP de bomba o reducir pérdidas del segmento.`
+          title: `Seg.${si+1} R${ri+1}: Solo el ${eff}% del GLP — caudal de extinción insuficiente`,
+          sub:   `Q real: ${p.q_real||0} GPM / GLP: ${p.q} GPM · NP real: ${(p.np_real||0).toFixed(0)} psi`,
+          desc:  `Este pitón entrega solo <strong>${p.q_real||0} de ${p.q} GPM</strong> (${eff}% del GLP).<br>
+                  Con menos del 75%, el pitón no alcanza su curva de extinción de diseño.<br>
+                  FL+AL+EP del ramal: ${(p.fl_ramal_real||0).toFixed(1)} + ${(p.al_ramal_real||0).toFixed(1)} + ${(p.ep_ramal_real||0).toFixed(1)} psi.<br>
+                  <strong>Causa probable:</strong> ramal muy largo o diámetro insuficiente.<br>
+                  <strong>Correctivo:</strong> aumentar PDP de bomba · reducir pérdidas del ramal · aumentar diámetro.`
         });
       }
     });
@@ -1810,23 +1847,25 @@ function buildRecommendations(pdp, caudal_nom, caudal_real) {
     }
   });
 
-  // ── R-8: Mal reparto de caudal en bifurcación (pitones muy desiguales) ──
+  // ── R-8: Mal reparto en bifurcación (ramales muy desequilibrados) ───
   segmentos.forEach((s, si) => {
-    if (s.pitones.length < 2) return;
-    const qsReales = s.pitones.map(p => p.q_real || 0);
+    if ((s.ramales||[]).length < 2) return;
+    const qsReales = s.ramales.map(r => (r.piton||{}).q_real || 0);
     const qMax     = Math.max(...qsReales);
     const qMin     = Math.min(...qsReales);
     if (qMax > 0 && qMin / qMax < 0.60) {
-      const pMax = s.pitones.findIndex(p => (p.q_real||0) === qMax) + 1;
-      const pMin = s.pitones.findIndex(p => (p.q_real||0) === qMin) + 1;
+      const riMax = s.ramales.findIndex(r => ((r.piton||{}).q_real||0) === qMax) + 1;
+      const riMin = s.ramales.findIndex(r => ((r.piton||{}).q_real||0) === qMin) + 1;
+      const npMax = ((s.ramales[riMax-1]||{}).piton||{}).np_real || 0;
+      const npMin = ((s.ramales[riMin-1]||{}).piton||{}).np_real || 0;
       bloques.push({ p: -2, icon: '⚠️',
-        title: `Seg.${si+1}: Reparto desequilibrado — P${pMax} recibe ${qMax} GPM y P${pMin} solo ${qMin} GPM`,
-        sub:   'Equilibrio hidráulico · boquillas con GLP muy diferentes generan desequilibrio en bifurcación Y',
-        desc:  `En una bifurcación Y, el caudal se divide según la resistencia de cada boquilla.<br>
-                Pitones con GLP muy diferente generan desequilibrio: la boquilla de menor resistencia acapara caudal.<br>
-                <strong>P${pMax}:</strong> ${qMax} GPM / NP ${((s.pitones[pMax-1]||{}).np_real||0).toFixed(0)} psi<br>
-                <strong>P${pMin}:</strong> ${qMin} GPM / NP ${((s.pitones[pMin-1]||{}).np_real||0).toFixed(0)} psi<br>
-                <strong>Correctivo:</strong> usar pitones del mismo GLP en el mismo segmento · o separar en segmentos independientes.`
+        title: `Seg.${si+1}: Reparto desequilibrado — R${riMax} recibe ${qMax} GPM y R${riMin} solo ${qMin} GPM`,
+        sub:   'Equilibrio hidráulico en Y · resistencias de ramal diferentes generan desequilibrio',
+        desc:  `En la bifurcación Y el caudal se divide según las resistencias de cada ramal.<br>
+                <strong>R${riMax}:</strong> ${qMax} GPM / NP ${npMax.toFixed(0)} psi<br>
+                <strong>R${riMin}:</strong> ${qMin} GPM / NP ${npMin.toFixed(0)} psi<br>
+                Causa: diferencia en longitud, diámetro o GLP de los ramales.<br>
+                <strong>Correctivo:</strong> igualar resistencias de ramal · usar pitones de GLP similar · o separar en segmentos independientes.`
       });
     }
   });
@@ -1901,7 +1940,7 @@ function buildRecommendations(pdp, caudal_nom, caudal_real) {
     panel.style.display = 'block';
     const vMax = segmentos.reduce((mx, s) => Math.max(mx, s.maxVel || 0), 0);
     const effMin = segmentos.length
-      ? Math.min(...segmentos.flatMap(s => s.pitones.map(p => p.eficiencia || 100)))
+      ? Math.min(...segmentos.flatMap(s => (s.ramales||[]).map(r => (r.piton||{}).eficiencia || 100)))
       : 100;
     body.innerHTML = `<div style="background:rgba(16,185,129,.06);border:1px solid rgba(16,185,129,.3);border-radius:var(--rs);padding:14px 16px;display:flex;gap:12px;align-items:flex-start;">
       <div style="font-size:20px">✅</div>
@@ -1977,7 +2016,7 @@ function buildSchematic() {
   const branchLen = 44;  // largo de cada rama del Y → pitón
 
   // Pitones: cuántos pitones como máximo hay en un segmento
-  const maxPit   = Math.max(...segmentos.map(s => s.pitones.length), 1);
+  const maxPit   = Math.max(...segmentos.map(s => (s.ramales||[]).length), 1);
   const pitSpV   = 38;  // separación vertical entre pitones del mismo segmento
   const pitBodyW = 36;  // largo del ícono de pitón
   const pitBodyH = 14;  // alto del ícono de pitón
@@ -2133,7 +2172,7 @@ function buildSchematic() {
     svg += `<text x="${col2}" y="${rowY4}" fill="${CD}" font-size="6.5">${hoseTxt}</text>`;
 
     // 3. BIFURCACIÓN Y (si hay más de 1 pitón, dibuja el Y; si hay 1 solo dibuja línea recta)
-    const nP      = s.pitones.length;
+    const nP      = (s.ramales||[]).length;
     const wyeY    = midY;
 
     // Línea datos → wye
@@ -2156,7 +2195,7 @@ function buildSchematic() {
       svg += `<text x="${col_wye + 10}" y="${midY + 3.5}"
         text-anchor="middle" fill="${CP2}" font-size="6" font-weight="800">Y</text>`;
       // Ramas del Y
-      s.pitones.forEach((_, pi) => {
+      s.ramales.forEach((_, pi) => {
         const brY = midY - halfSpread + pi * pitSpV;
         svg += `<path d="M ${col_wye + 10} ${midY} L ${col_wye + 22} ${brY} L ${col_pitStart} ${brY}"
           stroke="${CP2}90" stroke-width="1.8" fill="none" stroke-dasharray="4,3"/>`;
@@ -2168,8 +2207,9 @@ function buildSchematic() {
       fill="${CB}" stroke="${CP2}" stroke-width="1.5"/>`;
 
     // 4. PITONES — valores reales individuales
-    s.pitones.forEach((p, pi) => {
-      const nP2    = s.pitones.length;
+    s.ramales.forEach((ramal, pi) => {
+      const p = ramal.piton || {};
+      const nP2    = (s.ramales||[]).length;
       const halfSp = (nP2 - 1) * pitSpV / 2;
       const pitY   = midY - halfSp + pi * pitSpV;
       const pitX   = col_pitStart;
@@ -2275,278 +2315,380 @@ function buildSchematic() {
   if (cc) cc.innerHTML = svg;
 }
 
-// ─── RENDER SEGMENTOS ────────────────────────────────────────────────
-function renderSegmentos(){
-  const lista=document.getElementById('seg-lista'); if(!lista) return; lista.innerHTML='';
-  segmentos.forEach((s,sidx)=>{
-    const velOk=!s.maxVel||s.maxVel<=V_MAX_FTPS;
-    const pdpCol=s.pdp>PDP_MAX_PSI?'badge-pdp-bad':s.pdp>200?'badge-pdp-warn':'badge-pdp-ok';
-    const exceso=s.exceso||0;
-    let excessHtml='';
-    if(_lastPDP>0&&!s.isCrit){
-      const ecls = s.np_insuf ? 'excess-bad'
-                  : exceso>50  ? 'excess-bad'
-                  : exceso>20  ? 'excess-warn'
-                  : 'excess-ok';
-      const icon = s.np_insuf ? '🔴'
-                  : exceso>50  ? '🔴'
-                  : exceso>20  ? '🟡'
-                  : '✅';
-      const titleColor = s.np_insuf ? 'var(--red)'
-                       : exceso>50  ? 'var(--red)'
-                       : exceso>20  ? 'var(--amber)'
-                       : 'var(--green)';
-      const titleText = s.np_insuf
-        ? `⛔ PRESIÓN INSUFICIENTE — Pérdidas (${s.perdidas.toFixed(1)} psi) > PDP bomba (${_lastPDP.toFixed(1)} psi) — Revisar tendido`
-        : `${icon} Presión real en pitón: ${s.np_real.toFixed(1)} psi${exceso>5?' (+'+exceso.toFixed(0)+' psi exceso)':' ✓'}`;
-      excessHtml=`<div class="excess-box ${ecls}">
-        <div class="excess-title" style="color:${titleColor}">${titleText}</div>
-        <div style="font-size:10px;color:var(--text-dim);line-height:1.6;">
-          ${s.np_insuf?`Las pérdidas del tendido superan la presión que puede generar la bomba. Reducir longitud, aumentar diámetro o eliminar accesorios.`
-            :exceso>50?`<strong>Exceso crítico</strong> — El pitonero recibe ${exceso.toFixed(0)} psi adicionales. Caudal real: ${s.totalQ_real} GPM. Riesgo de pérdida de control.`
-            :exceso>20?`Exceso moderado — pitonero recibe ${exceso.toFixed(0)} psi adicionales. Caudal real: ${s.totalQ_real} GPM. Mayor esfuerzo físico.`
-            :`Sistema equilibrado — NP dentro del rango objetivo.`}
-        </div>
+// ─── RENDER SEGMENTOS v7 — Troncal + Ramales ─────────────────────────
+function renderSegmentos() {
+  const lista = document.getElementById('seg-lista');
+  if (!lista) return;
+  lista.innerHTML = '';
+
+  segmentos.forEach((s, sidx) => {
+    const velOk   = !s.maxVel || s.maxVel <= V_MAX_FTPS;
+    const pdpCol  = s.pdp > PDP_MAX_PSI ? 'badge-pdp-bad' : s.pdp > 200 ? 'badge-pdp-warn' : 'badge-pdp-ok';
+    const exceso  = s.exceso || 0;
+    const hasCalc = _lastPDP > 0 || _sliderPDP > 0;
+
+    // ── Banner estado de segmento ─────────────────────────────────────
+    let excessHtml = '';
+    if (hasCalc && !s.isCrit) {
+      const ecls = s.np_insuf ? 'excess-bad' : exceso > 50 ? 'excess-bad' : exceso > 20 ? 'excess-warn' : 'excess-ok';
+      const icon = s.np_insuf || exceso > 50 ? '🔴' : exceso > 20 ? '🟡' : '✅';
+      const tCol = s.np_insuf || exceso > 50 ? 'var(--red)' : exceso > 20 ? 'var(--amber)' : 'var(--green)';
+      const ttxt = s.np_insuf
+        ? `⛔ PRESIÓN INSUFICIENTE — Pérdidas (${s.perdidas.toFixed(1)} psi) > PDP (${_lastPDP.toFixed(1)} psi)`
+        : `${icon} NP nodo: ${s.np_real.toFixed(1)} psi${exceso > 5 ? ' (+' + exceso.toFixed(0) + ' psi sobre obj.)' : ' ✓'}`;
+      const tdesc = s.np_insuf
+        ? 'Las pérdidas del tendido superan la PDP. Reducir longitud o aumentar diámetro.'
+        : exceso > 50 ? `Exceso crítico — pitones reciben presión muy elevada. Q real: ${s.totalQ_real} GPM.`
+        : exceso > 20 ? `Exceso moderado — mayor esfuerzo para los pitoneros. Q real: ${s.totalQ_real} GPM.`
+        : 'Sistema equilibrado — pitones dentro del rango objetivo.';
+      excessHtml = `<div class="excess-box ${ecls}">
+        <div class="excess-title" style="color:${tCol}">${ttxt}</div>
+        <div style="font-size:10px;color:var(--text-dim);line-height:1.6;">${tdesc}</div>
       </div>`;
-    } else if(_lastPDP>0&&s.isCrit){
-      excessHtml=`<div class="excess-box excess-ok"><div class="excess-title" style="color:var(--sky)">★ Segmento crítico — NP exacto: 100 psi ✓ · Caudal real: ${s.totalQ_real} GPM</div></div>`;
+    } else if (hasCalc && s.isCrit) {
+      excessHtml = `<div class="excess-box excess-ok">
+        <div class="excess-title" style="color:var(--sky)">★ Segmento crítico — NP nodo: ${s.np_real.toFixed(1)} psi · Q real: ${s.totalQ_real} GPM</div>
+      </div>`;
     }
 
-    const card=document.createElement('div'); card.className='seg-card';
-    card.innerHTML=`
-      <div class="seg-card-head">
-        <span class="seg-num">${sidx+1}</span>
-        <span class="seg-label">Segmento ${sidx+1}</span>
-        <span class="badge badge-fl">${s.perdidas.toFixed(1)} psi pérd.</span>
-        <span class="badge ${pdpCol}">${s.pdp.toFixed(1)} psi PDP</span>
-        <span class="badge ${velOk?'badge-vel-ok':'badge-vel-bad'}">${s.maxVel?s.maxVel.toFixed(1)+' ft/s':'—'}</span>
-        <span style="margin-left:auto;font-family:var(--ff-m);font-size:9px;color:var(--text-muted)">${s.totalQ} GPM nom.</span>
-        ${segmentos.length>1?`<button class="btn-del" onclick="eliminarSegmento(${s.id})">&times;</button>`:''}
-      </div>
-      <div class="seg-card-body">
+    // ── Helper: render un ramal ───────────────────────────────────────
+    function renderRamal(r, ri) {
+      const p     = r.piton || {};
+      const hasC  = hasCalc && p.np_real !== undefined;
+      const npR   = hasC ? p.np_real   : null;
+      const qR    = hasC ? p.q_real    : null;
+      const eff   = hasC ? p.eficiencia : null;
+      const flR   = hasC ? p.fl_ramal_real : null;
+      const alR   = hasC ? p.al_ramal_real : null;
+      const epR   = hasC ? p.ep_ramal_real : null;
+      const vR    = hasC ? (p.vel_ramal_real || 0) : 0;
 
-        ${excessHtml}
+      // Estado del pitón
+      let pfCls = 'piton-feedback pf-idle';
+      let pfHtml = 'Calcule o mueva el slider para ver los resultados de este ramal';
+      if (hasC) {
+        const obj = parseFloat(p.np_obj || NP_TARGET);
+        if (s.np_insuf || npR < 0) {
+          pfCls = 'piton-feedback pf-bad';
+          pfHtml = '🔴 <strong>SIN AGUA</strong> — Pérdidas de troncal superan la PDP disponible.';
+        } else if (npR < 50) {
+          pfCls = 'piton-feedback pf-bad';
+          pfHtml = `🔴 <strong>CRÍTICO</strong> — NP: <strong>${npR.toFixed(0)} psi</strong> · Q: <strong>${qR} GPM</strong> · Eff: ${eff}%`;
+        } else if (npR < 85) {
+          pfCls = 'piton-feedback pf-bad';
+          pfHtml = `🔴 <strong>INSUFICIENTE</strong> — NP: <strong>${npR.toFixed(0)} psi</strong> · Q: <strong>${qR} GPM</strong> (nom: ${p.q}) · Eff: ${eff}%`
+                 + (flR ? ` · FL: ${flR.toFixed(1)} psi` : '') + (alR ? ` · AL: ${alR.toFixed(1)} psi` : '')
+                 + (epR ? ` · EP: ${epR.toFixed(1)} psi` : '') + (vR > V_MAX_FTPS ? ` · ⚠ V: ${vR.toFixed(1)} ft/s` : '');
+        } else if (npR < 95) {
+          pfCls = 'piton-feedback pf-warn';
+          pfHtml = `🟡 <strong>BAJA</strong> — NP: <strong>${npR.toFixed(0)} psi</strong> · Q: <strong>${qR} GPM</strong> (nom: ${p.q}) · Eff: ${eff}%`
+                 + (flR ? ` · FL+AL+EP: ${flR.toFixed(1)}+${(alR||0).toFixed(1)}+${(epR||0).toFixed(1)} psi` : '');
+        } else if (npR <= 105) {
+          pfCls = 'piton-feedback pf-ok';
+          pfHtml = `✅ <strong>ÓPTIMO</strong> — NP: <strong>${npR.toFixed(0)} psi</strong> · Q: <strong>${qR} GPM</strong> (nom: ${p.q}) · Eff: ${eff}%`
+                 + (flR ? ` · FL+AL+EP: ${flR.toFixed(1)}+${(alR||0).toFixed(1)}+${(epR||0).toFixed(1)} psi` : '')
+                 + (vR > 0 ? ` · V_ramal: ${vR.toFixed(1)} ft/s ${vR > V_MAX_FTPS ? '⚠' : '✓'}` : '');
+        } else if (npR <= 115) {
+          pfCls = 'piton-feedback pf-warn';
+          pfHtml = `🟡 <strong>EXCESO +${(npR - obj).toFixed(0)} psi</strong> — NP: <strong>${npR.toFixed(0)} psi</strong> · Q: <strong>${qR} GPM</strong> · Eff: ${eff}%`;
+        } else {
+          pfCls = 'piton-feedback pf-bad';
+          pfHtml = `🔴 <strong>EXCESO CRÍTICO +${(npR - obj).toFixed(0)} psi</strong> — NP: <strong>${npR.toFixed(0)} psi</strong> · Q: <strong>${qR} GPM</strong> · PELIGRO`;
+        }
+      }
 
-        <div class="acc-title" style="margin-top:${excessHtml?'10px':'0'}">Mangueras en Serie</div>
-        ${s.hoses.map((h,hi)=>`
-          <div class="hose-row">
-            <select class="field-input" style="padding:4px;font-size:11px" onchange="onHose(${s.id},${hi},'diam',this.value)">
-              ${['1.5','1.75','2','2.5','3','4','5'].map(d=>`<option value="${d}" ${d==h.diam?'selected':''}>${d}" (ID ${D_REAL_IN[d]}")</option>`).join('')}
-            </select>
-            <input class="field-input" type="number" style="padding:4px" value="${h.cant}" min="1" max="30" title="Cantidad" oninput="onHose(${s.id},${hi},'cant',this.value)">
-            <select class="field-input" style="padding:4px" onchange="onHose(${s.id},${hi},'longFt',this.value)">
-              ${[25,50,75,100,150,200,250,300].map(l=>`<option value="${l}" ${l==h.longFt?'selected':''}>${l} ft</option>`).join('')}
-            </select>
-            <select class="field-input" style="padding:4px;font-size:11px" onchange="onHose(${s.id},${hi},'material',this.value)">
-              <option value="caucho" ${h.material==='caucho'?'selected':''}>Caucho</option>
-              <option value="lona"   ${h.material==='lona'?'selected':''}>Lona +20%</option>
-            </select>
-            <button class="btn-del" onclick="eliminarHose(${s.id},${hi})">&times;</button>
-          </div>`).join('')}
-        <div style="font-family:var(--ff-m);font-size:10px;color:var(--text-muted);margin:4px 0 2px;">
-          Q nominal: <strong style="color:var(--sky)">${s.totalQ} GPM</strong>
-          ${s.maxVel>0?` · V máx: <strong style="color:${s.maxVel>V_MAX_FTPS?'var(--red)':'var(--green)'}">${s.maxVel.toFixed(1)} ft/s</strong>`:''}
-          ${s.fl>0?` · FL: <strong style="color:var(--amber)">${s.fl.toFixed(1)} psi</strong>`:''}
+      // Tramos del ramal
+      const tramosHtml = (r.hoses || []).map((h, hi) => `
+        <div class="ramal-hose-row">
+          <select class="field-input" style="padding:4px;font-size:11px" onchange="onRamalHose(${s.id},${r.id},${hi},'diam',this.value)">
+            ${['1.5','1.75','2','2.5','3','4','5'].map(d => `<option value="${d}" ${d == h.diam ? 'selected' : ''}>${d}" (ID ${D_REAL_IN[d]}")</option>`).join('')}
+          </select>
+          <input class="field-input" type="number" style="padding:4px" value="${h.cant || 1}" min="1" max="20"
+            title="Cant. en paralelo" oninput="onRamalHose(${s.id},${r.id},${hi},'cant',this.value)">
+          <select class="field-input" style="padding:4px" onchange="onRamalHose(${s.id},${r.id},${hi},'longFt',this.value)">
+            ${[25,50,75,100,150,200,250,300].map(l => `<option value="${l}" ${l == h.longFt ? 'selected' : ''}>${l} ft</option>`).join('')}
+          </select>
+          <select class="field-input" style="padding:4px;font-size:11px" onchange="onRamalHose(${s.id},${r.id},${hi},'material',this.value)">
+            <option value="caucho" ${(h.material || 'caucho') === 'caucho' ? 'selected' : ''}>Caucho</option>
+            <option value="lona"   ${h.material === 'lona' ? 'selected' : ''}>Lona +20%</option>
+          </select>
+          <button class="btn-del" onclick="eliminarRamalHose(${s.id},${r.id},${hi})">&times;</button>
+        </div>`).join('');
+
+      // Stats calculadas
+      const statsHtml = (hasC && (r.hoses || []).length > 0) ? `
+        <div class="ramal-stats">
+          ${flR !== null ? `<span>FL_ramal=${flR.toFixed(2)} psi</span>` : ''}
+          ${alR !== null && alR > 0.01 ? `<span>AL_ramal=${alR.toFixed(2)} psi</span>` : ''}
+          ${epR !== null && Math.abs(epR) > 0.01 ? `<span>EP_ramal=${epR.toFixed(2)} psi</span>` : ''}
+          ${vR > 0 ? `<span style="color:${vR > V_MAX_FTPS ? 'var(--red)' : vR > V_WARN_FTPS ? 'var(--amber)' : 'var(--green)'}">V=${vR.toFixed(1)} ft/s ${vR > V_MAX_FTPS ? '⚠' : '✓'}</span>` : ''}
+        </div>` : '';
+
+      // Header badge de ramal
+      const hosesDesc = (r.hoses || []).length > 0
+        ? (r.hoses).map(h => `${h.cant || 1}×${h.diam}"/${h.longFt}ft`).join('+')
+        : 'sin manguera propia';
+      const elevBadge = r.elev && parseFloat(r.elev) !== 0
+        ? `<span style="font-family:var(--ff-m);font-size:9px;background:rgba(56,189,248,.1);border:1px solid rgba(56,189,248,.2);border-radius:3px;padding:1px 5px;color:var(--sky)">↑ ${r.elev}${r.elevUnit || 'm'}</span>`
+        : '';
+
+      return `
+      <div class="ramal-card">
+        <div class="ramal-card-head">
+          <span class="ramal-badge">RAMAL ${ri + 1}</span>
+          <span style="font-family:var(--ff-m);font-size:9px;color:var(--text-muted)">${hosesDesc}</span>
+          ${elevBadge}
+          ${hasC && npR !== null ? `<span style="font-family:var(--ff-m);font-size:9px;font-weight:800;color:${npR >= 95 && npR <= 105 ? 'var(--green)' : npR >= 85 ? 'var(--amber)' : 'var(--red)'};margin-left:4px">${npR.toFixed(0)} psi · ${qR} GPM</span>` : ''}
+          <span style="margin-left:auto">
+            ${(s.ramales || []).length > 1 ? `<button class="btn-del" style="width:22px;height:22px;font-size:12px" onclick="eliminarRamal(${s.id},${r.id})">&times;</button>` : ''}
+          </span>
         </div>
-        <button class="btn-add" onclick="agregarHose(${s.id})">+ Agregar tramo</button>
+        <div class="ramal-body">
 
-        <div class="acc-title">Pitones</div>
-        ${s.pitones.map((p,pi)=>{
-          const npR  = p.np_real !== undefined ? p.np_real : null;
-          const qR   = p.q_real  !== undefined ? p.q_real  : null;
-          const eff  = p.eficiencia !== undefined ? p.eficiencia : null;
-          const flR  = p.fl_rama_real !== undefined ? p.fl_rama_real : null;
-          const vRama = p.vel_rama_real !== undefined ? p.vel_rama_real : 0;
-          const rh   = p.rama_hoses || [];
-          const hasCalc = (npR !== null) && (_lastPDP > 0 || _sliderPDP > 0);
+          <!-- Tramos del ramal -->
+          <div class="ramal-section-title">🔗 Mangueras del ramal (Nodo Y → Pitón)</div>
+          ${tramosHtml}
+          ${statsHtml}
+          <button class="btn-add-ramal-hose" onclick="agregarRamalHose(${s.id},${r.id})">+ Agregar tramo de ramal</button>
 
-          let pfCls='piton-feedback pf-idle', pfHtml='Calcule o mueva el slider para ver presión y caudal real';
-          if(hasCalc){
-            if(npR < 0 || s.np_insuf){
-              pfCls='piton-feedback pf-bad';
-              pfHtml=`🔴 <strong>SIN PRESIÓN</strong> — Las pérdidas superan la PDP. Revisar tendido.`;
-            } else if(npR < 50){
-              pfCls='piton-feedback pf-bad';
-              pfHtml=`🔴 <strong>CRÍTICO</strong> — NP real: <strong>${npR.toFixed(0)} psi</strong> · Q: <strong>${qR} GPM</strong> · Eff: ${eff}%${flR?` · FL_rama: ${flR.toFixed(1)} psi`:''}`;
-            } else if(npR < 85){
-              pfCls='piton-feedback pf-bad';
-              pfHtml=`🔴 <strong>INSUFICIENTE</strong> — NP: <strong>${npR.toFixed(0)} psi</strong> · Q: <strong>${qR} GPM</strong> (nom: ${p.q}) · Eff: ${eff}%${flR?` · FL_rama: ${flR.toFixed(1)} psi`:''}${vRama>V_MAX_FTPS?` · ⚠ V_rama: ${vRama.toFixed(1)} ft/s`:''}`; 
-            } else if(npR < 95){
-              pfCls='piton-feedback pf-warn';
-              pfHtml=`🟡 <strong>BAJA</strong> — NP: <strong>${npR.toFixed(0)} psi</strong> · Q: <strong>${qR} GPM</strong> (nom: ${p.q}) · Eff: ${eff}%${flR?` · FL_rama: ${flR.toFixed(1)} psi`:''}`;
-            } else if(npR <= 105){
-              pfCls='piton-feedback pf-ok';
-              pfHtml=`✅ <strong>ÓPTIMO</strong> — NP: <strong>${npR.toFixed(0)} psi</strong> · Q: <strong>${qR} GPM</strong> (nom: ${p.q}) · Eff: ${eff}%${flR?` · FL_rama: ${flR.toFixed(1)} psi`:''}${vRama>0?` · V_rama: ${vRama.toFixed(1)} ft/s ${vRama>V_MAX_FTPS?'⚠':'✓'}`:''}`;
-            } else if(npR <= 115){
-              pfCls='piton-feedback pf-warn';
-              pfHtml=`🟡 <strong>EXCESO +${(npR-(p.np_obj||NP_TARGET)).toFixed(0)} psi</strong> — NP: <strong>${npR.toFixed(0)} psi</strong> · Q: <strong>${qR} GPM</strong> · Eff: ${eff}%${flR?` · FL_rama: ${flR.toFixed(1)} psi`:''}`;
-            } else {
-              pfCls='piton-feedback pf-bad';
-              pfHtml=`🔴 <strong>EXCESO CRÍTICO +${(npR-(p.np_obj||NP_TARGET)).toFixed(0)} psi</strong> — NP: <strong>${npR.toFixed(0)} psi</strong> · Q: <strong>${qR} GPM</strong> · PELIGRO${flR?` · FL_rama: ${flR.toFixed(1)} psi`:''}`;
-            }
-          }
+          <!-- Accesorios del ramal -->
+          <div class="ramal-section-title" style="margin-top:10px">🔧 Accesorios del ramal</div>
+          <div class="ramal-acc-grid">
+            ${ACCESORIOS.map(a => `<div class="ramal-acc-btn ${(r.accs || {})[a.id] ? 'active' : ''}" onclick="toggleRamalAcc(${s.id},${r.id},'${a.id}')">
+              <span>${a.nombre}</span><span style="font-family:var(--ff-m);font-size:9px">K=${a.k}</span>
+            </div>`).join('')}
+          </div>
 
-          // Estadísticas de rama (calculadas)
-          const R_total = calcR_rama(rh);
-          const ramaStatsHtml = (hasCalc && rh.length > 0) ? `
-            <div class="rama-stats">
-              <span>R_rama=${R_total.toExponential(2)} psi/GPM²</span>
-              <span>FL_rama=${(flR||0).toFixed(2)} psi</span>
-              ${vRama > 0 ? `<span style="color:${vRama>V_MAX_FTPS?'var(--red)':vRama>V_WARN_FTPS?'var(--amber)':'var(--green)'}">V_rama=${vRama.toFixed(1)} ft/s ${vRama>V_MAX_FTPS?'⚠':'✓'}</span>` : ''}
-            </div>` : '';
+          <!-- Elevación del ramal -->
+          <div class="ramal-section-title" style="margin-top:8px">📐 Elevación del ramal (independiente de la troncal)</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:10px">
+            <input class="field-input" type="number" value="${r.elev || 0}" style="font-size:11px"
+              placeholder="Elevación ±" oninput="onRamalField(${s.id},${r.id},'elev',this.value)">
+            <select class="field-input" style="font-size:11px" onchange="onRamalField(${s.id},${r.id},'elevUnit',this.value)">
+              <option value="m"     ${(r.elevUnit || 'm') === 'm' ? 'selected' : ''}>metros</option>
+              <option value="ft"    ${r.elevUnit === 'ft' ? 'selected' : ''}>pies</option>
+              <option value="pisos" ${r.elevUnit === 'pisos' ? 'selected' : ''}>pisos (3m)</option>
+            </select>
+          </div>
 
-          return `
-          <div class="piton-row">
-            <div class="piton-row-head">
-              <span class="piton-badge">PITÓN ${pi+1}</span>
-              ${p.tipo==='automatico'?'<span style="font-family:var(--ff-m);font-size:9px;color:var(--purple);margin-left:4px">⚙ AUTO</span>':'<span style="font-family:var(--ff-m);font-size:9px;color:var(--sky);margin-left:4px">🔧 FIJO</span>'}
-              ${rh.length > 0 ? `<span style="font-family:var(--ff-m);font-size:8px;background:rgba(167,139,250,.12);border:1px solid rgba(167,139,250,.3);border-radius:3px;padding:1px 5px;color:var(--purple);margin-left:2px">🔗 ${rh.length} tramo${rh.length>1?'s':''} de rama</span>` : ''}
-              <button class="btn-del" style="margin-left:auto" onclick="eliminarPiton(${s.id},${p.id})">&times;</button>
-            </div>
+          <!-- Pitón del ramal -->
+          <div class="ramal-piton-wrap">
+            <div class="ramal-piton-title">🎯 Pitón de este ramal</div>
             <div class="piton-fields" style="grid-template-columns:1fr 1fr 1fr 1fr">
               <div>
                 <span class="piton-field-label">GLP nominal</span>
-                <select class="field-input" style="padding:6px;font-size:11px" onchange="onPiton(${s.id},${p.id},'q',this.value)">
-                  ${[50,75,95,125,150,200,250,300,400,500].map(g=>`<option value="${g}" ${p.q==g?'selected':''}>${g} GPM</option>`).join('')}
+                <select class="field-input" style="padding:6px;font-size:11px" onchange="onRamalPiton(${s.id},${r.id},'q',this.value)">
+                  ${[50,75,95,125,150,200,250,300,400,500].map(g => `<option value="${g}" ${(p.q || 95) == g ? 'selected' : ''}>${g} GPM</option>`).join('')}
                 </select>
               </div>
               <div>
                 <span class="piton-field-label">NP objetivo</span>
-                <select class="field-input" style="padding:6px;font-size:11px" onchange="onPiton(${s.id},${p.id},'np_obj',this.value)">
-                  <option value="75"  ${p.np_obj==75?'selected':''}>75 psi</option>
-                  <option value="80"  ${p.np_obj==80?'selected':''}>80 psi</option>
-                  <option value="100" ${(!p.np_obj||p.np_obj==100)?'selected':''}>100 psi (std)</option>
-                  <option value="125" ${p.np_obj==125?'selected':''}>125 psi</option>
+                <select class="field-input" style="padding:6px;font-size:11px" onchange="onRamalPiton(${s.id},${r.id},'np_obj',this.value)">
+                  <option value="75"  ${p.np_obj == 75  ? 'selected' : ''}>75 psi</option>
+                  <option value="80"  ${p.np_obj == 80  ? 'selected' : ''}>80 psi</option>
+                  <option value="100" ${(!p.np_obj || p.np_obj == 100) ? 'selected' : ''}>100 psi</option>
+                  <option value="125" ${p.np_obj == 125 ? 'selected' : ''}>125 psi</option>
                 </select>
               </div>
               <div>
                 <span class="piton-field-label">Boquilla (pulg.)</span>
-                <select class="field-input" style="padding:6px;font-size:11px" onchange="onPiton(${s.id},${p.id},'boquilla_d',this.value)">
-                  ${[0.5,0.75,1.0,1.125,1.25,1.375,1.5].map(d=>`<option value="${d}" ${parseFloat(p.boquilla_d||1.0)==d?'selected':''}>${d}"</option>`).join('')}
+                <select class="field-input" style="padding:6px;font-size:11px" onchange="onRamalPiton(${s.id},${r.id},'boquilla_d',this.value)">
+                  ${[0.5,0.75,1.0,1.125,1.25,1.375,1.5].map(d => `<option value="${d}" ${parseFloat(p.boquilla_d || 1.0) == d ? 'selected' : ''}>${d}"</option>`).join('')}
                 </select>
               </div>
               <div>
                 <span class="piton-field-label">Tipo</span>
-                <select class="field-input" style="padding:6px;font-size:11px" onchange="onPiton(${s.id},${p.id},'tipo',this.value)">
-                  <option value="fijo"        ${(!p.tipo||p.tipo==='fijo')?'selected':''}>Fijo</option>
-                  <option value="automatico"  ${p.tipo==='automatico'?'selected':''}>Automático</option>
+                <select class="field-input" style="padding:6px;font-size:11px" onchange="onRamalPiton(${s.id},${r.id},'tipo',this.value)">
+                  <option value="fijo"       ${(!p.tipo || p.tipo === 'fijo') ? 'selected' : ''}>Fijo</option>
+                  <option value="automatico" ${p.tipo === 'automatico' ? 'selected' : ''}>Automático</option>
                 </select>
               </div>
             </div>
+            <div class="${pfCls}" style="margin-top:8px">${pfHtml}</div>
+          </div>
 
-            <!-- MANGUERA DE RAMA — tramos propios de este pitón desde el nodo Y -->
-            <div class="rama-section">
-              <div class="rama-section-title">
-                <span>🔗</span>
-                <span>Manguera de Rama (desde nodo Y hasta este pitón)</span>
-                ${rh.length === 0 ? '<span style="font-size:8px;font-weight:400;color:var(--text-muted)">&nbsp;— sin rama propia (comparte NP del nodo)</span>' : ''}
-              </div>
-              ${rh.map((rHose, ri) => `
-                <div class="rama-hose-row">
-                  <select class="field-input" style="padding:4px;font-size:11px" onchange="onRamaHose(${s.id},${p.id},${ri},'diam',this.value)">
-                    ${['1.5','1.75','2','2.5','3','4','5'].map(d=>`<option value="${d}" ${d==rHose.diam?'selected':''}>${d}" (ID ${D_REAL_IN[d]}")</option>`).join('')}
-                  </select>
-                  <input class="field-input" type="number" style="padding:4px" value="${rHose.cant}" min="1" max="10" title="Cantidad paralelas" oninput="onRamaHose(${s.id},${p.id},${ri},'cant',this.value)">
-                  <select class="field-input" style="padding:4px" onchange="onRamaHose(${s.id},${p.id},${ri},'longFt',this.value)">
-                    ${[25,50,75,100,150,200,250,300].map(l=>`<option value="${l}" ${l==rHose.longFt?'selected':''}>${l} ft</option>`).join('')}
-                  </select>
-                  <select class="field-input" style="padding:4px;font-size:11px" onchange="onRamaHose(${s.id},${p.id},${ri},'material',this.value)">
-                    <option value="caucho" ${(rHose.material||'caucho')==='caucho'?'selected':''}>Caucho</option>
-                    <option value="lona"   ${rHose.material==='lona'?'selected':''}>Lona +20%</option>
-                  </select>
-                  <button class="btn-del" onclick="eliminarRamaHose(${s.id},${p.id},${ri})">&times;</button>
-                </div>`).join('')}
-              ${ramaStatsHtml}
-              <button class="btn-add-rama" onclick="agregarRamaHose(${s.id},${p.id})">+ Agregar tramo de rama</button>
-            </div>
+        </div>
+      </div>`;
+    }
 
-            <div class="${pfCls}" id="pf-${s.id}-${p.id}">${pfHtml}</div>
-          </div>`;
-        }).join('')}
-        <button class="btn-add" onclick="agregarPiton(${s.id})" style="border-color:var(--purple);color:var(--purple);background:rgba(167,139,250,.04)">+ Conectar Pitón</button>
+    const ramalesHtml = (s.ramales || []).map((r, ri) => renderRamal(r, ri)).join('');
 
-        <div class="acc-title">Accesorios</div>
+    const card = document.createElement('div');
+    card.className = 'seg-card';
+    card.innerHTML = `
+      <div class="seg-card-head">
+        <span class="seg-num">${sidx + 1}</span>
+        <span class="seg-label">Segmento ${sidx + 1}</span>
+        <span class="badge badge-fl">${s.perdidas.toFixed(1)} psi pérd. troncal</span>
+        <span class="badge ${pdpCol}">${s.pdp.toFixed(1)} psi PDP</span>
+        <span class="badge ${velOk ? 'badge-vel-ok' : 'badge-vel-bad'}">${s.maxVel ? s.maxVel.toFixed(1) + ' ft/s' : '—'}</span>
+        <span style="margin-left:auto;font-family:var(--ff-m);font-size:9px;color:var(--text-muted)">${s.totalQ} GPM · ${(s.ramales || []).length} ramal${(s.ramales || []).length !== 1 ? 'es' : ''}</span>
+        ${segmentos.length > 1 ? `<button class="btn-del" onclick="eliminarSegmento(${s.id})">&times;</button>` : ''}
+      </div>
+      <div class="seg-card-body">
+        ${excessHtml}
+
+        <!-- ══ TRONCAL ══ -->
+        <div class="troncal-label" style="margin-top:${excessHtml ? '12px' : '0'}">
+          🚒 Troncal — Línea de abastecimiento (Bomba → Nodo Y)
+        </div>
+        ${s.hoses.map((h, hi) => `
+          <div class="hose-row">
+            <select class="field-input" style="padding:4px;font-size:11px" onchange="onHose(${s.id},${hi},'diam',this.value)">
+              ${['1.5','1.75','2','2.5','3','4','5'].map(d => `<option value="${d}" ${d == h.diam ? 'selected' : ''}>${d}" (ID ${D_REAL_IN[d]}")</option>`).join('')}
+            </select>
+            <input class="field-input" type="number" style="padding:4px" value="${h.cant}" min="1" max="30"
+              title="Cant. en paralelo" oninput="onHose(${s.id},${hi},'cant',this.value)">
+            <select class="field-input" style="padding:4px" onchange="onHose(${s.id},${hi},'longFt',this.value)">
+              ${[25,50,75,100,150,200,250,300].map(l => `<option value="${l}" ${l == h.longFt ? 'selected' : ''}>${l} ft</option>`).join('')}
+            </select>
+            <select class="field-input" style="padding:4px;font-size:11px" onchange="onHose(${s.id},${hi},'material',this.value)">
+              <option value="caucho" ${h.material === 'caucho' ? 'selected' : ''}>Caucho</option>
+              <option value="lona"   ${h.material === 'lona'   ? 'selected' : ''}>Lona +20%</option>
+            </select>
+            <button class="btn-del" onclick="eliminarHose(${s.id},${hi})">&times;</button>
+          </div>`).join('')}
+        <div style="font-family:var(--ff-m);font-size:10px;color:var(--text-muted);margin:4px 0 3px;">
+          Q total: <strong style="color:var(--sky)">${s.totalQ} GPM</strong>
+          ${s.maxVel > 0 ? ` · V_troncal: <strong style="color:${s.maxVel > V_MAX_FTPS ? 'var(--red)' : 'var(--green)'}">${s.maxVel.toFixed(1)} ft/s ${s.maxVel > V_MAX_FTPS ? '⚠' : '✓'}</strong>` : ''}
+          ${s.fl > 0   ? ` · FL: <strong style="color:var(--amber)">${s.fl.toFixed(1)} psi</strong>` : ''}
+          ${s.al > 0.01 ? ` · AL: <strong style="color:var(--amber)">${s.al.toFixed(1)} psi</strong>` : ''}
+          ${s.ep !== 0  ? ` · EP: <strong style="color:var(--sky)">${s.ep.toFixed(1)} psi</strong>` : ''}
+        </div>
+        <button class="btn-add" onclick="agregarHose(${s.id})">+ Agregar tramo de troncal</button>
+
+        <!-- Accesorios troncal -->
+        <div class="acc-title">Accesorios de troncal</div>
         <div class="acc-grid">
-          ${ACCESORIOS.map(a=>`<div class="acc-btn ${s.accs[a.id]?'active':''}" onclick="toggleAcc(${s.id},'${a.id}')">
+          ${ACCESORIOS.map(a => `<div class="acc-btn ${s.accs[a.id] ? 'active' : ''}" onclick="toggleAcc(${s.id},'${a.id}')">
             <span>${a.nombre}</span><span style="font-family:var(--ff-m);font-size:9px">K=${a.k}</span>
           </div>`).join('')}
         </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px">
-          <input class="field-input" type="number" value="${s.elev||0}" oninput="onSegField(${s.id},'elev',this.value)" placeholder="Elevación ±">
+        <!-- Elevación troncal -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:9px;margin-bottom:14px">
+          <input class="field-input" type="number" value="${s.elev || 0}"
+            oninput="onSegField(${s.id},'elev',this.value)" placeholder="Elevación troncal ±">
           <select class="field-input" onchange="onSegField(${s.id},'elevUnit',this.value)">
-            <option value="m"     ${s.elevUnit==='m'?'selected':''}>metros</option>
-            <option value="ft"    ${s.elevUnit==='ft'?'selected':''}>pies</option>
-            <option value="pisos" ${s.elevUnit==='pisos'?'selected':''}>pisos (3m)</option>
+            <option value="m"     ${s.elevUnit === 'm'     ? 'selected' : ''}>metros</option>
+            <option value="ft"    ${s.elevUnit === 'ft'    ? 'selected' : ''}>pies</option>
+            <option value="pisos" ${s.elevUnit === 'pisos' ? 'selected' : ''}>pisos (3m)</option>
           </select>
         </div>
+
+        <!-- ══ RAMALES ══ -->
+        <div class="ramales-wrap">
+          <div class="ramales-label">
+            <span>⑂</span>
+            <span>Ramales (Nodo Y → Pitones)</span>
+            <span style="margin-left:auto;font-family:var(--ff-m);font-size:9px;color:var(--text-muted)">
+              ${(s.ramales || []).length} ramal${(s.ramales || []).length !== 1 ? 'es' : ''} · Q_nom_total: ${s.totalQ} GPM
+            </span>
+          </div>
+          ${ramalesHtml}
+          <button class="btn-add-ramal" onclick="agregarRamal(${s.id})">⑂ Agregar ramal</button>
+        </div>
+
       </div>`;
     lista.appendChild(card);
   });
 }
 
 // ─── COMBAT CARD ─────────────────────────────────────────────────────
-function populateCombatCard(){
-  const now=new Date();
-  document.getElementById('cc-ts').innerText='Generado: '+now.toLocaleDateString('es-CO')+' '+now.toLocaleTimeString('es-CO');
-  document.getElementById('cc-vehicle-label').innerText='Vehículo: '+_bomba.nombre+' · NFPA 1901 Table C.5.1.1';
-  document.getElementById('cc-pdp').innerHTML=_lastPDP.toFixed(1)+'<span class="cc-badge-unit"> psi</span>';
-  document.getElementById('cc-q-badge').innerHTML=_lastFlow+'<span class="cc-badge-unit"> GPM</span>';
-  document.getElementById('cc-fl').innerText=_lastStats.fl.toFixed(1)+' psi';
-  document.getElementById('cc-al').innerText=_lastStats.al.toFixed(1)+' psi';
-  document.getElementById('cc-ep').innerText=_lastStats.ep.toFixed(1)+' psi';
-  const qd=qDisp(_lastPDP);
-  const nom=segmentos.reduce((s,x)=>s+x.totalQ,0);
-  let sv,ss,sc;
-  if(nom>qd)          {sv='⚠ CAUDAL INSUFICIENTE';ss='Reducir segmentos activos';sc='#c00';}
-  else if(_lastPDP>250){sv='⛔ PELIGRO MANGUERA';ss='Excede límite NFPA 1962';sc='#c00';}
-  else if(_lastPDP>200){sv='⚡ PRESIÓN ELEVADA';ss='Verificar antes de operar';sc='#8a5200';}
-  else                {sv='✓ OPERACIÓN SEGURA';ss='Sistema dentro de parámetros NFPA';sc='#175c28';}
-  document.getElementById('cc-sv').innerText=sv; document.getElementById('cc-sv').style.color=sc;
-  document.getElementById('cc-ss').innerText=ss; document.getElementById('cc-status-box').style.borderColor=sc;
-  const capRaw=parseFloat(document.getElementById('tank-cap').value)||0;
-  const unit=document.getElementById('tank-unit').value;
-  if(capRaw&&_lastFlow>0){
-    const cg=unit==='lit'?capRaw*.264172:capRaw, tm=(cg/_lastFlow)*60;
-    const md=Math.floor(tm),sd=Math.round((tm-md)*60);
-    document.getElementById('cc-aut-badge').style.display='block';
-    document.getElementById('cc-aut').innerHTML=md+'m'+sd+'s';
-    document.getElementById('cc-tank-sec').style.display='block';
-    document.getElementById('cc-tcap').innerText=capRaw+' '+(unit==='gal'?'GAL':'L');
-    document.getElementById('cc-ttime').innerText=md+'m '+sd+'s';
+function populateCombatCard() {
+  const now = new Date();
+  document.getElementById('cc-ts').innerText = 'Generado: ' + now.toLocaleDateString('es-CO') + ' ' + now.toLocaleTimeString('es-CO');
+  document.getElementById('cc-vehicle-label').innerText = 'Vehículo: ' + _bomba.nombre + ' · NFPA 1901 Table C.5.1.1';
+  document.getElementById('cc-pdp').innerHTML = _lastPDP.toFixed(1) + '<span class="cc-badge-unit"> psi</span>';
+  document.getElementById('cc-q-badge').innerHTML = _lastFlow + '<span class="cc-badge-unit"> GPM</span>';
+  document.getElementById('cc-fl').innerText = _lastStats.fl.toFixed(1) + ' psi';
+  document.getElementById('cc-al').innerText = _lastStats.al.toFixed(1) + ' psi';
+  document.getElementById('cc-ep').innerText = _lastStats.ep.toFixed(1) + ' psi';
+  const qd  = qDisp(_lastPDP);
+  const nom = segmentos.reduce((s, x) => s + x.totalQ, 0);
+  let sv, ss, sc;
+  if (nom > qd)           { sv = '⚠ CAUDAL INSUFICIENTE'; ss = 'Reducir segmentos activos';          sc = '#c00'; }
+  else if (_lastPDP > 250){ sv = '⛔ PELIGRO MANGUERA';    ss = 'Excede límite NFPA 1962';           sc = '#c00'; }
+  else if (_lastPDP > 200){ sv = '⚡ PRESIÓN ELEVADA';      ss = 'Verificar antes de operar';         sc = '#8a5200'; }
+  else                    { sv = '✓ OPERACIÓN SEGURA';     ss = 'Sistema dentro de parámetros NFPA'; sc = '#175c28'; }
+  document.getElementById('cc-sv').innerText = sv;
+  document.getElementById('cc-sv').style.color = sc;
+  document.getElementById('cc-ss').innerText = ss;
+  document.getElementById('cc-status-box').style.borderColor = sc;
+
+  const capRaw = parseFloat(document.getElementById('tank-cap').value) || 0;
+  const unit   = document.getElementById('tank-unit').value;
+  if (capRaw && _lastFlow > 0) {
+    const cg = unit === 'lit' ? capRaw * 0.264172 : capRaw;
+    const tm = (cg / _lastFlow) * 60;
+    const md = Math.floor(tm), sd = Math.round((tm - md) * 60);
+    document.getElementById('cc-aut-badge').style.display = 'block';
+    document.getElementById('cc-aut').innerHTML = md + 'm' + sd + 's';
+    document.getElementById('cc-tank-sec').style.display = 'block';
+    document.getElementById('cc-tcap').innerText = capRaw + ' ' + (unit === 'gal' ? 'GAL' : 'L');
+    document.getElementById('cc-ttime').innerText = md + 'm ' + sd + 's';
   }
-  const sd2=document.getElementById('cc-segs'); sd2.innerHTML='';
-  segmentos.forEach((s,i)=>{
-    const ht=s.hoses.map(h=>`${h.cant}×${h.diam}"/${h.longFt}ft`).join(', ');
-    const pt=s.pitones.map(p=>`${p.q}GPM@${p.boquilla_d||1.0}"`).join(' | ')||'—';
-    const excStr=s.isCrit?'Segmento crítico — NP=100psi':`NP real=${s.np_real.toFixed(0)}psi (+${s.exceso.toFixed(0)}psi exc.) · Q real=${s.totalQ_real}GPM`;
-    sd2.innerHTML+=`<div class="cc-seg-item">
-      <div class="cc-seg-title">Seg ${i+1}${s.isCrit?' ★':''} — PDP=${s.pdp.toFixed(1)}psi · Pérd=${s.perdidas.toFixed(1)}psi · V=${s.maxVel.toFixed(1)}ft/s${s.maxVel>V_MAX_FTPS?' ⚠':' ✓'}</div>
-      <div class="cc-seg-detail">${ht}</div>
-      <div class="cc-seg-detail">Pitones: ${pt}</div>
-      <div class="cc-seg-detail" style="color:${s.exceso>50?'#c00':s.exceso>20?'#8a5200':'#175c28'}">${excStr}</div>
+
+  const sd2 = document.getElementById('cc-segs');
+  sd2.innerHTML = '';
+  segmentos.forEach((s, i) => {
+    const ht  = s.hoses.map(h => `${h.cant}×${h.diam}"/${h.longFt}ft`).join(', ');
+    const rts = (s.ramales || []).map((r, ri) => {
+      const p   = r.piton || {};
+      const rht = (r.hoses || []).map(h => `${h.cant || 1}×${h.diam}"/${h.longFt}ft`).join('+') || 'sin ramal';
+      const npStr = p.np_real !== undefined ? `NP=${p.np_real.toFixed(0)}psi · Q=${p.q_real}GPM · Eff=${p.eficiencia}%` : '';
+      return `R${ri + 1}:[${rht}] ${p.q}GPM${npStr ? ' → ' + npStr : ''}`;
+    }).join(' | ') || '—';
+    const excStr = s.isCrit ? 'Segmento crítico' : `NP_nodo=${s.np_real.toFixed(0)}psi · Q_real=${s.totalQ_real}GPM`;
+    sd2.innerHTML += `<div class="cc-seg-item">
+      <div class="cc-seg-title">Seg ${i + 1}${s.isCrit ? ' ★' : ''} — PDP=${s.pdp.toFixed(1)}psi · FL_tronc=${s.perdidas.toFixed(1)}psi · V=${s.maxVel.toFixed(1)}ft/s${s.maxVel > V_MAX_FTPS ? ' ⚠' : ' ✓'}</div>
+      <div class="cc-seg-detail">Troncal: ${ht}</div>
+      <div class="cc-seg-detail">${rts}</div>
+      <div class="cc-seg-detail" style="color:${s.exceso > 50 ? '#c00' : s.exceso > 20 ? '#8a5200' : '#175c28'}">${excStr}</div>
     </div>`;
   });
 }
-function exportPDF(){
-  if(_lastPDP===0){alert('Calcule primero la presión del sistema.');return;}
-  populateCombatCard(); setTimeout(()=>window.print(),200);
+
+function exportPDF() {
+  if (_lastPDP === 0) { alert('Calcule primero la presión del sistema.'); return; }
+  populateCombatCard();
+  setTimeout(() => window.print(), 200);
 }
 
 // ════════════════════════════════════════════════════════════
-// 12. CRUD — segmentos, mangueras, pitones, accesorios
+// 12. CRUD COMPLETO — Segmentos, Troncal, Ramales, Pitones
 // ════════════════════════════════════════════════════════════
+
+// ── Helper: crea un ramal nuevo ────────────────────────────────────────
+function _nuevoRamal(glp) {
+  return {
+    id:       ++ramalUID,
+    hoses:    [],                      // vacío = sin manguera de ramal (modelo simple)
+    accs:     {},
+    elev:     0, elevUnit: 'm',
+    piton: {
+      q:          glp || 95,
+      np_obj:     NP_TARGET,
+      boquilla_d: 1.0,
+      tipo:       'fijo',
+      // calculados — se rellenan en recalcAll
+      np_real: 0, q_real: 0, eficiencia: 0,
+      fl_ramal_real: 0, al_ramal_real: 0, ep_ramal_real: 0, vel_ramal_real: 0,
+    }
+  };
+}
+
+// ── CRUD Segmento ─────────────────────────────────────────────────────
 function agregarSegmento() {
-  const pid = ++pitonUID;
   segmentos.push({
-    id: ++segUID,
+    id:      ++segUID,
     hoses:   [{ diam:'2.5', cant:1, longFt:100, material:'caucho' }],
-    pitones: [{ id:pid, q:95, np_obj:NP_TARGET, boquilla_d:1.0, tipo:'fijo',
-                rama_hoses:[] }],     // ← rama vacía = sin manguera propia
-    accs: {}, elev:0, elevUnit:'m',
+    accs:    {}, elev:0, elevUnit:'m',
+    ramales: [_nuevoRamal(95), _nuevoRamal(95)],  // 2 ramales por defecto
+    // calculados
     pdp:0, fl:0, al:0, ep:0, perdidas:0, np_obj:NP_TARGET,
     np_real:0, exceso:0, maxVel:0, velDiam:'2.5',
     totalQ:0, totalQ_real:0, eficiencia:0, isCrit:false,
-    np_insuf:false, hoseVels:[],
+    np_insuf:false, hoseVels:[], maxVelRamalGlobal:0,
   });
   recalcAndUpdateAll();
 }
@@ -2557,6 +2699,7 @@ function eliminarSegmento(id) {
   recalcAndUpdateAll();
 }
 
+// ── CRUD Troncal (hoses del segmento) ────────────────────────────────
 function agregarHose(sid) {
   const s = segmentos.find(x => x.id === sid);
   if (s) s.hoses.push({ diam:'2.5', cant:1, longFt:100, material:'caucho' });
@@ -2571,67 +2714,10 @@ function eliminarHose(sid, hi) {
 
 function onHose(sid, hi, f, v) {
   const s = segmentos.find(x => x.id === sid);
-  if (s && s.hoses[hi]) {
-    if (f === 'material') s.hoses[hi][f] = v;
-    else if (f === 'diam') s.hoses[hi][f] = String(v);
-    else s.hoses[hi][f] = parseFloat(v);
-  }
-  recalcAndUpdateAll();
-}
-
-function agregarPiton(sid) {
-  const s = segmentos.find(x => x.id === sid);
-  if (s) s.pitones.push({ id:++pitonUID, q:95, np_obj:NP_TARGET, boquilla_d:1.0,
-                           tipo:'fijo', rama_hoses:[] });
-  recalcAndUpdateAll();
-}
-
-function eliminarPiton(sid, pid) {
-  const s = segmentos.find(x => x.id === sid);
-  if (s && s.pitones.length > 1) s.pitones = s.pitones.filter(p => p.id !== pid);
-  recalcAndUpdateAll();
-}
-
-function onPiton(sid, pid, f, v) {
-  const s = segmentos.find(x => x.id === sid);
-  if (!s) return;
-  const p = s.pitones.find(x => x.id === pid);
-  if (!p) return;
-  if (f === 'tipo') p[f] = v;
-  else if (f === 'boquilla_d') p[f] = parseFloat(v);
-  else p[f] = parseFloat(v);
-  recalcAndUpdateAll();
-}
-
-// ── CRUD para mangueras de RAMA (propias de cada pitón) ──────────────
-function agregarRamaHose(sid, pid) {
-  const s = segmentos.find(x => x.id === sid);
-  if (!s) return;
-  const p = s.pitones.find(x => x.id === pid);
-  if (p) {
-    if (!p.rama_hoses) p.rama_hoses = [];
-    p.rama_hoses.push({ diam:'1.5', cant:1, longFt:100, material:'caucho' });
-  }
-  recalcAndUpdateAll();
-}
-
-function eliminarRamaHose(sid, pid, ri) {
-  const s = segmentos.find(x => x.id === sid);
-  if (!s) return;
-  const p = s.pitones.find(x => x.id === pid);
-  if (p && p.rama_hoses && p.rama_hoses.length > 1) p.rama_hoses.splice(ri, 1);
-  else if (p && p.rama_hoses && p.rama_hoses.length === 1) p.rama_hoses = [];
-  recalcAndUpdateAll();
-}
-
-function onRamaHose(sid, pid, ri, f, v) {
-  const s = segmentos.find(x => x.id === sid);
-  if (!s) return;
-  const p = s.pitones.find(x => x.id === pid);
-  if (!p || !p.rama_hoses || !p.rama_hoses[ri]) return;
-  if (f === 'material') p.rama_hoses[ri][f] = v;
-  else if (f === 'diam') p.rama_hoses[ri][f] = String(v);
-  else p.rama_hoses[ri][f] = parseFloat(v);
+  if (!s || !s.hoses[hi]) return;
+  if (f === 'material') s.hoses[hi][f] = v;
+  else if (f === 'diam') s.hoses[hi][f] = String(v);
+  else s.hoses[hi][f] = parseFloat(v);
   recalcAndUpdateAll();
 }
 
@@ -2648,15 +2734,89 @@ function onSegField(id, f, v) {
   recalcAndUpdateAll();
 }
 
+// ── CRUD Ramales ──────────────────────────────────────────────────────
+function agregarRamal(sid) {
+  const s = segmentos.find(x => x.id === sid);
+  if (s) s.ramales.push(_nuevoRamal(95));
+  recalcAndUpdateAll();
+}
+
+function eliminarRamal(sid, rid) {
+  const s = segmentos.find(x => x.id === sid);
+  if (s && s.ramales.length > 1) s.ramales = s.ramales.filter(r => r.id !== rid);
+  recalcAndUpdateAll();
+}
+
+// ── CRUD Hoses del ramal ──────────────────────────────────────────────
+function agregarRamalHose(sid, rid) {
+  const s = segmentos.find(x => x.id === sid);
+  if (!s) return;
+  const r = s.ramales.find(x => x.id === rid);
+  if (r) r.hoses.push({ diam:'1.5', cant:1, longFt:100, material:'caucho' });
+  recalcAndUpdateAll();
+}
+
+function eliminarRamalHose(sid, rid, hi) {
+  const s = segmentos.find(x => x.id === sid);
+  if (!s) return;
+  const r = s.ramales.find(x => x.id === rid);
+  if (!r) return;
+  if (r.hoses.length > 1) r.hoses.splice(hi, 1);
+  else r.hoses = [];   // ramal vacío = sin manguera propia
+  recalcAndUpdateAll();
+}
+
+function onRamalHose(sid, rid, hi, f, v) {
+  const s = segmentos.find(x => x.id === sid);
+  if (!s) return;
+  const r = s.ramales.find(x => x.id === rid);
+  if (!r || !r.hoses[hi]) return;
+  if (f === 'material') r.hoses[hi][f] = v;
+  else if (f === 'diam') r.hoses[hi][f] = String(v);
+  else r.hoses[hi][f] = parseFloat(v);
+  recalcAndUpdateAll();
+}
+
+// ── Accesorios del ramal ──────────────────────────────────────────────
+function toggleRamalAcc(sid, rid, aid) {
+  const s = segmentos.find(x => x.id === sid);
+  if (!s) return;
+  const r = s.ramales.find(x => x.id === rid);
+  if (r) { if (!r.accs) r.accs = {}; r.accs[aid] = !r.accs[aid]; }
+  recalcAndUpdateAll();
+}
+
+// ── Campos del ramal (elev, elevUnit) ────────────────────────────────
+function onRamalField(sid, rid, f, v) {
+  const s = segmentos.find(x => x.id === sid);
+  if (!s) return;
+  const r = s.ramales.find(x => x.id === rid);
+  if (!r) return;
+  r[f] = f === 'elev' ? (parseFloat(v) || 0) : v;
+  recalcAndUpdateAll();
+}
+
+// ── Pitón del ramal ───────────────────────────────────────────────────
+function onRamalPiton(sid, rid, f, v) {
+  const s = segmentos.find(x => x.id === sid);
+  if (!s) return;
+  const r = s.ramales.find(x => x.id === rid);
+  if (!r || !r.piton) return;
+  if (f === 'tipo') r.piton[f] = v;
+  else if (f === 'boquilla_d') r.piton[f] = parseFloat(v);
+  else r.piton[f] = parseFloat(v);
+  recalcAndUpdateAll();
+}
+
 function calcular() { recalcAndUpdateAll(); }
 
 function resetAll() {
-  segmentos = []; segUID = 0; pitonUID = 0;
+  segmentos = []; segUID = 0; pitonUID = 0; ramalUID = 0;
   _lastPDP = 0; _lastFlow = 0; _velWarnings = []; _sliderPDP = 0;
-  document.getElementById('pm-slider').value    = 0;
+  document.getElementById('pm-slider').value      = 0;
   document.getElementById('pm-val-num').innerText = '0';
-  document.getElementById('pm-note').innerText  = '↑ Mueva el slider para simular la presión del manómetro en tiempo real';
-  document.getElementById('pm-note').style.color = '';
+  document.getElementById('pm-note').innerText    = '↑ Mueva el slider para simular la presión del manómetro en tiempo real';
+  document.getElementById('pm-note').style.color  = '';
   document.getElementById('result-idle').style.display  = 'block';
   document.getElementById('result-body').style.display  = 'none';
   document.getElementById('recs-panel').style.display   = 'none';
@@ -2667,8 +2827,14 @@ function resetAll() {
   agregarSegmento();
 }
 
-setInterval(()=>{const t=new Date().toLocaleTimeString('es-CO');document.getElementById('tb-clock').innerText=t;const ft=document.getElementById('footer-ts');if(ft)ft.innerText=new Date().toLocaleDateString('es-CO')+' '+t;},1000);
-window.onload=resetAll;
+setInterval(() => {
+  const t = new Date().toLocaleTimeString('es-CO');
+  document.getElementById('tb-clock').innerText = t;
+  const ft = document.getElementById('footer-ts');
+  if (ft) ft.innerText = new Date().toLocaleDateString('es-CO') + ' ' + t;
+}, 1000);
+window.onload = resetAll;
+
 
 // ════════════════════════════════════════════════════════════
 // 15. INDICADORES TÁCTICOS — NP / GPM / VELOCIDAD
@@ -2741,14 +2907,17 @@ function updateTacticIndicators() {
   const critSeg = segmentos.reduce((m, s) => (!m || s.pdp > m.pdp) ? s : m, null);
 
   // ── INDICADOR 1: NP ─────────────────────────────────────
-  // Mostrar NP del segmento con MENOR NP real (el más desfavorable para el pitonero)
+  // Peor NP individual a nivel de pitón (el más desfavorable de todos los ramales)
   let worstNP = null;
   if (hasCalt && segmentos.length > 0) {
-    worstNP = segmentos.reduce((mn, s) => {
-      const n = s.np_real !== undefined ? s.np_real : null;
-      if (n === null) return mn;
-      return mn === null ? n : Math.min(mn, n);
-    }, null);
+    segmentos.forEach(s => {
+      (s.ramales || []).forEach(r => {
+        const np = (r.piton || {}).np_real;
+        if (np !== undefined && np !== null) {
+          worstNP = worstNP === null ? np : Math.min(worstNP, np);
+        }
+      });
+    });
   }
 
   const npCls = hasCalt && worstNP !== null ? tacNPClass(worstNP) : 'tac-idle';
@@ -2764,18 +2933,23 @@ function updateTacticIndicators() {
   document.getElementById('tac-np-arc').setAttribute('stroke', dotColor(npCls));
   document.getElementById('tac-np-tooltip-text').innerText = tacNPTooltip(worstNP);
 
-  // Filas por segmento
+  // Filas por ramal (NP individual de cada pitón)
   const npSegs = document.getElementById('tac-np-segs');
   if (hasCalt) {
-    npSegs.innerHTML = segmentos.map((s, i) => {
-      const sc = tacNPClass(s.np_real);
-      return `<div class="tac-seg-row">
-        <span class="tac-seg-row-dot" style="background:${dotColor(sc)}"></span>
-        <span class="tac-seg-row-label">Seg.${i+1}${s.isCrit ? ' ★' : ''}</span>
-        <span class="tac-seg-row-val" style="color:${dotColor(sc)}">${s.np_real !== undefined ? Math.round(s.np_real) : '—'} psi</span>
-        <span style="color:var(--text-muted);font-size:8px;margin-left:auto">${tacNPStatusText(s.np_real)}</span>
-      </div>`;
-    }).join('');
+    const rows = [];
+    segmentos.forEach((s, si) => {
+      (s.ramales || []).forEach((r, ri) => {
+        const np = (r.piton || {}).np_real;
+        const sc = tacNPClass(np);
+        rows.push(`<div class="tac-seg-row">
+          <span class="tac-seg-row-dot" style="background:${dotColor(sc)}"></span>
+          <span class="tac-seg-row-label">Seg.${si+1} R${ri+1}${s.isCrit && ri === 0 ? ' ★' : ''}</span>
+          <span class="tac-seg-row-val" style="color:${dotColor(sc)}">${np !== undefined ? Math.round(np) : '—'} psi</span>
+          <span style="color:var(--text-muted);font-size:8px;margin-left:auto">${tacNPStatusText(np)}</span>
+        </div>`);
+      });
+    });
+    npSegs.innerHTML = rows.join('');
   } else { npSegs.innerHTML = ''; }
 
   // ── INDICADOR 2: GPM ────────────────────────────────────
